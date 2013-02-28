@@ -1,0 +1,114 @@
+/* general styles*/
+div#unittest {
+	margin: auto;
+	width: 65%;
+	padding: 2px;
+}
+
+/* main test container test*/
+div.test-container {
+	border: 1px dashed #555555;
+	text-align: left;
+	padding: 2px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
+
+/* test report elements test->header, test->footer, test->asserts*/
+p.test-header {
+	font-weight: bold;
+	margin: .3em;
+}
+p.test-footer {
+	margin: .3em;
+}
+
+ul.test-asserts {
+	margin-top: .5em;
+	margin-bottom: .3em;
+	padding: 5px;
+	list-style-type: none;
+}
+ul.test-asserts-fold {
+	display: none;	
+}
+
+/* test-asserts elements test->asserts->assert-item*/
+li.test-assert {
+	font-family: 'Lucida Console', Monaco, monospace;
+	font-size: medium;
+	margin: 2px;
+}
+
+li.test-assert-failure {
+	border: 1px solid #B22222;
+}
+li.test-assert-success {
+	border: 1px solid #9ACD32;
+}
+li.test-assert-message {
+	border: 1px solid #E6C200;
+}
+
+/* blocks inside test-asserts list items test->asserts->assert-item->icon
+ *		test->asserts->assert-item->report
+ * */
+span.test-icon {
+	width: 20px;
+	height: 20px;
+	max-width: 20px;
+	max-height: 20px;
+	margin: 2px;
+	display: inline-block;
+	vertical-align: middle;
+}
+span.test-icon-failure {
+	background-color: #B22222; /* red */
+}
+span.test-icon-success {
+	background-color: #9ACD32; /* green */
+}
+span.test-icon-message {
+	background-color: #E6C200; /* yellow */
+}
+
+span.test-report {
+	vertical-align: middle;
+}
+span.test-report-expected {
+	font-weight: bold;
+}
+span.test-report-value {
+	font-weight: bold;
+}
+span.test-report-message {
+	color: #696969; /* mid gray*/
+}
+span.test-report-error {
+	color: #808080; /* dark gray*/
+}
+
+/* footer elements test->footer->field-success, test->footer->field-failure */
+span.test-footer-field-success {
+	font-weight: bold;
+	color: #9ACD32;
+}
+span.test-footer-field-failure {
+	font-weight: bold;
+	color: #B22222;
+}
+span.test-footer-field-total {
+	font-weight: bold;
+}
+
+/* header element test->header_>test-folding-icon */
+span.test-fold-icon {
+	background-color: #708090;
+	color: #ffffff;
+	text-align: center;
+	font-size: 16px;
+	padding: 0px;
+}
+span.test-header-text {
+	vertical-align: middle;
+}
