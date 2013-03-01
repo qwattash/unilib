@@ -1,3 +1,0 @@
-/**
- * @author: qwattash (Alfredo Mazzinghi)
- */
