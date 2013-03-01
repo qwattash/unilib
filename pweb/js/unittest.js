@@ -12,6 +12,7 @@
  */
 
 /**
+ * @private
  * @description convert value to a string representation of the value, 
  * 	 including null, undefined, empty string etc.
  * @param {Object} value
@@ -49,6 +50,7 @@ Result = {
 };
 
 /**
+ * @private
  * @class AssertionResult is an helper for storing assertion results
  */
 function AssertionResult(result, value, expected, message, errMessage){
@@ -78,10 +80,11 @@ function AssertionResult(result, value, expected, message, errMessage){
 	this.errorMessage = errMessage || '';
 }
 /**
+ * @private
  * @description global test manager is used to handle communication of test results
  * @namespace
  */
-TestManager = {
+testManager = {
 	/** @description where to put test reports
 	 * @type {Element}
 	 * @private
@@ -94,7 +97,7 @@ TestManager = {
 	 */
 	testDisplay: null,
 	
-	/** @description tests registered on the TestManager, stored for future reruns
+	/** @description tests registered on the testManager, stored for future reruns
 	 * @type {Array.<Test>}
 	 * @private
 	 */
@@ -122,6 +125,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description properly displays assertion results inside the display element
 	 * @param {AssertionResult} assertResult: results of an assertion  display
 	 */
@@ -193,6 +197,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description add test to tests list
 	 * @param {Test} test
 	 */
@@ -211,6 +216,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description initialise display entry for the test
 	 * @param {Test} test
 	 */
@@ -243,6 +249,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description add test summary to the container and unset test-specific variables
 	 */
 	endTest: function(){
@@ -283,6 +290,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description notify an unexpected global failure
 	 * @param {Object} reason exception causing global test failure
 	 */
@@ -292,6 +300,11 @@ TestManager = {
 		this.handleAssertion(results);
 	},
 	
+	/**
+	 * @public
+	 * @description handle an expect call in current test
+	 * @param {number} expectedAssertNum number of expected assertions
+	 */
 	handleExpect: function(expectedAssertNum) {
 		if (this.current) {
 			this.current.expect(expectedAssertNum)
@@ -303,6 +316,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description execute registered tests
 	 */
 	execute: function() {
@@ -321,6 +335,7 @@ TestManager = {
 	},
 	
 	/**
+	 * @public
 	 * @description fold test assertions for given test container
 	 * @param {String} testContainerId
 	 */
@@ -341,11 +356,12 @@ TestManager = {
 		 * })(testId);
 		 * */
 		fold.onclick = function() {
-			TestManager.unfoldTestReport(testContainerId);
+			testManager.unfoldTestReport(testContainerId);
 		}
 	},
 	
 	/**
+	 * @param
 	 * @description unfold test assertions for given test container
 	 * @param {String} testContainerId
 	 */
@@ -373,12 +389,13 @@ TestManager = {
 		 * or not??
 		 * */
 		fold.onclick = function() {
-			TestManager.foldTestReport(testContainerId);
+			testManager.foldTestReport(testContainerId);
 		}
 	}
 };
 /**
- * Test is a test module that uses TestManager to organise its output
+ * @private
+ * @description Test is a test module that uses testManager to organise its output
  * @class Test
  * @param {String} testName
  * @param {Function} body
@@ -426,28 +443,28 @@ function Test(testName, body){
 };
 
 /**
- * @description run the test
  * @public
+ * @description run the test
  */
 Test.prototype.run = function() {
 	this.passed = 0;
 	this.failed = 0;
 	this.total = 0;
-	TestManager.startTest(this);
+	testManager.startTest(this);
 	try {
 		this.body();
 	}
 	catch(ex){
-		TestManager.globalFailure(ex);
+		testManager.globalFailure(ex);
 	}
-	TestManager.endTest();
+	testManager.endTest();
 };
 
 /**
+ * @public
  * @description set a number of expected assertions to be invoked,
  *  this prevent the test to fail silently when dealing with callbacks
  * @param {number} expected the number of assertions to expect
- * @public
  */
 Test.prototype.expect = function(expected) {
 	if (expected < 0) throw "can't expect a negative number of assertions";
@@ -455,11 +472,13 @@ Test.prototype.expect = function(expected) {
 };
 
 /**
+ * @private
  * @description encapsulate logic for assertions evaluation
  * @namespace
  */
-Assertion = {
+assertion = {
 		/**
+		 * @public
 		 * @description <p>test if value evaluates to true or false, 
 		 * 	fill an AssertionResult properly, modify:</p>
 		 * <ul>
@@ -471,7 +490,6 @@ Assertion = {
 		 * @param {object} value object to be evaluated
 		 * @param {boolean} expected boolean value to match against
 		 * @param {AssertionResult} result where to put results of the test
-		 * @public
 		 */
 		testBool: function(value, expected, result) {
 			result.value = stringRepr(value);
@@ -488,6 +506,7 @@ Assertion = {
 			}
 		},
 		/**
+		 * @public
 		 * @description <p>test if value == expected without checking types,
 		 * 	fill an AssertionResult properly, modify:</p>
 		 * <ul>
@@ -499,7 +518,6 @@ Assertion = {
 		 * @param {object} value object to be evaluated
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
-		 * @public
 		 */
 		testEqual: function(value, expected, result) {
 			result.value = stringRepr(value);
@@ -522,6 +540,7 @@ Assertion = {
 			}
 		},
 		/**
+		 * @public
 		 * @description <p>test if value === expected (checking types), 
 		 * 	fill an AssertionResult properly, modify :</p>
 		 * <ul>
@@ -533,10 +552,9 @@ Assertion = {
 		 * @param {object} value object to be evaluated
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
-		 * @public
 		 */
 		testStrictEqual: function(value, expected, result) {
-			Assertion.testEqual(value, expected, result);
+			assertion.testEqual(value, expected, result);
 			if (result.resultCode == Result.PASS) {
 				//test type
 				if (typeof value != typeof expected) {
@@ -547,6 +565,7 @@ Assertion = {
 			}
 		},
 		/**
+		 * @private
 		 * @description <p>test if two arrays has same internal structure</p>
 		 * <ul>
 		 * <li>AssertionResult.resultCode
@@ -556,7 +575,6 @@ Assertion = {
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
 		 * @throws {string} if value or expected are not Arrays
-		 * @private
 		 */
 		testDeepEqualArray: function(value, expected, result){
 			if (value instanceof Array && expected instanceof Array) {
@@ -588,6 +606,7 @@ Assertion = {
 			}
 		},
 		/**
+		 * @private
 		 * @description <p>test if two objects has same internal structure</p>
 		 * <ul>
 		 * <li>AssertionResult.resultCode
@@ -597,7 +616,6 @@ Assertion = {
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
 		 * @throws {string} if value or expected are not objects
-		 * @private
 		 */
 		testDeepEqualObject: function(value, expected, result) {
 			if (typeof value == 'object' && typeof expected == 'object') {
@@ -625,6 +643,7 @@ Assertion = {
 			}
 		},
 		/**
+		 * @public
 		 * @description <p>test if value == expected descending 
 		 * 	in arrays and objects, fill an AssertionResult 
 		 * 	properly, modify :</p>
@@ -637,20 +656,20 @@ Assertion = {
 		 * @param {object} value object to be evaluated
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
-		 * @public
 		 */
 		testDeepEqual: function(value, expected, result) {
-			Assertion.testEqual(value, expected, result);
+			assertion.testEqual(value, expected, result);
 			if (result.resultCode == Result.FAIL) {
 				if (value instanceof Array && expected instanceof Array) {
-					Assertion.testDeepEqualArray(value, expected, result)
+					assertion.testDeepEqualArray(value, expected, result)
 				}
 				else if (typeof value == 'object' && typeof expected == 'object') {
-					Assertion.testDeepEqualObject(value, expected, result);
+					assertion.testDeepEqualObject(value, expected, result);
 				}
 			}
 		},
 		/**
+		 * @public
 		 * @description <p>test if an exception match expected</p>
 		 * <ul>
 		 * <li> AssertionResult.value
@@ -661,7 +680,6 @@ Assertion = {
 		 * @param {object} exception exception to be checked
 		 * @param {object} expected value to expect
 		 * @param {AssertionResult} result where to put results of the test
-		 * @public
 		 */
 		testException: function(exception, expected, result) {
 			result.value = stringRepr(exception);
@@ -706,8 +724,9 @@ Assertion = {
  * Assertions are globals so they can be used everywhere.
  * Note that if an assertion is called when no test is running it will throw an
  * 	exception for missing test context
-
+*/
 /**
+ * @public
  * @description wraps exception handling for functions passed via this
  * 	object to assertions
  * @class Call
@@ -739,10 +758,10 @@ function Call(callable, params) {
 }
 
 /**
+ * @public
  * @description execute function, fill result properly
  * @returns {boolean} true if a value is generated successfully,
  * 	false if an exception is raised
- * @public
  */
 Call.prototype.exec = function() {
 	try {
@@ -756,19 +775,19 @@ Call.prototype.exec = function() {
 };
 
 /**
+ * @public
  * @description get value generated by Call.exec()
  * @returns {object} value generated by exec or the exception object raised
- * @public
  */
 Call.prototype.getValue = function(){
 	return this.generatedValue_;
 };
 
 /**
+ * @public
  * @description get error generated by Call.exec()
  * @returns {AssertionResult} result object filled properly or null 
  * 	if value is correctly generated
- * @public
  */
 Call.prototype.getError = function(){
 	return this.generatedError_;
@@ -789,7 +808,7 @@ function assertTrue(value, message) {
 	result.message = message || '';
 	if (value instanceof Call) {
 		if (value.getError() == null) {
-			Assertion.testBool(value.getValue(), true, result);
+			assertion.testBool(value.getValue(), true, result);
 		}
 		else {
 			// specific case, fill result manually
@@ -801,9 +820,9 @@ function assertTrue(value, message) {
 		}
 	}
 	else {
-		Assertion.testBool(value, true, result);
+		assertion.testBool(value, true, result);
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 /**
@@ -821,7 +840,7 @@ function assertFalse(value, message) {
 	result.message = message || '';
 	if (value instanceof Call) {
 		if (value.getError() == null) {
-			Assertion.testBool(value.getValue(), false, result);
+			assertion.testBool(value.getValue(), false, result);
 		}
 		else {
 			// specific case, fill result manually
@@ -832,9 +851,9 @@ function assertFalse(value, message) {
 		}
 	}
 	else {
-		Assertion.testBool(value, false, result);
+		assertion.testBool(value, false, result);
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 /**
@@ -853,7 +872,7 @@ function assertEqual(value, expected, message) {
 	result.message = message || '';
 	if (value instanceof Call) {
 		if (value.getError() == null) {
-			Assertion.testEqual(value.getValue(), expected, result);
+			assertion.testEqual(value.getValue(), expected, result);
 		}
 		else {
 			// specific case, fill result manually
@@ -864,9 +883,9 @@ function assertEqual(value, expected, message) {
 		}
 	}
 	else {
-		Assertion.testEqual(value, expected, result);
+		assertion.testEqual(value, expected, result);
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 /**
@@ -886,7 +905,7 @@ function assertStrictEqual(value, expected, message) {
 	result.message = message || '';
 	if (value instanceof Call) {
 		if (value.getError() == null) {
-			Assertion.testStrictEqual(value.getValue(), expected, result);
+			assertion.testStrictEqual(value.getValue(), expected, result);
 		}
 		else {
 			// specific case, fill result manually
@@ -897,9 +916,9 @@ function assertStrictEqual(value, expected, message) {
 		}
 	}
 	else {
-		Assertion.testStrictEqual(value, expected, result);
+		assertion.testStrictEqual(value, expected, result);
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 
@@ -925,13 +944,13 @@ function assertThrow(call , expected, message) {
 			result.errorMessage = 'no exception raised';
 		}
 		else {
-			Assertion.testException(call.getError(), expected, result);
+			assertion.testException(call.getError(), expected, result);
 		}
 	}
 	else {
 		throw 'call must be an istance of Call';
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 /**
@@ -947,7 +966,7 @@ function assertDeepEqual(value, expected, message){
 	result.message = message || '';
 	if (value instanceof Call) {
 		if (value.getError() == null) {
-			Assertion.testDeepEqual(value.getValue(), expected, result);
+			assertion.testDeepEqual(value.getValue(), expected, result);
 		}
 		else {
 			// specific case, fill result manually
@@ -958,9 +977,9 @@ function assertDeepEqual(value, expected, message){
 		}
 	}
 	else {
-		Assertion.testDeepEqual(value, expected, result);
+		assertion.testDeepEqual(value, expected, result);
 	}
-	TestManager.handleAssertion(result);
+	testManager.handleAssertion(result);
 }
 
 /**
@@ -968,17 +987,17 @@ function assertDeepEqual(value, expected, message){
  * @param {number} expectedAssertNum
  */
 function expect(expectedAssertNum) {
-	TestManager.handleExpect(expectedAssertNum);
+	testManager.handleExpect(expectedAssertNum);
 }
 
 /**
- * @description creates a Test and add it to TestManager
+ * @description creates a Test and add it to testManager
  * @param {string} testName
  * @param {function} body
  */
 function test(testName, body) {
 	var testObject = new Test(testName, body);
-	TestManager.registerTest(testObject);
+	testManager.registerTest(testObject);
 }
 
 /*
@@ -986,5 +1005,5 @@ function test(testName, body) {
  * 	as soon as everything is loaded
  */
 window.onload = function() {
-	TestManager.execute();
+	testManager.execute();
 }

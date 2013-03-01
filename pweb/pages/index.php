@@ -10,7 +10,7 @@
 	
 </head>
 <body>
-<a href="../tests/sample.php">Testing</a>
+<a href="../tests/index.php">Testing</a>
 </body>
 </html>
 
