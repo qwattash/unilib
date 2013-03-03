@@ -7,7 +7,7 @@
 
 /*
  * Note: in future versions may be introduced a more powerful
- * dependency handling system with import support such as
+ * dependency handling system such as
  * the one provided by the google closure library
  */
 
@@ -32,17 +32,26 @@ unilib.provideNamespace = function(name){
 };
 
 /**
- * check if a namespace or object are available
- * this is useful to check that required stuff has been loaded
- * @param {string} name
- * @throws {Error}
+ * configuration section
+ * @type {Object}
  */
-unilib.require = function(name){
-    var parts = name.split('.');
-    current = window; //global scope
-    for (var i = 0; i < parts.length; i++) {
-      if (!current[parts[i]]) {
-        throw Error('Requirement ' + name + ' not available');
-      }
-    }
+unilib.config = {
+  jsBase: 'js/'
+};
+
+/**
+ * load an additional script
+ * @param {string} path path to include
+ * @param {string} [base] optional base path, default unilib.config.jsBase
+ */
+unilib.include = function(path, base) {
+  if (document.readyState != 'complete') {
+    base = base || unilib.config.jsBase;
+    var fullPath = (base.charAt(base.length - 1) == '/') ? base : base + '/';
+    fullPath += (path.charAt(0) == '/') ? path.substring(1) : path;
+    document.write('<script language = "javascript" src = "' + fullPath + '"></script>');
+  }
+  else {
+    throw Error('Cannot load resource, lazy loading not yet supported');
+  }
 };

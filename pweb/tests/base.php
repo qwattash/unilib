@@ -7,7 +7,9 @@
 	<script language="JavaScript" src="../js/unilib/base.js"></script>
 	<script language="JavaScript" src="../js/unilib/unittest.js"></script>
 	<script language="JavaScript">
-	  test('base test', function() {
+	 //prepare to test
+	 unilib.include('testinclude.js', '../js/');
+   test('base test', function() {
 	    unilib.provideNamespace('foo');
 	    assertTrue(foo, 'foo namespace created');
 	    unilib.provideNamespace('foo.bar');
@@ -15,8 +17,7 @@
 	    foo.baz = 'baz';
 	    unilib.provideNamespace('foo');
 	    assertEqual(foo.baz, 'baz', 'no code override test');
-	    assertThrow(new Call(unilib.require, ['baz']), Error, 'require error test');
-	    unilib.require('foo'); //need an assertNotThrow()??
+	    assertTrue(importedStuff, 'include ok');
 	  });
 	</script>
 </head>
