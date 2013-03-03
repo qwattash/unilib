@@ -7,7 +7,7 @@
 
 /* 
  * @todo: Refactoring notes:
- * refactor exception using custom exceptions
+ * refactor exception using custom exceptions and namespaces
  * may need an Async test support for ajax callbacks
  */
 

@@ -11,6 +11,7 @@
 </head>
 <body>
 <a href="../tests/sample.php">Testing</a>
+<a href="../tests/base.php">Testing base</a>
 </body>
 </html>
 
