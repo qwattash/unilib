@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
 <script language="JavaScript" src="../../js/unittest.js"></script>
 <script language="JavaScript" src="../../js/mvc/observer.js"></script>
-<script language="JavaScript" src=""
+<script language="JavaScript" src="../../js/mvc/error.js"></script>
 <script language="JavaScript">
 test('observable basics', function(){
 	expect(3);
