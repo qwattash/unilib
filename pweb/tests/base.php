@@ -18,6 +18,9 @@
 	    unilib.provideNamespace('foo');
 	    assertEqual(foo.baz, 'baz', 'no code override test');
 	    assertTrue(importedStuff, 'include ok');
+	    assertThrow(new Call(unilib.include, 
+	      ['testinclude.js', '../js/']), Error, 'include in document complete');
+	    assertFalse(unilib.loadCallbacks_['../js/testinclude.js'], 'remove used callback');
 	  });
 	</script>
 </head>
