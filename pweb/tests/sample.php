@@ -3,7 +3,7 @@
 <html encoding='UTF-8'>
 <head>
 <link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
-<script language="JavaScript" src="../js/unittest.js"></script>
+<script language="JavaScript" src="../js/unilib/unittest.js"></script>
 <script language="JavaScript">
 test('assertTrue [PASS]', function(){
 	assertTrue(true, 'given true');
