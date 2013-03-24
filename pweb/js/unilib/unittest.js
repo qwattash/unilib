@@ -7,8 +7,9 @@
 
 /* 
  * @todo: Refactoring notes:
- * refactor exception using custom exceptions
- * may need an Async test support for ajax callbacks
+ * i) refactor exception using custom exceptions
+ * ii) may need an Async test support for ajax callbacks
+ * iii) refactor code using unilib base
  */
 
 /**
@@ -1000,10 +1001,13 @@ function test(testName, body) {
 	testManager.registerTest(testObject);
 }
 
-/*
- * add onload listener to document body to start tests 
+/**
+ * add global onload listener to start tests 
  * 	as soon as everything is loaded
+ * @todo temporary solution, depends on unilib 
  */
-window.onload = function() {
+unilib.addEventListener(window, 'load', 
+		unilib.createCallback(testManager, testManager.execute));
+/*window.onload = function() {
 	testManager.execute();
-}
+}*/

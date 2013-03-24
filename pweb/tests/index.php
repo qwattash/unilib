@@ -10,6 +10,12 @@
 	function echoEntry($entry, $path) {
 		echo '<li><a href="'.$path.$entry.'">'.$path.$entry.'</a></li>';
 	}
+  
+  function endsWith($entry, $end) {
+    $entryEnd = substr($entry, -strlen($end));
+    if ($entryEnd == $end) return true;
+    return false;
+  }
 	
 	function traverse($path) {
 		$files = array();
@@ -19,7 +25,7 @@
 			$path = ($current != '.') ? $current.'/' : '';
 			if ($handle = opendir($current)) {
 				while (false !== ($entry = readdir($handle))) {
-					if ($entry == '.' || $entry == '..') {
+					if ($entry == '.' || $entry == '..' || endsWith($entry, '.js')) {
 						continue;
 					}
 					if (is_dir($entry)) {

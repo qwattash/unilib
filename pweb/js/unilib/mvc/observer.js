@@ -7,25 +7,16 @@
 
 unilib.provideNamespace('unilib.mvc');
 
-unilib.include('unilib/error.js', null, unilib.mvc.__init__);
-/*
- * @todo: include is ok with it?
- * study HTML standard to determine in which way pages are loaded, then
- * modify include/provide to be functional and elegant enough.
- * may put an include alias function in each namespace, so that knowing which NS
- * is calling unilib can determine if the last include has finished loading and call
- * NS.__init__
- * i.e. (to check in HTML standard) http://www.whatwg.org/specs/web-apps/current-work/#browsers
- * NS.include('a.js');  ---> includeList['NS'].push('a.js');
- * [async loading of 'a.js' is started]
- * [can loading finish after the second include happens? If yes does the callback onLoad be invoked?]
- * [...]
- * NS.include('z.js');  ---> includeList['NS'].push('z.js');
- * [async loading of scripts goes on]
- * [continue execution of scripts]
- * loop: [i.js loading finished] ---> includeList['NS'].remove('i.js');
- * when: includeList empty ---> NS.__init__(); //all includes loaded successfully
+/**
+ * function for initialisation of namespace after all dependencies are loaded 
+ * @private
  */
+unilib.mvc.init_ = function() {
+	unilib.mvc.InvalidObserverError.prototype = new unilib.error.UnilibError();
+};
+
+unilib.createIncludeGroup(unilib.mvc.init_)
+	.addScript('unilib/error.js', null).include();
 
 /**
  * base observer implementation
@@ -126,12 +117,4 @@ unilib.mvc.ObserverEvent = function(eventType, source) {
 unilib.mvc.InvalidObserverError = function(source, message) {
 	this.source = source;
 	this.message = message || 'Invalid observer';
-};
-
-/**
- * function for initialisation of namespace after all dependencies are loaded 
- * @private
- */
-unilib.mvc.__init__ = function() {
-	unilib.mvc.InvalidObserverError.prototype = new unilib.error.UnilibError();
 };

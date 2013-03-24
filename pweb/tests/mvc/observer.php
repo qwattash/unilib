@@ -1,12 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
 "http://www.w3.org/TR/html4/strict.dtd">
-<html encoding='UTF-8'>
+<html>
 <head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
-<script language="JavaScript" src="../../js/unilib/base.js"></script>
-<script language="JavaScript" src="../../js/unilib/unittest.js"></script>
-<script language="JavaScript" src="../../js/unilib/mvc/observer.js"></script>
-<script language="JavaScript">
+<script type="text/JavaScript" src="../../js/unilib/base.js"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript" src="../../js/unilib/mvc/observer.js"></script>
+<script type="text/JavaScript">
 test('observable basics', function(){
 	//expect(5);
 	var observer1 = new unilib.mvc.Observer();
@@ -32,7 +33,7 @@ test('observable error scenarios', function() {
 	assertThrow(new Call(observable.detachObserver, [null]),
 		unilib.mvc.InvalidObserverError, 'detaching null');
 	assertThrow(new Call(observable.attachObserver, [null]),
-		unilib.mvc.InvalidObserverError, 'attaching null');
+		unilib.error.UnilibError, 'attaching null');
 });
 </script>
 </head>

@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>base.js test</title>
+  <link rel="stylesheet" href="../css/unittest.css"/>
+  <script type="text/JavaScript" src="../js/unilib/base.js"></script>
+  <script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+  <script type="text/JavaScript">
+   /*
+    * here must use this workaround since tests are started after page has loaded
+    * but callbacks happens while page is loading
+    */
+   var loadTime1 = false;
+   unilib.provideNamespace('foo', {
+     bar: 'bar'
+   }, function() {
+     loadTime1 = baz.loadTime;
+   },
+   [['testinclude_cascade.js', './']]);
+   test('multiple inclusion', function() {
+      assertTrue(foo, 'foo namespace created');
+      assertTrue(loadTime1, 'init called correctly');
+      assertEqual(foo.bar, 'bar', 'namespace content accessible');
+      assertFalse(unilib.loadCallbacks_['../js/testinclude_cascade.js'], 'used callback removed correctly from callback map');
+      assertTrue(baz, 'baz created correctly');
+      assertTrue(baz.loadTime, 'baz init called');
+      assertFalse(unilib.loadCallbacks_['../js/testinclude.js'], 'used callback removed correctly from callback map');
+      assertTrue(importedStuff, 'cascade included stuff ok');
+      assertEqual(loadTime1, baz.loadTime, 'baz init called before foo init');
+    });
+  </script>
+</head>
+<body>
+  <div id="unittest"></div>
+</body>
+</html>

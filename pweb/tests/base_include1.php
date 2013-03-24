@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<title>base.js test</title>
+	<link rel="stylesheet" href="../css/unittest.css"/>
+	<script type="text/JavaScript" src="../js/unilib/base.js"></script>
+	<script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+	<script type="text/JavaScript">
+	 /*
+	  * here must use this workaround since tests are started after page has loaded
+	  * but callbacks happens while page is loading
+	  */
+	 var ck1 = false;
+	 unilib.provideNamespace('foo', {
+	   bar: 'bar'
+	 }, function() {
+	   ck1 = true;
+	 },
+	 [['testinclude.js', './']]);
+   test('base test', function() {
+	    assertTrue(foo, 'foo namespace created');
+	    assertTrue(ck1, 'init called correctly');
+	    assertEqual(foo.bar, 'bar', 'namespace content accessible');
+	    assertTrue(importedStuff, 'included stuff ok');
+	    assertFalse(unilib.loadCallbacks_['../js/testinclude.js'], 'used callback removed correctly from callback map');
+	  });
+	</script>
+</head>
+<body>
+  <div id="unittest"></div>
+</body>
+</html>

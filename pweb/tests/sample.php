@@ -2,6 +2,7 @@
 "http://www.w3.org/TR/html4/strict.dtd">
 <html encoding='UTF-8'>
 <head>
+ <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
 <script language="JavaScript" src="../js/unilib/unittest.js"></script>
 <script language="JavaScript">
