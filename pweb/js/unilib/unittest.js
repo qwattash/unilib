@@ -1006,8 +1006,10 @@ function test(testName, body) {
  * 	as soon as everything is loaded
  * @todo temporary solution, depends on unilib 
  */
-unilib.addEventListener(window, 'load', 
+unilib.callbackGroupManager.createGroup(window, 'load').attach(
 		unilib.createCallback(testManager, testManager.execute));
-/*window.onload = function() {
-	testManager.execute();
-}*/
+/* "same" as
+ * window.onload = function() {
+ * testManager.execute();
+ * }
+ */

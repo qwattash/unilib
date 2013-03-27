@@ -40,7 +40,9 @@ unilib.dependencyManager_ = {
 		 * @param {function} callback callback function to add
 		 */
 		addCallback: function(callback) {
-			this.callbackQueue_.push(callback);
+			if (callback && typeof callback == 'function') {
+				this.callbackQueue_.unshift(callback);
+			}
 		},
 		/**
 		 * execute all callbacks in the queue, users should not call this function
@@ -59,28 +61,46 @@ unilib.dependencyManager_ = {
  * @param {object} source object containing symbols to export
  * @param {object} namespace namespace where to export to
  */
-unilib.exportNamespace = function(source, namespace) {
+unilib.copyObject = function(source, destination) {
 	for (var symbol in source) {
-		namespace[symbol] = source[symbol];
+		destination[symbol] = source[symbol];
 	}
 };
 
 /** @todo name of the function is temporary
  * create new namespace, import dependencies and call init callback
  * @param {string} name name of the namespace i.e. 'unilib.myNamespace'
- * @param {object} body namespace definition as an object to be exported 
- * 	in the global scope as 'name'
  * @param {function} init initialization callback for the namespace, called 
  * 	after all dependencies are loaded, parsed and initialized
- * @param {Array.<Array.<string>>} [deps] dependencies of the namespace as 
- * 	[path, base], where base is nullable, @see unilib#include
+ * @param {Array.<Array.<string> || string>=} deps array of dependencies of the
+ *  namespace as ["path", "base"] or just "path", 
+ *  where base is nullable @see unilib.include
+ * @example
+ * //no dependencies
+ * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
+ * //dependencies: baz in unilib.config.jsBase/baz.js and 
+ * //bazbaz in external/path/to/bazbaz.js 
+ * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
+ * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
  */
-unilib.provideNamespace = function(name, body, init, deps) {
+unilib.provideNamespace = function(name, init, deps) {
 	if (deps) {
 		for (var i = 0; i < deps.length; i++) {
-			unilib.include(deps[i][0], deps[i][1]);
+			if (typeof deps[i] == 'string' || deps[i] instanceof String) {
+				//dependency located in unilib.config.jsBase
+				unilib.include(deps[i]);
+			}
+			else if (deps[i] instanceof Array) {
+				//dependency in the form [path, base]
+				unilib.include(deps[i][0], deps[i][1]);
+			}
+			else {
+				//not supported, throw exception
+				throw new Error("invalid dependency format " + deps[i]);
+			}
 		}
 	}
+	//var cbk = unilib.createCallback(body, init);
 	unilib.dependencyManager_.addCallback(init);
 	//provide name
   var parts = name.split('.');
@@ -89,7 +109,6 @@ unilib.provideNamespace = function(name, body, init, deps) {
     current[parts[i]] = current[parts[i]] || {};
     current = current[parts[i]];
   }
-  unilib.exportNamespace(body, current);
 };
 
 /**
@@ -146,12 +165,9 @@ unilib.scriptLoaded_ = function(path) {
 };
 
 /*
- * Event listeners helpers
+ * Event helpers
  */
 
-/*
- * event handling Xbrowser primitives
- */
 /**
  * add event listener to object (IE8+)
  * @param {Object} element DOM element where to add listener
@@ -188,7 +204,7 @@ unilib.removeEventListener = function(element, eventType, listener) {
 		element.detachEvent('on' + eventType, listener);
 		}
 		catch (e) {
-			throw new Error('Unableto add event listener ' + eventType + 
+			throw new Error('Unableto remove event listener ' + eventType + 
 					' to ' + element.toString());
 		}
 	}
@@ -218,15 +234,17 @@ unilib.createCallback = function(object, method, args) {
  */
 unilib.CallbackGroup = function(element, type) {
 	/** callbacks of this group are attached to this element
+	 *	WARNING use CallbackGroup.subscribe() CallbackGroup.unsubscribe()
+	 *	and do no edit this  directly
 	 * @type {Object}
-	 * @private
 	 */
-	this.element_ = element || null;
+	this.element = element || null;
 	/** type of the callbacks in the group
+	 *  WARNING use CallbackGroup.subscribe() CallbackGroup.unsubscribe()
+	 *	and do no edit this field directly
 	 * @type {string}
-	 * @private
 	 */
-	this.type_ = type || null;
+	this.type = type || null;
 	/** callbacks list
 	 * @type {Array.<function(event=)>}
 	 * @private
@@ -240,22 +258,40 @@ unilib.CallbackGroup = function(element, type) {
 	if (element && type) this.subscribe();
 };
 
+/** first position in CallbackGroup callback list
+ * @type {number}
+ * @constant
+ * @example 
+ * var cbg = new CallbackGroup(someEl, someType);
+ * cbg.attach(myCallback, CallbackGroup.FIRST);
+ */
+unilib.CallbackGroup.prototype.FIRST = 0;
+
+/** last position in CallbackGroup callback list
+ * @type {number}
+ * @constant
+ * @example 
+ * var cbg = new CallbackGroup(someEl, someType);
+ * cbg.attach(myCallback, CallbackGroup.LAST);
+ */
+unilib.CallbackGroup.prototype.LAST = -1;
+
+
 /**
  * add a callback to the group
  * @param {function(event=)} callback callback to add
- * @param {number} order integer index of the callback array 
- * 	where to insert callback, negative indexes are treated as
- * 	beginning from the bottom; indexes with modulus greater than
- * 	callbacks number are treated as maximum length allowed
+ * @param {number=} position position where to put new callback
+ * 	a negative number corresponds to last position,
+ * 	default unilib.CallbackGroup.LAST
  */
-unilib.CallbackGroup.prototype.attach = function(callback, order) {
+unilib.CallbackGroup.prototype.attach = function(callback, position) {
 	//avoid duplicates
 	this.detach(callback);
-	var sign = (order < 0) ? -1 : +1;
-	if (Math.abs(order) >= this.callbacks_.length) {
-		order = sign * this.callbacks_.length;
-	}
-	this.callback_.splice(order, 0, callback);
+	//handle default values
+	position = (position != undefined) ? position : unilib.CallbackGroup.LAST;
+	//handle negative values
+	position = (position >= 0) ? position : (this.callbacks_.length);
+	this.callbacks_.splice(position, 0, callback);
 };
 
 /**
@@ -275,12 +311,12 @@ unilib.CallbackGroup.prototype.detach = function(callback) {
  * @param {type=} type type of events to listen
  */
 unilib.CallbackGroup.prototype.subscribe = function(element, type) {
-	if (element != this.element_ || type != this.type) {
+	if (element != this.element || type != this.type) {
 		this.unsubscribe();
-		this.element_ = element || this.element_;
-		this.type_ = type || this.type_;
+		this.element = element || this.element;
+		this.type = type || this.type;
 		this.generatedCallback_ = unilib.createCallback(this, this.trigger_);
-		unilib.addEventListener(this.element_, this.type_, 
+		unilib.addEventListener(this.element, this.type, 
 				this.generatedCallback_);
 	}
 };
@@ -289,7 +325,7 @@ unilib.CallbackGroup.prototype.subscribe = function(element, type) {
  * unsubscribe group from element currently subscribed
  */
 unilib.CallbackGroup.prototype.unsubscribe = function() {
-	unilib.removeEventLister(this.element_, this.type_, this.generatedCallback_);
+	unilib.removeEventListener(this.element, this.type, this.generatedCallback_);
 };
 
 /**
@@ -298,16 +334,91 @@ unilib.CallbackGroup.prototype.unsubscribe = function() {
  * @private
  */
 unilib.CallbackGroup.prototype.trigger_ = function(event) {
+	for (var i = 0; i < this.callbacks_.length; i++) {
+		this.callbacks_[i](event);
+	}
+};
+
+/**
+ * manage CallbackGroups to be accessible from everywhere
+ * @type {Object}
+ */
+unilib.callbackGroupManager = {
+ /** CallbackGroup list
+	* @type {Array.<unilib#CallbackGroup>}
+	* @private
+	*/
+	groups_: [],
 	
+	/** 
+	 * find group by giving target element and event type
+	 * @param {Object} element DOMElement where the group is subscribed
+	 * @param {string?} type event type string, if omitted any type match
+	 * @returns {Array.<unilib.CallbackGroup>}
+	 */
+	getGroupWithElement: function(element, type) {
+		var match = null;
+		for (var i = 0; i < this.groups_.length; i++) {
+			if (this.groups_[i].element == element && this.groups_[i].type == type) {
+				match = this.groups_[i];
+				break;
+			}
+		}
+		return match;
+	},
+	
+	/**
+	 * add CallbackGroup to manager
+	 * @param {unilib.CallbackGroup} group group to add
+	 */
+	addGroup: function(group) {
+		if (group.element && group.type) {
+			if (! this.getGroupWithElement(group.element, group.type)) {
+				this.groups_.push(group);
+			}
+			//else group is already in
+		}
+		else {
+			throw new Error('group has no element or event type, subscribe it before adding');
+		}
+	},
+	
+	/**
+	 * remove CallbackGroup from manager, this also unsubscribe 
+	 * 	the group from its element 
+	 * @param {unilib.CallbackGroup} group group to remove
+	 */
+	removeGroup: function(group) {
+		var index = this.groups_.indexOf(group);
+		if (index != -1) {
+			this.groups_.splice(index, 1);
+		}
+	},
+	
+	/**
+	 * create CallbackGroup, this is a convenience function that add the
+	 * 	group to the manager
+	 * @param {Object} element DOMElement to subscribe to
+	 * @param {string} type type of the event to listen
+	 * @returns {unilib.CallbackGroup} group created
+	 */
+	createGroup: function(element, type) {
+		var group = this.getGroupWithElement(element, type);
+		if (group) return group;
+		group = new unilib.CallbackGroup(element, type);
+		this.groups_.push(group);
+		return group;
+	}
 };
 
 //setup code
 /*
  * register global load callback to handle include callbacks
  */
-unilib.addEventListener(window, 'load', 
+unilib.callbackGroupManager.createGroup(window, 'load').attach(
 		unilib.createCallback(unilib.dependencyManager_, 
-				unilib.dependencyManager_.execute));
+				unilib.dependencyManager_.execute), unilib.CallbackGroup.FIRST);
+		
 
 // functionality extensions for browsers with js version 1.3 (i.e. IE8)
 // this is aimed to provide higher version functions to older browsers 

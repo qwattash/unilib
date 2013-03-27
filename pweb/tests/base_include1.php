@@ -12,16 +12,14 @@
 	  * here must use this workaround since tests are started after page has loaded
 	  * but callbacks happens while page is loading
 	  */
-	 var ck1 = false;
-	 unilib.provideNamespace('foo', {
-	   bar: 'bar'
-	 }, function() {
-	   ck1 = true;
+	 unilib.provideNamespace('foo', function() {
+	   foo.ck1 = true;
+	   foo.bar = 'bar';
 	 },
 	 [['testinclude.js', './']]);
    test('base test', function() {
 	    assertTrue(foo, 'foo namespace created');
-	    assertTrue(ck1, 'init called correctly');
+	    assertTrue(foo.ck1, 'init called correctly');
 	    assertEqual(foo.bar, 'bar', 'namespace content accessible');
 	    assertTrue(importedStuff, 'included stuff ok');
 	    assertFalse(unilib.loadCallbacks_['../js/testinclude.js'], 'used callback removed correctly from callback map');

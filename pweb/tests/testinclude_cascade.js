@@ -4,10 +4,8 @@
  * @author qwattash
  */
 
-unilib.provideNamespace('baz', {
-	loadTime: null
-}, function() {
-	baz.loadTime = new Date();
+unilib.provideNamespace('baz', function() {
+	baz.loadTime = true;
 }, [['testinclude.js', './']]); 
 /*
  * note that base is relative to testinclude_cascade.html
