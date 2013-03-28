@@ -160,7 +160,7 @@ unilib.scriptLoaded_ = function(path) {
   //do init stuff
   var item = unilib.loadCallbacks_[path];
   //call relative callback
-  item.call();
+  if (item) item.call();
   delete unilib.loadCallbacks_[path];
 };
 
@@ -261,20 +261,22 @@ unilib.CallbackGroup = function(element, type) {
 /** first position in CallbackGroup callback list
  * @type {number}
  * @constant
+ * @static
  * @example 
  * var cbg = new CallbackGroup(someEl, someType);
  * cbg.attach(myCallback, CallbackGroup.FIRST);
  */
-unilib.CallbackGroup.prototype.FIRST = 0;
+unilib.CallbackGroup.FIRST = 0;
 
 /** last position in CallbackGroup callback list
  * @type {number}
  * @constant
+ * @static
  * @example 
  * var cbg = new CallbackGroup(someEl, someType);
  * cbg.attach(myCallback, CallbackGroup.LAST);
  */
-unilib.CallbackGroup.prototype.LAST = -1;
+unilib.CallbackGroup.LAST = -1;
 
 
 /**

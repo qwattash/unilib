@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>base.js test</title>
+  <link rel="stylesheet" href="../css/unittest.css"/>
+  <script type="text/JavaScript" src="../js/unilib/base.js"></script>
+  <script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+  <script type="text/JavaScript">
+   test('unilib.createCallback', function() {
+      expect(4);
+      var othis = {
+        baz: 'baz',
+        method: function() {
+          assertEqual(this.baz, othis.baz, 'internal method callback successfully bound to othis');
+        }
+      };
+      var external = function() {
+        assertEqual(this, othis, 'callback successfuly bound to object othis');
+      };
+      var internalcbk = unilib.createCallback(othis, othis.method);
+      var externalcbk = unilib.createCallback(othis, external);
+      internalcbk();
+      externalcbk();
+      var external1 = function(param) {
+        assertEqual(param, 'foo', 'params passed successfully');
+        this.baz = param;
+      };
+      var externalcbk1 = unilib.createCallback(othis, external1, ['foo']);
+      externalcbk1();
+      assertEqual(othis.baz, 'foo', 'modification of othis ok');
+    });
+    var aux = ''; //auxiliary var
+    test('unilib.CallbackGroup', function() {
+      var foo = document.getElementById("foo");
+      var cbkg = new unilib.CallbackGroup(foo, 'click');
+      assertTrue(cbkg.generatedCallback_, 'created trigger function callback');
+      assertEqual(cbkg.element, foo, 'subscribed element stored');
+      assertEqual(cbkg.type, 'click', 'group type stored');
+      var f1 = function() { aux += 'a'; };
+      var f2 = function() { aux += 'b'; };
+      var f3 = function() { aux += 'c'; };
+      cbkg.attach(f1);
+      assertEqual(cbkg.callbacks_[0], f1, 'callback f1 attached to group');
+      cbkg.attach(f2, unilib.CallbackGroup.FIRST);
+      assertEqual(cbkg.callbacks_[0], f2, 'callback f2 attached first');
+      cbkg.attach(f3, unilib.CallbackGroup.LAST);
+      assertEqual(cbkg.callbacks_[2], f3, 'callback f3 attached last');
+      //simulate event call
+      cbkg.generatedCallback_();
+      assertEqual(aux, 'bac', 'callbacks triggered in right order');
+      cbkg.detach(f1);
+      assertEqual(cbkg.callbacks_[0], f2, 'callback f2 left first');
+      assertEqual(cbkg.callbacks_[1], f3, 'callback f3 left last');
+      assertEqual(cbkg.callbacks_.length, 2, 'callbacks list resized after detach(f1)');
+      cbkg.unsubscribe();
+    });
+    test('unilib.callbackGroupManager', function() {
+      /*note that unilib.callbackGroupManager.groups_[] indexes start at 1 because base.js
+       * adds by default a group on (window, 'load') that is necessary for its internals
+       */
+      var foo = document.getElementById('foo');
+      var grp1 = unilib.callbackGroupManager.createGroup(foo, 'click');
+      assertEqual(unilib.callbackGroupManager.groups_[1], grp1, 'group added');
+      assertEqual(unilib.callbackGroupManager.getGroupWithElement(foo, 'click'), grp1, 'getGroupWithElement ok');
+      unilib.callbackGroupManager.removeGroup(grp1);
+      assertEqual(unilib.callbackGroupManager.groups_.length, 1, 'group removed');
+      unilib.callbackGroupManager.addGroup(grp1);
+      assertEqual(unilib.callbackGroupManager.groups_[1], grp1, 'addGroup ok');
+      unilib.callbackGroupManager.addGroup(grp1);
+      assertEqual(unilib.callbackGroupManager.groups_.length, 2, 'duplicate group not added');
+      var grp2 = unilib.callbackGroupManager.createGroup(foo, 'click');
+      assertEqual(grp1, grp2, 'create duplicate group ok');
+      assertEqual(unilib.callbackGroupManager.groups_.length, 2, 'duplicate group not created and not readded');
+    });
+    test('built-in extensions', function() {
+      var x = [1,2,3,4,5,6,7,5];
+      assertEqual(x.indexOf(3), 2, 'Array.indexOf value found');
+      assertEqual(x.indexOf(12), -1, 'Array.indexOf value not found');
+      assertEqual(x.indexOf(5), 4, 'Array.indexOf duplicate value in array');
+    });
+</script>
+</head>
+<body>
+  <div id="unittest"></div>
+  <div id="foo"></div>
+</body>
+</html>

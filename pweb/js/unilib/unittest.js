@@ -9,7 +9,8 @@
  * @todo: Refactoring notes:
  * i) refactor exception using custom exceptions
  * ii) may need an Async test support for ajax callbacks
- * iii) refactor code using unilib base
+ * iii) add something like assertCalled()
+ * iv) refactor code using unilib base
  */
 
 /**
