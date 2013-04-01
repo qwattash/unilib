@@ -4,8 +4,9 @@
 <head>
  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
-<script language="JavaScript" src="../js/unilib/unittest.js"></script>
-<script language="JavaScript">
+<script type='text/JavaScript' src='../js/unilib/base.js'></script>
+<script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
 test('assertTrue [PASS]', function(){
 	assertTrue(true, 'given true');
 	assertTrue(1, 'given 1');

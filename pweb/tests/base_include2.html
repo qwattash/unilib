@@ -16,15 +16,13 @@
      foo.bar = 'bar';
      foo.loadTime = (baz.loadTime) ? true : false;
    },
-   [['testinclude_cascade.js', './']]);
+   [['testinclude_cascade.js', './']], false);
    test('multiple inclusion', function() {
       assertTrue(foo, 'foo namespace created');
       assertEqual(foo.bar, 'bar', 'namespace content accessible');
       assertTrue(foo.loadTime, 'init called correctly and baz init called before foo init');
-      assertFalse(unilib.loadCallbacks_['../js/testinclude_cascade.js'], 'used callback removed correctly from callback map');
       assertTrue(baz, 'baz created correctly');
       assertTrue(baz.loadTime, 'baz init called');
-      assertFalse(unilib.loadCallbacks_['../js/testinclude.js'], 'used callback removed correctly from callback map');
       assertTrue(importedStuff, 'cascade included stuff ok');
     });
   </script>

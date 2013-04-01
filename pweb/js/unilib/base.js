@@ -5,6 +5,37 @@
  * @version 1.0
  */
 
+/*
+ * refactor dependency system to allow callbacks on finishing using 
+ * 	CallbackGroup and CallbackGroupManager 
+ * provide support for lazy loading
+ */
+
+/*
+ * functionality extensions for browsers with js version 1.3 (i.e. IE8)
+ * this is aimed to provide higher version functions to older browsers 
+ * without compromising efficency and code repetitions in newer ones
+ */
+if (!Array.prototype.indexOf) {
+//IE 8
+/**
+* searches the array for the specified item, and returns its position
+* @param {Object} item item to search
+* @param {number=} start start index
+* @returns {number} index of first occurrence or -1
+*/
+Array.prototype.indexOf = function(item, start) {
+	for (var i = (start) ? start : 0; i < this.length; i++) {
+		if (this[i] === item) return i;
+	}
+	return -1;
+};
+}
+
+/*
+ * definition of unilib base library
+ */
+
 /**
  * base namespace for the unilib library
  * @namespace unilib
@@ -16,152 +47,8 @@ var unilib = {};
  * @type {Object}
  */
 unilib.config = {
-  jsBase: 'http://localhost/eclipse/pweb.git/pweb/js/'
-};
-
-/*
- * dependency system handling
- * use a LIFO queue to queue callbacks and init everything on document.onload()
- */
-
-/**
- * group private dependency handling functions and variables
- * @type {object}
- * @private
- */
-unilib.dependencyManager_ = {
-		/** LIFO queue of callbacks
-		 * @type {Array.<function>}
-		 * @private
-		 */
-		callbackQueue_: [],
-		/**
-		 * add callback to callbackQueue_
-		 * @param {function} callback callback function to add
-		 */
-		addCallback: function(callback) {
-			if (callback && typeof callback == 'function') {
-				this.callbackQueue_.unshift(callback);
-			}
-		},
-		/**
-		 * execute all callbacks in the queue, users should not call this function
-		 */
-		execute: function() {
-			for (var i = 0; i < this.callbackQueue_.length; i++) {
-				this.callbackQueue_[i].call();
-			}
-			//free array
-			this.callbackQueue_ = [];
-		}
-};
-
-/**
- * export all symbols in source into given namespace
- * @param {object} source object containing symbols to export
- * @param {object} namespace namespace where to export to
- */
-unilib.copyObject = function(source, destination) {
-	for (var symbol in source) {
-		destination[symbol] = source[symbol];
-	}
-};
-
-/** @todo name of the function is temporary
- * create new namespace, import dependencies and call init callback
- * @param {string} name name of the namespace i.e. 'unilib.myNamespace'
- * @param {function} init initialization callback for the namespace, called 
- * 	after all dependencies are loaded, parsed and initialized
- * @param {Array.<Array.<string> || string>=} deps array of dependencies of the
- *  namespace as ["path", "base"] or just "path", 
- *  where base is nullable @see unilib.include
- * @example
- * //no dependencies
- * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
- * //dependencies: baz in unilib.config.jsBase/baz.js and 
- * //bazbaz in external/path/to/bazbaz.js 
- * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
- * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
- */
-unilib.provideNamespace = function(name, init, deps) {
-	if (deps) {
-		for (var i = 0; i < deps.length; i++) {
-			if (typeof deps[i] == 'string' || deps[i] instanceof String) {
-				//dependency located in unilib.config.jsBase
-				unilib.include(deps[i]);
-			}
-			else if (deps[i] instanceof Array) {
-				//dependency in the form [path, base]
-				unilib.include(deps[i][0], deps[i][1]);
-			}
-			else {
-				//not supported, throw exception
-				throw new Error("invalid dependency format " + deps[i]);
-			}
-		}
-	}
-	//var cbk = unilib.createCallback(body, init);
-	unilib.dependencyManager_.addCallback(init);
-	//provide name
-  var parts = name.split('.');
-  var current = window; //global scope
-  for (var i = 0; i < parts.length; i++) {
-    current[parts[i]] = current[parts[i]] || {};
-    current = current[parts[i]];
-  }
-};
-
-/**
- * keep track of included files to avoid repeated inclusions
- * @type {Array.<string>}
- * @private
- */
-unilib.included_ = [];
-
-/**
- * load an additional script
- * @param {string} path path to include
- * @param {string} [base] optional base path, default unilib.config.jsBase
- * @param {function} [callback] callback to execute one script is loaded,
- * 	useful if including a script manually, when not using more powerful
- * 	unilib functions such as unilib.provideNamespace
- */
-unilib.include = function(path, base, callback) {
-  //assign defaults
-  base = base || unilib.config.jsBase;
-  callback = callback || function() {};
-  //build include path
-  var fullPath = (base.charAt(base.length - 1) == '/') ? base : base + '/';
-  fullPath += (path.charAt(0) == '/') ? path.substring(1) : path;
-  if (unilib.included_.indexOf(fullPath) == -1) {
-  	var script = document.createElement('script');
-  	script.setAttribute('type', 'text/javascript');
-  	script.setAttribute('src', fullPath);
-  	script.onload = unilib.createCallback(null, unilib.scriptLoaded_, [fullPath]);
-    document.head.appendChild(script);
-    unilib.loadCallbacks_[fullPath] = callback;
-    unilib.included_.push(fullPath);
-  }
-};
-
-/**
- * map callbacks to included files
- * @type {Object}
- * @private
- */
-unilib.loadCallbacks_ = {};
-
-/**
- * invoke right callback once file is loaded
- * @param {string} path
- * @private
- */
-unilib.scriptLoaded_ = function(path) {
-  //do init stuff
-  var item = unilib.loadCallbacks_[path];
-  //call relative callback
-  if (item) item.call();
-  delete unilib.loadCallbacks_[path];
+  //jsBase: 'http://localhost/eclipse/pweb.git/pweb/js/'
+	jsBase: 'http://192.168.0.102/eclipse/pweb.git/pweb/js/'
 };
 
 /*
@@ -169,7 +56,7 @@ unilib.scriptLoaded_ = function(path) {
  */
 
 /**
- * add event listener to object (IE8+)
+ * add event listener to object (support IE)
  * @param {Object} element DOM element where to add listener
  * @param {string} eventType event type string
  * @param {function} listener listener to add
@@ -190,7 +77,7 @@ unilib.addEventListener = function(element, eventType, listener) {
 };
 
 /**
- * remove event listener from object (IE8+)
+ * remove event listener from object (support IE)
  * @param {Object} element DOM element from which remove listener
  * @param {string} eventType event type string
  * @param {function} listener listener to remove
@@ -359,14 +246,12 @@ unilib.callbackGroupManager = {
 	 * @returns {Array.<unilib.CallbackGroup>}
 	 */
 	getGroupWithElement: function(element, type) {
-		var match = null;
 		for (var i = 0; i < this.groups_.length; i++) {
 			if (this.groups_[i].element == element && this.groups_[i].type == type) {
-				match = this.groups_[i];
-				break;
+				return this.groups_[i];
 			}
 		}
-		return match;
+		return null;
 	},
 	
 	/**
@@ -413,31 +298,241 @@ unilib.callbackGroupManager = {
 	}
 };
 
-//setup code
 /*
- * register global load callback to handle include callbacks
+ * dependency system handling
+ * use a LIFO queue to queue callbacks and init everything as soon as
+ * every dependency has notified its loading. This is necessary beacuse no
+ * standard way to determine the loading of a script exists in HTML 4.01
+ * (no document.onload for dynamically added scripts, nor script.onload
+ * attribute). Generally unilib handles everything transparently using
+ * unilib.provideNamespace function with correct parameters, if an user
+ * wants to handle manually dependency notification he should use instead
+ * unilib.include and unilib.notifyLoading (i.e. for lazy loading inclusions)
  */
-unilib.callbackGroupManager.createGroup(window, 'load').attach(
-		unilib.createCallback(unilib.dependencyManager_, 
-				unilib.dependencyManager_.execute), unilib.CallbackGroup.FIRST);
-		
 
-// functionality extensions for browsers with js version 1.3 (i.e. IE8)
-// this is aimed to provide higher version functions to older browsers 
-// without compromising efficency and code repetitions in newer ones
-
-if (! Array.prototype.indexOf) {
-	//IE 8
-	/**
-	 * searches the array for the specified item, and returns its position
-	 * @param {Object} item item to search
-	 * @param {number=} start start index
-	 * @returns {number} index of first occurrence or -1
-	 */
-	Array.prototype.indexOf = function(item, start) {
-		for (var i = (start) ? start : 0; i < this.length; i++) {
-			if (this[i] === item) return i;
+/**
+ * group private dependency handling functions and variables
+ * @type {object}
+ * @private
+ */
+unilib.dependencyManager_ = {
+		/** number of notifications received
+		 * @type {number}
+		 * @private
+		 */
+		notifications_: 0,
+		/** callback group to trigger after initialisation of dependencies is made
+		 * @type {Array.<function>}
+		 */
+		onload: [],
+		/** indicates when onload event has been triggered, i.e. when callbacks in
+		 * 	this.onload have been called
+		 * @type {boolean}
+		 */
+		done_: false,
+		/**
+		 * notify that an included file has been loaded.
+		 * 	This is used to determine if all files has been included by just
+		 * 	comparing number of notification received with number of dependencies
+		 * 	registered
+		 */
+		notifyLoaded: function() {
+			this.notifications_++;
+			if (this.notifications_ == unilib.included_.length) {
+				for (var i = 0; i < this.onload.length; i++) {
+					this.onload[i].call();
+				}
+				this.done_ = true;
+			}
+		},
+		/** 		
+		 * this callback is used to tell dependencymanager_ that document has 
+		 * 	loaded (window.onload Event). This necessary because if no dependency
+		 * 	is included, all callbacks attached to the group that is listening
+		 * 	on dependencyManager_ will never be executed (example unittest.js).
+		 * 	Note that document.onload cannot be called before script elements
+		 * 	present in the page (not dynamically added) have been parsed, so if
+		 * 	one of them has uninitialised dependencies this.notifications_ != 
+		 * 	unilib.included.length_ always.
+		 * @todo may be removed if, after refactoring unittest, it is proved
+		 * 	that it is not safe (or it is useless) to fire a load event on 
+		 * 	subscribed CallbackGroup when document is loaded.
+		 * @private
+		 */
+		documentLoaded_: function() {
+			//check this.done_ to avoid double calls 
+			// if callbacks have been already triggered by notifyLoaded
+			if ((this.notifications_ == unilib.included_.length) && !this.done_) {
+				for (var i = 0; i < this.onload.length; i++) {
+					this.onload[i].call();
+				}
+				this.done_ = true;
+			}
+		},
+		/**
+		 * event source interface, used to make dependencymanager_ compatible with
+		 * 	CallbackGroup. Add given event listener if eventType is 'load'
+		 * @param {function} listener listener to append
+		 * @param {string} eventType 
+		 */
+		addEventListener: function(eventType, listener){
+			if (this.onload.indexOf(listener) && eventType == 'load') {
+				this.onload.push(listener);
+			}
+		},
+		/**
+		 * event source interface, used to make dependencymanager_ compatible with
+		 * 	CallbackGroup. Remove given event listener if eventType is 'load'
+		 * @param {function} listener listener to append
+		 * @param {string} eventType 
+		 */
+		removeEventListener: function(eventType, listener) {
+			if (eventType == 'load') {
+				var index = this.onload.indexOf(listener);
+				if (index != -1) this.onload.splice(index, 1);
+			}
 		}
-		return -1;
-	};
-}
+};
+
+//add event listener to window.onload for dependencyManager_
+unilib.addEventListener(window, 'load', unilib.createCallback(
+		unilib.dependencyManager_, unilib.dependencyManager_.documentLoaded_));
+
+/**
+ * export all symbols in source into given namespace
+ * @param {object} source object containing symbols to export
+ * @param {object} namespace namespace where to export to
+ */
+unilib.copyObject = function(source, destination) {
+	for (var symbol in source) {
+		destination[symbol] = source[symbol];
+	}
+};
+
+/**
+ * expose private unilib.dependencyManager_.notifyLoaded method,
+ * notify loading of a dependency file
+ * @see unilib.dependencyManager_.notifyLoaded
+ */
+unilib.notifyLoaded = function() {
+	unilib.dependencyManager_.notifyLoaded();
+};
+
+/**
+ * create new namespace, import dependencies and call init callback.
+ *  No standard way can be used to notify loading of a script
+ *  dynamically added to the page, i.e. window.onload can fire when there
+ *  are still scripts downloading and script.onload (script.onreadystatechange)
+ *  is not part of the HTML 4.01 specification. For this reason by now the best
+ *  we can do is provide a simple way to scripts to notify dependencyManager 
+ *  when they have done, so it can begin calling init callback stack.
+ *  This is done by unilib.dependencyManager_.notifyLoaded() function.
+ *  unilib.provideNamespace provide a shorthand by calling notifyLoaded itself
+ *  if the notify flag is set to true (or left default).
+ *  Usage Notes:
+ *  <ul>
+ *  <li> Each included script MUST notify its loading by calling
+ *  	ONCE unilib.notifyLoading or unilib.provideNamespace function.
+ *  </li>
+ *  <li> Note that if a file define more than one namespace it MUST call
+ *  	unilib.dependencyManager_.notifyLoaded() only ONCE.
+ *  </li>
+ *  <li> Calling provideNamespace(notify=true) or notifyLoaded() assumes that
+ *  	the file issuing the call will be used only as imported by unilib and 
+ *  	not added to the page manually. This is especially important if you
+ *  	make other includes because an extra notifyLoaded would break the
+ *  	dependency management system causing headaches to maintainers (that is
+ *  	why using script.onload would be more reliable)
+ *  </li>
+ *  <li> Inclusions done by main html document MUST use either unilib.include
+ *  	or unilib.provideNamespace(notify=false) in order to not pollute the
+ *  	notification count since inline scripts should not notify their
+ *  	loading (they are not dynamically imported, they may request inclusion
+ *  	of some file but cannot be included).
+ *  </li>
+ *  </ul>
+ *  @see unilib.dependencyManager_.notifyLoaded
+ * @param {string} name name of the namespace i.e. 'unilib.myNamespace'
+ * @param {function} init initialization callback for the namespace, called 
+ * 	after all dependencies are loaded, parsed and initialized
+ * @param {Array.<Array.<string> || string>=} deps array of dependencies of the
+ *  namespace as ["path", "base"] or just "path", 
+ *  where base is nullable @see unilib.include
+ * @param {boolean=} notify if true providenamespace will notify loading of a
+ * 	file, default true
+ * @example
+ * //no dependencies
+ * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
+ * //dependencies: baz in unilib.config.jsBase/baz.js and 
+ * //bazbaz in external/path/to/bazbaz.js 
+ * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
+ * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
+ * //do not notify file loading
+ * unilib.provideNamespace("foo", function() {foo.bar = 'bar';}, [], false);
+ */
+unilib.provideNamespace = function(name, init, deps, notify) {
+	//set defaults
+	notify = (notify == undefined) ? true : notify;
+	if (deps) {
+		for (var i = 0; i < deps.length; i++) {
+			if (typeof deps[i] == 'string' || deps[i] instanceof String) {
+				//dependency located in unilib.config.jsBase
+				unilib.include(deps[i]);
+			}
+			else if (deps[i] instanceof Array) {
+				//dependency in the form [path, base]
+				unilib.include(deps[i][0], deps[i][1]);
+			}
+			else {
+				//not supported, throw exception
+				throw new Error("invalid dependency format " + deps[i]);
+			}
+		}
+	}
+	//if group already exists, it is returned 
+	// @see unilib.callbackGroupmanager.createGroup
+	var group = unilib.callbackGroupManager.
+		createGroup(unilib.dependencyManager_, 'load');
+	//callbacks must be executed in LIFO order
+	group.attach(init, unilib.CallbackGroup.FIRST);
+	//provide name
+  var parts = name.split('.');
+  var current = window; //global scope
+  for (var i = 0; i < parts.length; i++) {
+    current[parts[i]] = current[parts[i]] || {};
+    current = current[parts[i]];
+  }
+  if (notify) {
+  	unilib.notifyLoaded();
+  }
+};
+
+/** keep track of included files to avoid repeated inclusions
+ * and to count number of dependencies
+ * @type {Array.<string>}
+ * @private
+ */
+unilib.included_ = [];
+
+/**
+ * load an additional script. Note: a non-standard implementation may permit
+ * 	to invoke a callback after a script has loaded using script.onload or
+ * 	script.onreadystatechange (IE), this may permit to include scripts that
+ * 	do not use unilib to notify they have loaded.
+ * @param {string} path path to include
+ * @param {string} [base] optional base path, default unilib.config.jsBase
+ */
+unilib.include = function(path, base) {
+  //assign defaults
+  base = base || unilib.config.jsBase;
+  //build include path
+  var fullPath = (base.charAt(base.length - 1) == '/') ? base : base + '/';
+  fullPath += (path.charAt(0) == '/') ? path.substring(1) : path;
+  if (unilib.included_.indexOf(fullPath) == -1) {
+  	var script = document.createElement('script');
+  	script.setAttribute('type', 'text/javascript');
+  	script.setAttribute('src', fullPath);
+  	document.getElementsByTagName('head')[0].appendChild(script);
+    unilib.included_.push(fullPath);
+  }
+};

@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
 <script type="text/JavaScript" src="../../js/unilib/base.js"></script>
 <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
-<script type="text/JavaScript" src="../../js/unilib/mvc/observer.js"></script>
 <script type="text/JavaScript">
+unilib.include('unilib/mvc/observer.js');
 test('observable basics', function(){
 	//expect(5);
 	var observer1 = new unilib.mvc.Observer();

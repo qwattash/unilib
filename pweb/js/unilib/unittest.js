@@ -12,7 +12,38 @@
  * iii) add something like assertCalled()
  * iv) refactor code using unilib base
  */
-
+/*
+ * Each test report is generated using the following structure:
+ * expressions inside [*] are parametrics.
+ * <div id='test#[ordinal_number]' class='test-container'>
+ * 	<p class='test-header'>
+ * 		<span class='test-icon test-fold-icon'>[icon]</span>
+ * 		<span class'test-header-text'>[text]</span>
+ * 	</p>
+ * 	<ul class='test-asserts'>
+ * 		<!-- sample Assert entry -->
+ * 		<li class='test-assert test-assert-success||test-assert-failure||
+ * 					test-assert-message'>
+ * 			<span class='test-icon test-icon-success'></span>
+ * 			<span class='test-report'>
+ * 				<span class='test-report-message'>[text]</span>
+ * 				=> Expected:
+ * 				<span class='test-report-expected'>[text]</span>
+ * 				Found:
+ * 				<span class='test-report-value'>[text]</span>
+ * 			</span>
+ * 		</li>
+ * 	</ul>
+ * 	<p class='test-footer'>
+ * 		Summary => Passed:
+ * 		<span class='test-footer-field-success'>[text]</span>
+ * 		Failed:
+ * 		<span class='test-footer-field-failure'>[text]</span>
+ * 		Total:
+ * 		<span class='test-footer-field-total'>[text]</span>
+ * 	</p>
+ * </div>
+ */
 /**
  * @private
  * @description convert value to a string representation of the value, 
@@ -81,6 +112,7 @@ function AssertionResult(result, value, expected, message, errMessage){
 	 */
 	this.errorMessage = errMessage || '';
 }
+
 /**
  * @private
  * @description global test manager is used to handle communication of test results
@@ -345,10 +377,13 @@ testManager = {
 		var container = document.getElementById(testContainerId);
 		var asserts = container.getElementsByTagName('ul')[0];
 		asserts.setAttribute('class', asserts.getAttribute('class') + ' test-asserts-fold');
-		var header = container.getElementsByClassName('test-header')[0];
-		var fold = header.getElementsByClassName('test-fold-icon')[0];
+		//can't use getElementsByClassName since IE < 9 does not support it :(
+		//var header = container.getElementsByClassName('test-header')[0];
+		var header = container.getElementsByTagName('p')[0];
+		//var fold = header.getElementsByClassName('test-fold-icon')[0];
+		var fold = header.getElementsByTagName('span')[0];
 		fold.firstChild.nodeValue = '+';
-		/* WARNING
+		/* NOTE
 		 * here it is not needed to double encapsulate the function since 
 		 * 	testId is not changed by anyone. Otherwise it would need to
 		 * (function (tempId) {
@@ -356,6 +391,7 @@ testManager = {
 		 * 		doStuffWith(tempId);
 		 * 	};
 		 * })(testId);
+		 * @todo although may be good to use unilib.addEventListener instead
 		 * */
 		fold.onclick = function() {
 			testManager.unfoldTestReport(testContainerId);
@@ -377,10 +413,13 @@ testManager = {
 			var newClass = assertClass.substr(0, index) + assertClass.substr(index + 17);
 			asserts.setAttribute('class', newClass);
 		}
-		var header = container.getElementsByClassName('test-header')[0];
-		var fold = header.getElementsByClassName('test-fold-icon')[0];
+		//same as foldTestReport, IE < 9 does not support getElementsByClassName
+		//var header = container.getElementsByClassName('test-header')[0];
+		//var fold = header.getElementsByClassName('test-fold-icon')[0];
+		var header = container.getElementsByTagName('p')[0];
+		var fold = header.getElementsByTagName('span')[0];
 		fold.firstChild.nodeValue = '-';
-		/* WARNING
+		/* NOTE
 		 * here it is not needed to double encapsulate the function since 
 		 * 	testId is not changed by anyone. Otherwise it would need to
 		 * (function (tempId) {
@@ -388,7 +427,7 @@ testManager = {
 		 * 		doStuffWith(tempId);
 		 * 	};
 		 * })(testId);
-		 * or not??
+		 * although may be good to use unilib.addEventListener instead
 		 * */
 		fold.onclick = function() {
 			testManager.foldTestReport(testContainerId);
@@ -1005,12 +1044,6 @@ function test(testName, body) {
 /**
  * add global onload listener to start tests 
  * 	as soon as everything is loaded
- * @todo temporary solution, depends on unilib 
  */
-unilib.callbackGroupManager.createGroup(window, 'load').attach(
-		unilib.createCallback(testManager, testManager.execute));
-/* "same" as
- * window.onload = function() {
- * testManager.execute();
- * }
- */
+var grp = unilib.callbackGroupManager.createGroup(unilib.dependencyManager_, 'load');
+grp.attach(unilib.createCallback(testManager, testManager.execute), unilib.CallbackGroup.LAST);
