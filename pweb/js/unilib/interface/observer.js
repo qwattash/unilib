@@ -5,18 +5,18 @@
  * @version 1.0
  */
 
-unilib.provideNamespace('unilib.mvc',  function() {
+unilib.provideNamespace('unilib.interfaces',  function() {
 	/**
 	 * base observer implementation
 	 * @constructor
 	 */
-	unilib.mvc.Observer = function() {};
+	unilib.interfaces.Observer = function() {};
 
 	/**
 	 * notify update on the observed object
-	 * @param {!unilib.mvc.ObserverEvent} evt notification info
+	 * @param {!unilib.interfaces.ObserverEvent} evt notification info
 	 */
-	unilib.mvc.Observer.prototype.update = function(evt) {
+	unilib.interfaces.Observer.prototype.update = function(evt) {
 	  throw new unilib.error.NotYetImplementedError();
 	};
 
@@ -24,20 +24,20 @@ unilib.provideNamespace('unilib.mvc',  function() {
 	 * base observable implementation
 	 * @constructor
 	 */
-	unilib.mvc.Observable = function() {
+	unilib.interfaces.Observable = function() {
 	  /** store observers references
-	   * @type {Array.<unilib.mvc.Observer>}
+	   * @type {Array.<unilib.interfaces.Observer>}
 	   */
 	  this.observers_ = [];
 	};
 
 	/**
 	 * register an observer to this observable
-	 * @param {!unilib.mvc.Observer} observer
+	 * @param {!unilib.interfaces.Observer} observer
 	 */
-	unilib.mvc.Observable.prototype.attachObserver = function(observer) {
+	unilib.interfaces.Observable.prototype.attachObserver = function(observer) {
 		if (!observer) {
-			throw new unilib.mvc.InvalidObserverError(this);
+			throw new unilib.interfaces.InvalidObserverError(this);
 		}
 	  if (this.observers_.indexOf(observer) == -1) {
 	    this.observers_.push(observer);
@@ -46,11 +46,11 @@ unilib.provideNamespace('unilib.mvc',  function() {
 
 	/**
 	 * unregister given observer form this observable
-	 * @param {!unilib.mvc.Observer} observable observable to remove
+	 * @param {!unilib.interfaces.Observer} observable observable to remove
 	 */
-	unilib.mvc.Observable.prototype.detachObserver = function(observer) {
+	unilib.interfaces.Observable.prototype.detachObserver = function(observer) {
 		if (!observer) {
-			throw new unilib.mvc.InvalidObserverError(this);
+			throw new unilib.interfaces.InvalidObserverError(this);
 		}
 	  var index = this.observers_.indexOf(observer);
 	  if (index != -1) {
@@ -61,11 +61,11 @@ unilib.provideNamespace('unilib.mvc',  function() {
 
 	/**
 	 * notify observers of a change
-	 * @param {unilib.mvc.ObserverEvent=} evt
+	 * @param {unilib.interfaces.ObserverEvent=} evt
 	 */
-	unilib.mvc.Observable.prototype.notify = function(evt) {
+	unilib.interfaces.Observable.prototype.notify = function(evt) {
 		if (!evt) {
-			evt = new unilib.mvc.ObserverEvent();
+			evt = new unilib.interfaces.ObserverEvent();
 		}
 	  for (var i = 0; i < this.observers_.length; i++) {
 	    this.observers_[i].update(evt);
@@ -76,7 +76,7 @@ unilib.provideNamespace('unilib.mvc',  function() {
 	 * enumeration for ObserverEvent types
 	 * @enum {number}
 	 */
-	unilib.mvc.ObserverEventType = {
+	unilib.interfaces.ObserverEventType = {
 		UNKNOWN: -1,
 		UPDATE: 0,
 		DELETE: 1,
@@ -86,11 +86,11 @@ unilib.provideNamespace('unilib.mvc',  function() {
 	/**
 	 * event for communication between observable and observer
 	 * @constructor
-	 * @param {unilib.mvc.ObserverEventType=} eventType type of event
-	 * @param {?unilib.mvc.Observable=} source source of the notification
+	 * @param {unilib.interfaces.ObserverEventType=} eventType type of event
+	 * @param {?unilib.interfaces.Observable=} source source of the notification
 	 */
-	unilib.mvc.ObserverEvent = function(eventType, source) {
-		this.eventType = eventType || unilib.mvc.ObserverEventType.UNKNOWN;
+	unilib.interfaces.ObserverEvent = function(eventType, source) {
+		this.eventType = eventType || unilib.interfaces.ObserverEventType.UNKNOWN;
 		this.source = source || null;
 	};
 
@@ -98,14 +98,14 @@ unilib.provideNamespace('unilib.mvc',  function() {
 	 * exception thrown if some function finds an invalid observer
 	 * @constructor
 	 * @extends {unilib.error.UnilibError}
-	 * @param {?unilib.mvc.Observable} source where exception raised, 
+	 * @param {?unilib.interfaces.Observable} source where exception raised, 
 	 * 	null if not raised by an Observable 
 	 * @param {string=} message error message
 	 */
-	unilib.mvc.InvalidObserverError = function(source, message) {
+	unilib.interfaces.InvalidObserverError = function(source, message) {
 		this.source = source;
 		this.message = message || 'Invalid observer';
 	};
-	unilib.mvc.InvalidObserverError.prototype = new unilib.error.UnilibError();
+	unilib.interfaces.InvalidObserverError.prototype = new unilib.error.UnilibError();
 }, ['unilib/error.js']);
 

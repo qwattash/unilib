@@ -47,8 +47,7 @@ var unilib = {};
  * @type {Object}
  */
 unilib.config = {
-  //jsBase: 'http://localhost/eclipse/pweb.git/pweb/js/'
-	jsBase: 'http://192.168.0.102/eclipse/pweb.git/pweb/js/'
+	jsBase: 'http://localhost/eclipse/pweb.git/pweb/js/'
 };
 
 /*
