@@ -5,6 +5,9 @@
  * @version 1.0
  */
 
+/**
+ * @namespace unilib.interfaces
+ */
 unilib.provideNamespace('unilib.interfaces',  function() {
 	/**
 	 * base observer implementation

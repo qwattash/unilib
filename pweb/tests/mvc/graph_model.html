@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<script type="text/JavaScript" src="../../js/unilib/base.js"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+unilib.include('unilib/mvc/graph/model.js');
+
+test('Iterator', function() {
+  //@todo
+});
+
+test('base GraphModel operations', function() {
+  //some tests are done using private variables to make the test independent from Iterators
+  var model = new unilib.mvc.graph.GraphModel();
+  var node = model.createNode();
+  assertTrue(node instanceof unilib.mvc.graph.Node, 'create node');
+  assertEqual(node.getOwner(), model, 'postcondition: node owner is model');
+  assertNotThrow(new Call(model, model.addNode, [node]), 'add node to model');
+  assertEqual(model.nodes_[0], node , 'postcondition: node added to model.nodes_[]');
+  assertNotThrow(new Call(model, model.removeNode, [node]), 'remove node from model');
+  assertEqual(model.nodes_.length, 0, 'postcondition: node removed from model.nodes_[]');
+  //readd node
+  model.addNode(node);
+  var pin = node.createPin();
+  assertTrue(pin instanceof unilib.mvc.graph.Pin, 'create pin');
+  assertEqual(pin.getOwner(), node, 'postcondition: pin owner is node');
+  assertNotThrow(new Call(node, node.addPin, [pin]), 'add pin to node');
+  assertEqual(node.pins_[0], pin, 'postcondition: pin added to node.pins_[]');
+  assertNotThrow(new Call(node, node.removePin, [pin]), 'remove pin from node');
+  assertEqual(node.pins_.length, 0, 'postcondition: pin removed from node.pins_[]');
+  //readd Pin
+  node.addPin(pin);
+  var link = pin.createLink();
+  assertTrue(link instanceof unilib.mvc.graph.Link, 'create Link');
+  assertEqual(link.getStartPin(), null, 'postcondition: default direction = UNKNOWN');
+  assertFalse(link.getEndPin(), 'postcondition: end pin defaults to null/false');
+  var pin2 = node.createPin();
+  assertNotThrow(new Call(link, link.setEndPin, [pin2]), 'set end pin');
+  assertEqual(link.getEndPin(), pin2, 'postcondition: end pin is set');
+  assertNotThrow(new Call(link, link.setStartPin, [null]), 'null start pin');
+  assertEqual(link.getStartPin(), null, 'postcondition: start pin set');
+});
+
+test('GraphModel interface', function() {});
+test('Node interface', function() {});
+test('Pin interface', function() {});
+test('Link iterface', function() {});
+test('Graph access', function() {});
+
+</script>
+</head>
+<body>
+<div id='unittest'></div>
+</body>
+</html>

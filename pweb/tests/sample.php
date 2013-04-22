@@ -151,68 +151,68 @@ test('assertDeepEqual [FAIL]', function() {
 });
 test('assertThrow [PASS]', function(){
 	//these shall pass
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'string_exception';
 	}), null, 'given string expect anything');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 10;
 	}), null, 'given number expect anything');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw new Object();
 	}), null, 'given Object expect anything');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'string_exception';
 	}), 'string_exception', 'given string expected same');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 0;
 	}), 0, 'given 0 expect 0');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'regexpable_exception';
 	}), new RegExp('_'), 'testing a passing regexp');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 10;
 	}), '10', 'given 10 expected "10"');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw new Object();
 	}), Object, 'given 10 expected "10"');
 	
 });
 test('assertThrow [FAIL]', function(){
 	//these should fail
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 10;
 	}), 0, 'given 10 expected 0');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'a_string';
 	}), 'another_string', 'given string expected another_string');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 10;
 	}), '2', 'given 10 expected "2"');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'string_ex';
 	}), 0, 'given string expected 0');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 10;
 	}), 'a_string', 'given string expected 0');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw 'regexpable_string';
 	}), new RegExp('some_weird_pattern'), 'given unmatching regexp');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		return;
 	}), null, 'given no exception expected any');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		return;
 	}), 10, 'given no exception expected 10');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		return;
 	}), 'a_string', 'given no exception expected a_string');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		return;
 	}), new RegExp('some_weird_pattern'), 'given no exception expected RegExp');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		return;
 	}), Object, 'given no exception expected object constuctor');
-	assertThrow(new Call(function() {
+	assertThrow(new Call(null, function() {
 		throw new Object();
 	}), new Object(), 'given random obj try to match with random obj');
 });
@@ -228,28 +228,54 @@ test('test expect #2', function() {
 	assertTrue(true, 'assert number one, miss number two');
 });
 test('test Call [PASS]', function() {
-	var call_1 = new Call(function(a_param){
+	var call_1 = new Call(null, function(a_param){
 		return a_param;
 	}, [true]);
-	var call_3 = new Call(function(a_param){
+	var call_3 = new Call(null, function(a_param){
 		return a_param;
 	}, [1, 2, 3]);
 	assertTrue(call_1, 'test main success scenario');
 	assertTrue(call_3, 'test wrong number of args');
-	assertFalse(new Call(function(){return false;}), 'assertFalse');
-	assertEqual(new Call(function(){return "something";}), "something", 'assertEqual');
-	assertStrictEqual(new Call(function(){return "something";}), "something", 'assertStrictEqual');
-	assertDeepEqual(new Call(function(){return ["something"];}), ["something"], 'assertDeepEqual');
+	assertFalse(new Call(null, function(){return false;}), 'assertFalse');
+	assertEqual(new Call(null, function(){return "something";}), "something", 'assertEqual');
+	assertStrictEqual(new Call(null, function(){return "something";}), "something", 'assertStrictEqual');
+	assertDeepEqual(new Call(null, function(){return ["something"];}), ["something"], 'assertDeepEqual');
 });
 test('test Call [FAIL]', function() {
-	var call_2 = new Call(function(){
+	var call_2 = new Call(null, function(){
 			throw 'Not Yet Implemented (example)';
 		});
 	assertTrue(call_2, 'test main failure scenario');
-	assertFalse(new Call(function(){return true;}), 'assertFalse');
-	assertEqual(new Call(function(){return "something";}), "else", 'assertEqual');
-	assertStrictEqual(new Call(function(){return "10";}), 10, 'assertStrictEqual');
-	assertDeepEqual(new Call(function(){return ["something"];}), [10], 'assertDeepEqual');
+	assertFalse(new Call(null, function(){return true;}), 'assertFalse');
+	assertEqual(new Call(null, function(){return "something";}), "else", 'assertEqual');
+	assertStrictEqual(new Call(null, function(){return "10";}), 10, 'assertStrictEqual');
+	assertDeepEqual(new Call(null, function(){return ["something"];}), [10], 'assertDeepEqual');
+});
+test('assertNotThrow [PASS]', function() {
+  var ok = function() {
+    return true;
+  };
+  var obj = {
+    foo: 'foo',
+    ok: function() {
+      return this.foo;
+    }
+  };
+  assertNotThrow(new Call(null, ok), 'ok function');
+  assertNotThrow(new Call(obj, obj.ok), 'ok in object');
+});
+test('assertNotThrow [FAIL]', function() {
+  var fail = function() {
+    throw new Error('An Error');
+  };
+  var obj = {
+    foo: 'An Error in object',
+    fail: function() {
+      throw new Error(this.foo);
+    }
+  };
+  assertNotThrow(new Call(null, fail), 'fail function');
+  assertNotThrow(new Call(obj, obj.fail), 'fail in object');
 });
 </script>
 </head>

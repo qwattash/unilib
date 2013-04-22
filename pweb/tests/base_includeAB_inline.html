@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>base_includeAB_inline</title>
+  <link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
+  <script type='text/JavaScript' src='../js/unilib/base.js'></script>
+  <script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+  <script type="text/javascript">
+    unilib.include('includeA.js', './');
+    unilib.provideNamespace('inline_test', function(){
+      inline_test.a_foo = testB.b;
+    }, [['includeB.js', './']], false);
+    test('base inline includes does not break dependency manager', function() {
+      assertEqual(testA.a, 'A foo', 'A loaded ok');
+      assertEqual(testB.b, testA.a, 'B loaded ok');
+      assertEqual(inline_test.a_foo, testB.b, 'inline provideNamespace OK');
+    });
+  </script>
+</head>
+<body>
+<div id='unittest'></div>
+</body>
+</html>
+
+
+
