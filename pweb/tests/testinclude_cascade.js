@@ -6,7 +6,8 @@
 
 unilib.provideNamespace('baz', function() {
 	baz.loadTime = true;
-}, [['testinclude.js', './']]); 
+}, [['testinclude.js', './']]);
+unilib.notifyLoaded();
 /*
  * note that base is relative to testinclude_cascade.html
  * in library files should rely on unilib.config.jsBase

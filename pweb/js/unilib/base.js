@@ -301,110 +301,177 @@ unilib.callbackGroupManager = {
 
 /*
  * dependency system handling
- * use a LIFO queue to queue callbacks and init everything as soon as
- * every dependency has notified its loading. This is necessary beacuse no
- * standard way to determine the loading of a script exists in HTML 4.01
- * (no document.onload for dynamically added scripts, nor script.onload
- * attribute). Generally unilib handles everything transparently using
- * unilib.provideNamespace function with correct parameters, if an user
- * wants to handle manually dependency notification he should use instead
- * unilib.include and unilib.notifyLoading (i.e. for lazy loading inclusions)
+ * use an ordered queue to init interdependant modules respecting the
+ * dependency ordering.
+ * Since no standard way to determine the loading of a script exists 
+ * in HTML 4.01 (no document.onload for dynamically added scripts, 
+ * nor script.onload attribute) dependencyManager has to enforce some 
+ * restrictions to the usage of this feature in order to remain 
+ * standard-compliant. 
+ * Generally unilib handles everything transparently using 
+ * unilib.provideNamespace function with correct parameters, 
+ * the only thing a developer MUST do while writing library files is to call
+ * unilib.notifyLoading at the END of every library file that will be included
+ * using the dependency handling system.
+ * 
+ *  Usage Notes:
+ *  <ul>
+ *  <li> Each included script MUST notify its loading by calling
+ *  	ONCE unilib.notifyLoading().
+ *    Note that if a file define more than one namespace it MUST call
+ *  	unilib.dependencyManager.notifyLoaded() only ONCE.
+ *    Calling notifyLoaded() assumes that the file issuing the call will
+ *    be used only as imported by unilib and will NEVER be added to the 
+ *    page manually (at least while using unilib dependencies). 
+ *    This is especially important if you make other includes because an 
+ *    extra notifyLoaded would break the dependency management system causing
+ *    headaches to you and to maintainers (that is
+ *  	why using script.onload would be more reliable, but non-standard ouch!)
+ *  </li>
+ *  <li> Inclusions done by main html document MUST use either unilib.include
+ *  	or unilib.provideNamespace(inline=true) in order to inform 
+ *  	dependencyManager to not try to find a running script name for the inline
+ *  	script.
+ *  	Inline scripts MUST NOT notify their loading with unilib.notifyLoaded 
+ *  	(they are not dynamically imported, they may request inclusion
+ *  	of some file but cannot be included).
+ *  </li>
+ *  </ul>
+ * @example spare examples.
+ * //no dependencies
+ * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
+ * //dependencies: baz in unilib.config.jsBase/baz.js and 
+ * //bazbaz in external/path/to/bazbaz.js 
+ * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
+ * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
+ * //define a namespace in inline script
+ * unilib.provideNamespace("foo", function() {foo.bar = 'bar';}, [], true);
+ * 
+ * @example simple scenario including a lib file.
+ * -------------- inline ------------
+ * unilib.include('myLib.js');
+ * function doStuffWithMyLib() {
+ * 	[...]
+ * }
+ * unilib.dependencyManager.addEventListener(doStuffWithMyLib, 'load');
+ * ---------------- myLib.js --------
+ * unilib.provideNamespace('myLib.aModule', function() {
+ * 	[...]
+ * }); //note that namespace has not dependencies.
+ * unilib.notifyLoaded();
  */
-
-/**
- * helper class for dependencyManager
- * @param {string} id id of the record or some reserved value
- * @param {function=} callback init callback for the namespace
- * @param {Array.<string> | Array.<Array.<string>>} dependencies 
- * 	dependencies of the namespace
- * @constructor
- */
-unilib.NamespaceRecord = function(id, callback, dependencies) {
-	/** id of the record, may be a reserved value
-	 * @type {string}
-	 */
-	this.id = id;
-	/** callback for this record
-	 * @type {?function}
-	 */
-	this.callback = callback || null;
-	/** dependencies for this record
-	 * @type {Array.<string> | Array.<Array.<string>>}
-	 */
-	this.dependencies = dependencies || [];
-};
-
-/**
- * check if record depends on given file
- * @param {string} file file to check for dependency, this is 
- * 	actually a full path
- * @returns {boolean}
- */
-unilib.NamespaceRecord.prototype.dependsOn = function(file) {
-	if (this.dependencies.indexOf(file) == -1) return false;
-	return true;
-};
 
 /**
  * group private dependency handling functions and variables
- * @type {object}
+ * @namespace
  */
 unilib.dependencyManager = {
+		
 		/**
-		 * enumeration for NamespaceRecord.id reserved values
-		 * @enum {string}
+		 * id to assign to next inline namespace found
+		 * @private
 		 */
-		NSReservedID: {
-			APPENDED_CALLBACK: '<cbk>'
-		},
+		nextInlineNSID_: 0,
+		
 		/**
 		 * stores included scripts, associated callbacks and dependencies
-		 * nsRecord_ is organised so that executing callbacks from last element to
+		 * nsRecords_ is organised so that executing callbacks from last element to
 		 * first will respect dependencies.
 		 * @type {Array.<unilib.NamespaceRecord>}
 		 * @private
 		 */
-		nsRecord_: [],
-		/** number of notifications received
+		nsRecords_: [],
+		
+		/** number of loading notifications received
 		 * @type {number}
 		 * @private
 		 */
 		notifications_: 0,
+		
 		/** indicates when onload event has been triggered, i.e. when callbacks in
 		 * 	this.onload have been called
 		 * @type {boolean}
+		 * @private
 		 */
 		done_: false,
-		/** keep track of included files in order of inclusion, this is used
-		 * to determine the current running included script.
-		 * @see dependencyManager.getCurrentScript
+		
+		/** callbacks to execute after all dependencies have been resolved and
+		 * 	initialised.
+		 * @type {Array.<function>}
+		 * @private
+		 */
+		callbacks_: [],
+		
+		/** keep track of included files.
+		 * @see dependencyManager.isIncluded
+		 * @see dependencyManager.inlineInclude
+		 * @see dependencyManager.libraryInclude_
+		 * @see dependencyManager.getCurrentScript_
 		 * @type {Array.<string>}
 		 * @private
 		 */
 		included_: [],
+		
+		/**
+		 * helper class used to keep track of included namespaces
+		 * @param {string} id id of the record or some reserved value
+		 * @param {function=} callback init callback for the namespace
+		 * @param {Array.<string> | Array.<Array.<string>>} dependencies 
+		 * 	dependencies of the namespace
+		 * @constructor
+		 */
+		NamespaceRecord: function(id, callback, dependencies) {
+			/** id of the record, may be a reserved value
+			 * @type {string}
+			 */
+			this.id = id;
+			/** callback for this record
+			 * @type {?function}
+			 */
+			this.callback = callback || null;
+			/** dependencies for this record
+			 * @type {Array.<string> | Array.<Array.<string>>}
+			 */
+			this.dependencies = dependencies || [];
+		},
+		
 		/**
 		 * execute init callbacks in order.
 		 * @private
+		 * @todo
 		 */
 		exec_: function() {
-			console.log('<Exec> ' + this.nsRecord_.length);
-			for (var i = this.nsRecord_.length  - 1; i >= 0; i--) {
-				if (this.nsRecord_[i].callback) this.nsRecord_[i].callback.call();
+			console.log('<Exec> ' + this.nsRecords_.length);
+			for (var i = this.nsRecords_.length - 1; i >= 0; i--) {
+				console.log('<record ' + i + '> ' + this.nsRecords_[i].id + ' deps: ' + this.nsRecords_[i].dependencies);
+				if (this.nsRecords_[i].callback) this.nsRecords_[i].callback.call();
+			}
+			for (var i = 0; i< this.callbacks_.length; i++) {
+				this.callbacks_[i].call();
 			}
 			this.done_ = true;
 			//may be an idea to clear this.nsRecord array
 		},
+		
 		/**
 		 * notify that an included file has been loaded.
 		 * 	This is used to determine if all files has been included by just
 		 * 	comparing number of notification received with number of dependencies
 		 * 	registered. If all notification have been received than 
 		 * 	call init callbacks.
+		 *  No standard way can be used to notify loading of a script
+		 *  dynamically added to the page, i.e. window.onload can fire when there
+		 *  are still scripts downloading and script.onload (script.onreadystatechange)
+		 *  is not part of the HTML 4.01 specification. For this reason by now the best
+		 *  we can do is provide a simple way to scripts to notify dependencyManager 
+		 *  when they have done, so it can begin calling init callback stack.
+		 *  This is done by unilib.dependencyManager.notifyLoaded() function.
 		 */
 		notifyLoaded: function() {
 			this.notifications_++;
 			if (this.notifications_ == this.included_.length) this.exec_();
 		},
+		
 		/** 		
 		 * this callback is used to tell dependencyManager that document has 
 		 * 	loaded (window.onload Event). This necessary because if no dependency
@@ -417,30 +484,36 @@ unilib.dependencyManager = {
 		 * @private
 		 */
 		documentLoaded_: function() {
+			console.log('<docLoaded>');
 			/* check this.done_ to avoid double calls 
 			 * if callbacks have been already triggered by notifyLoaded
 			 */
 			if ((this.notifications_ == this.included_.length) && 
 					!this.done_) this.exec_();
 		},
+		
 		/**
 		 * check if a file has already been included
 		 * @param {string} path path of the file
 		 * @returns {boolean}
 		 */
 		isIncluded: function(path) {
-			if (this.included_.indexOf(path) != -1) return true;
+			for (var i = 0; i < this.included_.length; i++) {
+				if (this.included_[i] == path) return true;
+			}
 			return false;
 		},
+		
 		/**
-		 * load an additional script. Note: a non-standard implementation may permit
-		 * 	to invoke a callback after a script has loaded using script.onload or
-		 * 	script.onreadystatechange (IE), this may permit to include scripts that
-		 * 	do not use unilib to notify they have loaded.
+		 * load an additional script. This function is meant to be used from inline
+		 *  scripts to include a library. Note: a non-standard implementation may 
+		 *  permit to invoke a callback after a script has loaded using 
+		 *  script.onload or script.onreadystatechange (IE), this may permit to 
+		 *  include scripts that do not use unilib to notify they have loaded.
 		 * @param {string} path path to include
-		 * @param {string} [base] optional base path, default unilib.config.jsBase
+		 * @param {string=} base optional base path, default unilib.config.jsBase
 		 */
-		include: function(path, base) {
+		inlineInclude: function(path, base) {
 		  fullPath = this.buildFullPath_(path, base);
 		  if (! this.isIncluded(fullPath)) {
 		  	var script = document.createElement('script');
@@ -455,8 +528,6 @@ unilib.dependencyManager = {
 		  	 * rendering of the page.
 		  	 * Here async is set to false because it would break the assumption of 
 		  	 * the dependency system that scripts are executed sequentially.
-		  	 * @todo let the browser do async loading and handle intenally the
-		  	 * 	reordering of callbacks depending on which dependencies are required.
 		  	 */
 		  	if (script.async) {
 		  		script.async = false;
@@ -466,16 +537,48 @@ unilib.dependencyManager = {
 		  	this.included_.push(fullPath);
 		  }
 		},
+		
 		/**
-		 * add a namespace to be handled, update this.nsRecord_ to keep it ordered
-		 * @param {string} filePath include path for the namespace 
-		 * 	i.e. the file that contains it
+		 * load an additional script from a library file (not inline).
+		 * @see unilib.dependencyManager.inlineInclude
+		 * @param {string} path path to include
+		 * @param {string=} base optional base path, default unilib.config.jsBase
+		 * @private
+		 */
+		libraryInclude_: function(path, base) {
+			fullPath = this.buildFullPath_(path, base);
+		  if (! this.isIncluded(fullPath)) {
+		  	var script = document.createElement('script');
+		  	script.setAttribute('type', 'text/javascript');
+		  	script.setAttribute('src', fullPath);
+		  	if (script.async) {
+		  		/* @see unilib.DepenencyManager.inlineInclude */ 
+		  		script.async = false;
+		  	}
+		  	console.log('<append> ' + fullPath);
+		  	document.getElementsByTagName('head')[0].appendChild(script);
+		  	this.included_.push(fullPath);
+		  }
+		},
+		
+		/**
+		 * add a namespace to be handled.
 		 * @param {function} callback init callback for the namespace
 		 * @param {Array.<string> | Array.<Array.<string>>=} dependencies files 
 		 * 	required for this namespace
+		 * @param {boolean} inline tells if namespace to 
+		 * 	register is declared inline
+		 * @private
 		 */
-		registerNamespaceLoad: function(callback, dependencies) {
-			var filePath = this.getCurrentScript_();
+		registerNamespace_: function(callback, dependencies, inline) {
+			var filePath;
+			if (inline) {
+				filePath = this.nextInlineNSID_;
+				this.nextInlineNSID_++;
+			}
+			else {
+				 filePath = this.getCurrentScript_()
+			}
 			if (dependencies) {
 				for (var i = 0; i < dependencies.length; i++) {
 					if (dependencies[i] instanceof Array) {
@@ -488,36 +591,41 @@ unilib.dependencyManager = {
 				}
 			}
 			console.log('<register> \n' + 
-					' <src> '+ filePath + '\n <deps>' + dependencies + '\n <nsRecord_>' + this.nsRecord_.length + ' | ' + this.included_.length);
-			var record = new unilib.NamespaceRecord(filePath, callback, 
+					' <src> '+ filePath + '\n <deps>' + dependencies + '\n <inline>' + inline + '\n <nsRecords_>' + this.nsRecords_.length + ' | ' + this.included_.length);
+			var record = new unilib.dependencyManager.NamespaceRecord(filePath, callback, 
 					dependencies);
-			/* a typical nsRecord_ array is:
+			/* a typical nsRecords_ array is:
 			 * +------------------+
-			 * | A | init | B, C	| nsRecord_[0]
+			 * | A | init | B, C	| nsRecords_[0]
 			 * +------------------+
-			 * | B | init | C, E	| nsRecord_[1]
+			 * | B | init | C, E	| nsRecords_[1]
 			 * +------------------+
-			 * | C | init | --		| nsRecord_[2]
+			 * | C | init | --		| nsRecords_[2]
 			 * +------------------+
 			 * assume we want to insert a record like this
 			 * | E | init | X, Y |
 			 * E must be inserted after the max index of all namespaces 
 			 * 	requiring it, and before any requirement it has.
 			 * So define:
-			 * 	firstDependencyIndex = min(i = {index of nsRecord_} 
-			 * 		such that nsRecord_[i] is required by E);
-			 * 	lastDependantIndex = max(i = {index of nsRecord_} 
-			 * 		such that nsRecord_[i] requires E).
+			 * 	firstDependencyIndex = min(i = {index of nsRecords_} 
+			 * 		such that nsRecords_[i] is required by E);
+			 * 	lastDependantIndex = max(i = {index of nsRecords_} 
+			 * 		such that nsRecords_[i] requires E).
 			 * Then if firstDependencyIndex <= lastDependantIndex, we have
 			 * 	a circular dependency and system will raise an exception.
 			 */
-			if (this.nsRecord_.length == 0) {
-				//handle special case
-				this.nsRecord_.push(record);
+			
+			//handle special case of self dependant modules.
+			if (record.dependsOn(record.id)) {
+				throw new Error('Detected self-dependant file ' + record.id);
+			}
+			if (this.nsRecords_.length == 0) {
+				//handle starting case
+				this.nsRecords_.push(record);
 			}
 			else {
 				console.log('<DepSort>\n ');
-				/*remind that the last nsRecord_ element will be initialised first
+				/*remind that the last nsRecords_ element will be initialised first
 					Index of first record that is a dependency for the one 
 					we are inserting, starting form index 0 as lowest.
 					A value of -1 means that no dependency is currently
@@ -531,34 +639,86 @@ unilib.dependencyManager = {
 				 * requested it.
 				 */
 				var lastDependantIndex = -1;
-				for (var i = 0; i < this.nsRecord_.length; i++) {
-					if (this.nsRecord_[i].dependsOn(record.id)) lastDependantIndex = i;
+				for (var i = 0; i < this.nsRecords_.length; i++) {
+					if (this.nsRecords_[i].dependsOn(record.id)) lastDependantIndex = i;
 				}
 				console.log('<LstDependantIndex> ' + lastDependantIndex + '\n');
-				for (var i = (this.nsRecord_.length - 1); i >= 0; i--) {
-					if (record.dependsOn(this.nsRecord_[i].id)) firstDependencyIndex = i;
+				for (var i = (this.nsRecords_.length - 1); i >= 0; i--) {
+					if (record.dependsOn(this.nsRecords_[i].id)) firstDependencyIndex = i;
 				}
 				console.log('<FstDependencyIndex> ' + firstDependencyIndex + '\n');
 				if (firstDependencyIndex == -1) {
 					//handle no dependency found, just append record
-					this.nsRecord_.push(record);
+					this.nsRecords_.push(record);
 					console.log('<noDependencyFound>');
 				}
 				else if (lastDependantIndex == -1) {
 					//note that firstDependencyIndex is not -1
-					this.nsRecord_.splice(firstDependencyIndex, 0, record);
+					this.nsRecords_.splice(firstDependencyIndex, 0, record);
 					console.log('<noDependantFound>');
 				}
 				else if (firstDependencyIndex <= lastDependantIndex) {
 					throw new Error('Circular dependency detected for ' + record.id);
 				}
 				else {
-					this.nsRecord_.splice(lastDependantIndex + 1, 0, record);
+					this.nsRecords_.splice(lastDependantIndex + 1, 0, record);
 					console.log('<normalFlow>');
 				}
 			}
-			console.log('<EOR> \n <nsRecord_>' + this.nsRecord_.length + ' | ' + this.included_.length);
+			console.log('<EOR> \n <nsRecords_>' + this.nsRecords_.length + ' | ' + this.included_.length);
 		},
+		
+		/**
+		 * create new namespace, import dependencies and call init callback.
+		 * @param {string} name name of the namespace i.e. 'unilib.myNamespace'
+		 * @param {function} init initialization callback for the namespace, called 
+		 * 	after all dependencies are loaded, parsed and initialized
+		 * @param {Array.<Array.<string> || string>=} deps array of dependencies of the
+		 *  namespace as ["path", "base"] or just "path", 
+		 *  where base is nullable @see unilib.include
+		 * @param {boolean=} inline tells if namespace is declared inline. 
+		 *  Default false.
+		 * @example
+		 * //no dependencies
+		 * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
+		 * //dependencies: baz in unilib.config.jsBase/baz.js and 
+		 * //bazbaz in external/path/to/bazbaz.js 
+		 * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
+		 * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
+		 * //define a namespace in inline script
+		 * unilib.provideNamespace("foo", function() {foo.bar = 'bar';}, [], true);
+		 */
+		provideNamespace: function(name, init, deps, inline) {
+			//set defaults
+			inline = (inline == undefined) ? false : inline;
+			if (deps) {
+				for (var i = 0; i < deps.length; i++) {
+					if (typeof deps[i] == 'string' || deps[i] instanceof String) {
+						//dependency located in unilib.config.jsBase
+						if (inline) this.inlineInclude(deps[i]);
+						else this.libraryInclude_(deps[i]);
+					}
+					else if (deps[i] instanceof Array) {
+						//dependency in the form [path, base]
+						if (inline) this.inlineInclude(deps[i][0], deps[i][1]);
+						else this.libraryInclude_(deps[i][0], deps[i][1]);
+					}
+					else {
+						//not supported, throw exception
+						throw new Error("invalid dependency format " + deps[i]);
+					}
+				}
+			}
+			//provide name
+		  var parts = name.split('.');
+		  var current = window; //global scope
+		  for (var i = 0; i < parts.length; i++) {
+		    current[parts[i]] = current[parts[i]] || {};
+		    current = current[parts[i]];
+		  }
+		  this.registerNamespace_(init, deps, inline);
+		},
+		
 		/**
 		 * get file path of the currently loading/executing script
 		 * Note that HTML5 provides a standard (and more general) way to do so
@@ -573,15 +733,12 @@ unilib.dependencyManager = {
 		 * @private
 		 */
 		getCurrentScript_: function() {
-			/* Note that if this.notifications_ == 0 there are 2 alternatives:
-			 * i) no scripts included, (maybe a provideNamespace called from
-			 *  inline script), so current script is null (unknown)
-			 * ii) a script has been included and provideNamespace has been called
-			 * 	on it, current script is the one with index 0;
+			/* search for the correct current script running considering
+			 * origin of inclusions, if running an inline script return null.
 			 */
-			if (this.included_.length <= this.notifications_) return null;
 			return this.included_[this.notifications_];
 		},
+		
 		/**
 		 * build full path string form a couple relativePath, base
 		 * @param {string} relativePath relative path of the file
@@ -598,6 +755,7 @@ unilib.dependencyManager = {
 		  		relativePath.substring(1) : relativePath;
 		  return fullPath;
 		},
+		
 		/**
 		 * Add given event listener if eventType is 'load', callback is invoked
 		 * after every dependency has been initialised
@@ -606,17 +764,14 @@ unilib.dependencyManager = {
 		 */
 		addEventListener: function(eventType, listener){
 			if (eventType == 'load') {
-				for (var i = 0; i < this.nsRecord_.length; i++) {
-					if (this.nsRecord_[i].id == this.NSReservedID.APPENDED_CALLBACK) {
+				for (var i = 0; i < this.callbacks_.length; i++) {
 						if (this.nsRecord[i].callback == listener) return;
-						}
 					}
-				//push front the callback to add
-				var record = new unilib.NamespaceRecord(
-						this.NSReservedID.APPENDED_CALLBACK, listener);
-				this.nsRecord_.unshift(record);
+				//push back the callback to add
+				this.callbacks_.push(listener);
 			}
 		},
+		
 		/**
 		 * Remove given event listener if eventType is 'load'
 		 * @param {function} listener listener to append
@@ -624,10 +779,9 @@ unilib.dependencyManager = {
 		 */
 		removeEventListener: function(eventType, listener) {
 			if (eventType == 'load') {
-				for (var i = 0; i < this.nsRecord_.length; i++) {
-					if (this.nsRecord_[i].id == this.NSReservedID.APPENDED_CALLBACK && 
-							this.nsRecord_[i].callback == listener) {
-						this.nsRecord_.splice(i, 1);
+				for (var i = 0; i < this.nsRecords_.length; i++) {
+					if (this.callbacks_[i] == listener) {
+						this.nsRecords_.splice(i, 1);
 						return;
 					}
 				}
@@ -635,20 +789,20 @@ unilib.dependencyManager = {
 		}
 };
 
+/**
+ * check if record depends on given file
+ * @param {string} file file to check for dependency, this is 
+ * 	actually a full path
+ * @returns {boolean}
+ */
+unilib.dependencyManager.NamespaceRecord.prototype.dependsOn = function(file) {
+	if (this.dependencies.indexOf(file) == -1) return false;
+	return true;
+};
+
 //add event listener to window.onload for dependencyManager
 unilib.addEventListener(window, 'load', unilib.createCallback(
 		unilib.dependencyManager, unilib.dependencyManager.documentLoaded_));
-
-/**
- * export all symbols in source into given namespace
- * @param {object} source object containing symbols to export
- * @param {object} namespace namespace where to export to
- */
-unilib.copyObject = function(source, destination) {
-	for (var symbol in source) {
-		destination[symbol] = source[symbol];
-	}
-};
 
 /**
  * expose private unilib.dependencyManager.notifyLoaded method,
@@ -660,89 +814,10 @@ unilib.notifyLoaded = function() {
 };
 
 /**
- * create new namespace, import dependencies and call init callback.
- *  No standard way can be used to notify loading of a script
- *  dynamically added to the page, i.e. window.onload can fire when there
- *  are still scripts downloading and script.onload (script.onreadystatechange)
- *  is not part of the HTML 4.01 specification. For this reason by now the best
- *  we can do is provide a simple way to scripts to notify dependencyManager 
- *  when they have done, so it can begin calling init callback stack.
- *  This is done by unilib.dependencyManager.notifyLoaded() function.
- *  unilib.provideNamespace provide a shorthand by calling notifyLoaded itself
- *  if the notify flag is set to true (or left default).
- *  Usage Notes:
- *  <ul>
- *  <li> Each included script MUST notify its loading by calling
- *  	ONCE unilib.notifyLoading or unilib.provideNamespace function.
- *  </li>
- *  <li> Note that if a file define more than one namespace it MUST call
- *  	unilib.dependencyManager.notifyLoaded() only ONCE.
- *  </li>
- *  <li> Calling provideNamespace(notify=true) or notifyLoaded() assumes that
- *  	the file issuing the call will be used only as imported by unilib and 
- *  	not added to the page manually. This is especially important if you
- *  	make other includes because an extra notifyLoaded would break the
- *  	dependency management system causing headaches to maintainers (that is
- *  	why using script.onload would be more reliable)
- *  </li>
- *  <li> Inclusions done by main html document MUST use either unilib.include
- *  	or unilib.provideNamespace(notify=false) in order to not pollute the
- *  	notification count since inline scripts should not notify their
- *  	loading (they are not dynamically imported, they may request inclusion
- *  	of some file but cannot be included).
- *  </li>
- *  </ul>
- *  @see unilib.dependencyManager.notifyLoaded
- * @param {string} name name of the namespace i.e. 'unilib.myNamespace'
- * @param {function} init initialization callback for the namespace, called 
- * 	after all dependencies are loaded, parsed and initialized
- * @param {Array.<Array.<string> || string>=} deps array of dependencies of the
- *  namespace as ["path", "base"] or just "path", 
- *  where base is nullable @see unilib.include
- * @param {boolean=} notify if true providenamespace will notify loading of a
- * 	file, default true
- * @example
- * //no dependencies
- * unilib.provideNamespace("foo", function() {foo.bar = 'baz';});
- * //dependencies: baz in unilib.config.jsBase/baz.js and 
- * //bazbaz in external/path/to/bazbaz.js 
- * unilib.provideNamespace("foo", function() {foo.bar = new baz();}, 
- * 	["baz.js", ["bazbaz.js", "external/path/to/"]]);
- * //do not notify file loading
- * unilib.provideNamespace("foo", function() {foo.bar = 'bar';}, [], false);
+ * @see unilib.dependencyManager.provideNamespace
  */
-unilib.provideNamespace = function(name, init, deps, notify) {
-	//set defaults
-	notify = (notify == undefined) ? true : notify;
-	if (deps) {
-		for (var i = 0; i < deps.length; i++) {
-			if (typeof deps[i] == 'string' || deps[i] instanceof String) {
-				//dependency located in unilib.config.jsBase
-				unilib.include(deps[i]);
-			}
-			else if (deps[i] instanceof Array) {
-				//dependency in the form [path, base]
-				unilib.include(deps[i][0], deps[i][1]);
-			}
-			else {
-				//not supported, throw exception
-				throw new Error("invalid dependency format " + deps[i]);
-			}
-		}
-	}
-	//provide name
-  var parts = name.split('.');
-  var current = window; //global scope
-  for (var i = 0; i < parts.length; i++) {
-    current[parts[i]] = current[parts[i]] || {};
-    current = current[parts[i]];
-  }
-  unilib.dependencyManager.registerNamespaceLoad(init, deps);
-  if (notify) {
-  	unilib.notifyLoaded();
-  }
-  //must be after unilib.notifyLoaded() call
-  //unilib.dependencyManager.registerNamespaceLoad(init, deps);
+unilib.provideNamespace = function(name, init, deps, inline) {
+	unilib.dependencyManager.provideNamespace(name, init, deps, inline);
 };
 
 /**
@@ -754,5 +829,5 @@ unilib.provideNamespace = function(name, init, deps, notify) {
  * @param {string} [base] optional base path, default unilib.config.jsBase
  */
 unilib.include = function(path, base) {
-  unilib.dependencyManager.include(path, base);
+  unilib.dependencyManager.inlineInclude(path, base);
 };

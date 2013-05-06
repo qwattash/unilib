@@ -10,7 +10,9 @@
   <script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
   <script type="text/javascript">
     unilib.include('includeA.js', './');
-    unilib.provideNamespace('inline_test', function(){
+  </script>
+  <script type="text/javascript">
+  unilib.provideNamespace('inline_test', function(){
       inline_test.a_foo = testB.b;
     }, [['includeB.js', './']], true);
     test('base inline includes does not break dependency manager', function() {
@@ -24,6 +26,7 @@
 <div id='unittest'></div>
 </body>
 </html>
+
 
 
 

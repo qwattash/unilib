@@ -5,3 +5,4 @@
 unilib.provideNamespace('testA', function() {
 	testA.a = 'A foo';
 });
+unilib.notifyLoaded();

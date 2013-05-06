@@ -3,3 +3,4 @@
  * @author qwattash
  */
 var importedStuff2 = 'test include 2 stuff';
+unilib.notifyLoaded();

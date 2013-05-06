@@ -16,7 +16,7 @@
 	   foo.ck1 = true;
 	   foo.bar = 'bar';
 	 },
-	 [['testinclude.js', './']], false);
+	 [['testinclude.js', './']], true);
    test('base test', function() {
 	    assertTrue(foo, 'foo namespace created');
 	    assertTrue(foo.ck1, 'init called correctly');
