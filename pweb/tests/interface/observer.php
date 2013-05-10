@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
-<script type="text/JavaScript" src="../../js/unilib/base.js"></script>
+<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
 <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
 <script type="text/JavaScript">
 unilib.include('unilib/interface/observer.js');
