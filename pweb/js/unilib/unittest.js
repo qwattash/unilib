@@ -1070,5 +1070,5 @@ function test(testName, body) {
  * add global onload listener to start tests 
  * 	as soon as everything is loaded
  */
-unilib.DependencyManager.addEventListener('load', 
+unilib.dependencyManager.addEventListener('load', 
 		unilib.createCallback(testManager, testManager.execute));
