@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>iterator test</title>
+  <link rel="stylesheet" href="../../css/unittest.css"/>
+  <script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+  <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+  <script type="text/JavaScript">
+    unilib.include('unilib/interface/iterator.js');
+    
+    test('ArrayIterator', function() {
+      var array1 = [1, 2, 3, 4, 5, 6];
+      var array2 = ['a'];
+      var array3 = [];
+      var i1 = new unilib.interfaces.iterator.ArrayIterator(array1);
+      var i2 = new unilib.interfaces.iterator.ArrayIterator(array2);
+      var i3 = new unilib.interfaces.iterator.ArrayIterator(array3);
+      //check starting conditions
+      assertFalse(i1.end(), 'array[5] not ended at creation');
+      assertFalse(i2.end(), 'array[1] not ended at creation');
+      assertTrue(i3.end(), 'array[0] ended at creation');
+      //stepping
+      assertEqual(i1.item(), 1, 'array[5] item 0 accessed');
+      assertEqual(i2.item(), 'a', 'array[1] item 0 accessed');
+      assertThrow(new Call(i3, i3.item, []), unilib.interfaces.iterator.IterationError, 
+        'array[0] item 0 not existing (exception)');
+      i1.next();
+      i2.next();
+      i3.next();
+      assertEqual(i1.item(), 2, 'array[5] stepped correctly');
+      assertThrow(new Call(i2, i2.item, []), unilib.interfaces.iterator.IterationError, 
+        'array[1] stepped correctly');
+      assertThrow(new Call(i3, i3.item, []), unilib.interfaces.iterator.IterationError, 
+        'array[0] stepped (but it is empty)');
+      //check end
+      assertFalse(i1.end(), 'array[5] not ended after stepping');
+      assertTrue(i2.end(), 'array[1] ended after stepping');
+      assertTrue(i3.end(), 'array[0] ended after stepping');
+    });
+  </script>
+</head>
+<body>
+  <div id='unittest'></div>
+</body>
+</html>

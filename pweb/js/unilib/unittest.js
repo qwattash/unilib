@@ -1,7 +1,7 @@
 /**
  * @fileOverview Simple unit test framework
  * @author qwattash (Alfredo Mazzinghi)
- * @license GNU General Public License
+ * @license GPL
  * @version 1.0
  */
 
@@ -14,7 +14,7 @@
  */
 /*
  * Each test report is generated using the following structure:
- * expressions inside [*] are parametrics.
+ * expressions inside [*] are parametric.
  * <div id='test#[ordinal_number]' class='test-container'>
  * 	<p class='test-header'>
  * 		<span class='test-icon test-fold-icon'>[icon]</span>
@@ -65,8 +65,7 @@ function stringRepr(value) {
 		return '[' + value.toString() + ']';
 	}
 	if (typeof value == 'function') {
-		var stringFunction = value.toString();
-		var nameExtractor = new RegExp("");
+		return value.toString();
 	}
 	return value.toString();
 }
@@ -84,7 +83,7 @@ Result = {
 
 /**
  * @private
- * @class AssertionResult is an helper for storing assertion results
+ * @constructor AssertionResult is an helper for storing assertion results
  */
 function AssertionResult(result, value, expected, message, errMessage){
 	/** value available in enum RESULT
@@ -95,12 +94,12 @@ function AssertionResult(result, value, expected, message, errMessage){
 	/** value given to assert function 
 	 * @type {Object}
 	 */
-	this.value = value || null;
+	this.value = (value === undefined) ? null : value;
 	
 	/** expected value to test in assertion
 	 * @type {Object}
 	 */
-	this.expected = expected || null;
+	this.expected = (expected === undefined) ? null : expected;
 	
 	/** message passed to assert function
 	 * @type {String}
@@ -623,7 +622,23 @@ assertion = {
 				if (value.length == expected.length) {
 					var equal = true;
 					for (var i = 0; i < value.length; i++) {
-						if (value[i] != expected[i]) {
+						if (value[i] instanceof Array && expected[i] instanceof Array) {
+							assertion.testDeepEqualArray(value[i], expected[i], result);
+							if (result.resultCode == Result.FAIL) {
+								//result is already set
+								return;
+							}
+							//else go on
+						}
+						else if (typeof value[i] == 'object' && 
+										typeof expected[i] == 'object') {
+							assertion.testDeepEqualObject(value[i], expected[i], result);
+							if (result.resultCode == Result.FAIL) {
+								//result is already set
+								return;
+							}
+						}
+						else if (value[i] != expected[i]) {
 							equal = false;
 							break;
 						}
@@ -643,7 +658,7 @@ assertion = {
 				}
 			}
 			else {
-				throw 'value or expected are not Array instances';
+				throw new Error('value or expected are not Array instances');
 			}
 		},
 		/**
@@ -661,26 +676,42 @@ assertion = {
 		testDeepEqualObject: function(value, expected, result) {
 			if (typeof value == 'object' && typeof expected == 'object') {
 				//traverse key value pairs
-				var ok = true;
+				result.resultCode = Result.PASS;
 				for (key in value) {
 					if (expected[key]) {
-						if (expected[key] != value[key]) {
-							ok = false;
+						if (value[key] instanceof Array && 
+								expected[key] instanceof Array) {
+							assertion.testDeepEqualArray(value[key], expected[key], result);
+							if (result.resultCode == Result.FAIL) {
+								//result is already set up correctly
+								return;
+							}
+						}
+						else if (typeof value[key] == 'object' && 
+								typeof expected[key] == 'object') {
+							assertion.testDeepEqualObject(value[key], expected[key], result);
+							if (result.resultCode == Result.FAIL) {
+								//result is already set up correctly
+								return;
+							}
+							//else go on
+						}
+						else if (expected[key] != value[key]) {
+							result.resultCode = Result.FAIL;
 							result.errorMessage = 'different values for ' + key;
-							break;
+							return;
 						}
 					}
 					else {
-						ok = false;
+						result.resultCode = Result.FAIL;
 						result.errorMessage = 'value has extra property ' + key;
-						break;
+						return;
 					}
 				
 				}
-				result.resultCode = (ok)? Result.PASS : Result.FAIL;
 			}
 			else {
-				throw 'value or expected are not objects';
+				throw new Error('value or expected are not objects');
 			}
 		},
 		/**
@@ -701,11 +732,18 @@ assertion = {
 		testDeepEqual: function(value, expected, result) {
 			assertion.testEqual(value, expected, result);
 			if (result.resultCode == Result.FAIL) {
+				//clean error message set by testEqual
+				result.errorMessage = '';
 				if (value instanceof Array && expected instanceof Array) {
 					assertion.testDeepEqualArray(value, expected, result)
 				}
 				else if (typeof value == 'object' && typeof expected == 'object') {
 					assertion.testDeepEqualObject(value, expected, result);
+				}
+				else {
+					result.resultCode = Result.FAIL;
+					result.errorMessage = 
+						'type of value does not match type of expected';
 				}
 			}
 		},
@@ -785,7 +823,8 @@ function Call(thisObj, callable, params) {
 	 */
 	this.params = params || [];
 	/**
-	 * 
+	 * object on which will be called the function
+	 * @type {Object}
 	 */
 	this.thisObj = thisObj;
 	/** value generated by executing callable

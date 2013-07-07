@@ -133,7 +133,13 @@ test('assertDeepEqual [PASS]', function(){
 	assertDeepEqual({a:'a', b:'b'}, {a:'a', b:'b'}, 'given two Objects with same key->value');
 	assertDeepEqual(['1', 2], [1, '2'], 'given arrays with matching mixed string/number values');
 	assertDeepEqual({1:'a', 2:3}, {'1':'a', 2:'3'}, 'given Objects with matching mixed string/number key->values');
-	assertDeepEqual(new Object(), new Object, 'given two random objects');
+	assertDeepEqual(new Object(), new Object(), 'given two random objects');
+	var objA = {a:'a', b:{c:'d'}};
+	var objB = {a:'a', b:{c:'d'}};
+	assertDeepEqual(objA, objB, 'given two nested objects');
+	objA = {a:'a', b:{c:'d', e:[4, 5, 6, 'c']}};
+	objB = {a:'a', b:{c:'d', e:[4, 5, 6, 'c']}};
+	assertDeepEqual(objA, objB, 'given two nested objects with arrays');
 });
 test('assertDeepEqual [FAIL]', function() {
 	//these should fail
@@ -148,6 +154,21 @@ test('assertDeepEqual [FAIL]', function() {
 	assertDeepEqual({1:'a', 2:3}, {2:3, 1:'b'}, 'given Objects with != mixed string/number key->values');
 	assertDeepEqual(undefined, NaN, 'given undefined/NaN');
 	assertDeepEqual(NaN, null, 'given NaN/null');
+	var objA = {a:'a', b:{c:'d'}};
+  var objB = {a:'a', b:{c:'f'}};
+  assertDeepEqual(objA, objB, 'given two (different for a key value) nested objects');
+  var objA = {a:'a', b:{c:'d', h:'h'}};
+  var objB = {a:'a', b:{c:'f'}};
+  assertDeepEqual(objA, objB, 'given two (different for a missing key) nested objects');
+  objA = {a:'a', b:{c:'d', e:[4, 5, 6, 'c']}};
+  objB = {a:'a', b:{c:99, e:[4, 5, 6, 'c']}};
+  assertDeepEqual(objA, objB, 'given two (different for a key value) nested objects with arrays');
+  objA = {a:'a', b:{c:'d', e:[4, 5, 6, 'c'], h:'h'}};
+  objB = {a:'a', b:{c:'d', e:[4, 5, 6, 'c']}};
+  assertDeepEqual(objA, objB, 'given two (different for a missing key) nested objects with arrays');
+  objA = {a:'a', b:{c:'d', e:[4, 5, 6, 'c'], h:'h'}};
+  objB = {a:'a', b:{c:'d', e:[4, 999, 6, 'c']}};
+  assertDeepEqual(objA, objB, 'given two (different for a value in the array) nested objects with arrays');
 });
 test('assertThrow [PASS]', function(){
 	//these shall pass

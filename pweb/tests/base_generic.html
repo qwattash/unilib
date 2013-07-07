@@ -62,23 +62,54 @@
        */
       var foo = document.getElementById('foo');
       var grp1 = unilib.callbackGroupManager.createGroup(foo, 'click');
-      assertEqual(unilib.callbackGroupManager.groups_[1], grp1, 'group added');
+      assertEqual(unilib.callbackGroupManager.groups_[0], grp1, 'group added');
       assertEqual(unilib.callbackGroupManager.getGroupWithElement(foo, 'click'), grp1, 'getGroupWithElement ok');
       unilib.callbackGroupManager.removeGroup(grp1);
-      assertEqual(unilib.callbackGroupManager.groups_.length, 1, 'group removed');
+      assertEqual(unilib.callbackGroupManager.groups_.length, 0, 'group removed');
       unilib.callbackGroupManager.addGroup(grp1);
-      assertEqual(unilib.callbackGroupManager.groups_[1], grp1, 'addGroup ok');
+      assertEqual(unilib.callbackGroupManager.groups_[0], grp1, 'addGroup ok');
       unilib.callbackGroupManager.addGroup(grp1);
-      assertEqual(unilib.callbackGroupManager.groups_.length, 2, 'duplicate group not added');
+      assertEqual(unilib.callbackGroupManager.groups_.length, 1, 'duplicate group not added');
       var grp2 = unilib.callbackGroupManager.createGroup(foo, 'click');
       assertEqual(grp1, grp2, 'create duplicate group ok');
-      assertEqual(unilib.callbackGroupManager.groups_.length, 2, 'duplicate group not created and not readded');
+      assertEqual(unilib.callbackGroupManager.groups_.length, 1, 'duplicate group not created and not readded');
     });
     test('built-in extensions', function() {
       var x = [1,2,3,4,5,6,7,5];
       assertEqual(x.indexOf(3), 2, 'Array.indexOf value found');
       assertEqual(x.indexOf(12), -1, 'Array.indexOf value not found');
       assertEqual(x.indexOf(5), 4, 'Array.indexOf duplicate value in array');
+      var objA = {a:'a', b:'b', c:'c'};
+      var objB = {d:'d', e:{f:'f', g:'g'}};
+      var cloneA = {}, cloneB = {};
+      unilib.cloneObject(objA, cloneA);
+      assertDeepEqual(cloneA, objA, 'cloneObject with simple properties');
+      unilib.cloneObject(objB, cloneB);
+      assertDeepEqual(cloneB, objB, 'cloneObject with obj properties');
+      //clone array
+      var arr1 = [1, 2, 'f', 4];
+      var arr2 = unilib.cloneObject(arr1);
+      assertDeepEqual(arr1, arr2, 'clone Array');
+      //data hiding for clones
+      cloneA['a'] = 'modified';
+      assertEqual(objA['a'], 'a', 'modification on clone hidden for simple object');
+      cloneB['e']['f'] = 'modified';
+      assertEqual(objB['e']['f'], 'f', 'modification on clone hidden for nested object');
+      //copy Object
+      cloneA = {};
+      unilib.copyObject(objA, cloneA);
+      assertDeepEqual(cloneA, objA, 'shallow copy Object');
+      cloneB = {};
+      unilib.copyObject(objB, cloneB);
+      assertDeepEqual(cloneB, objB, 'shallow copy nested object');
+      //copy array
+      arr2 = [];
+      arr2 = unilib.copyObject(arr1);
+      assertDeepEqual(arr2, arr1, 'shallow copy array');
+      //data hiding for copies
+      assertEqual(cloneB['e'], objB['e'], 'referenced instances are maintained');
+      cloneB['e']['f'] = 'modified';
+      assertEqual(objB['e']['f'], 'modified', 'modification on copy for nested object not hidden');
     });
 </script>
 </head>

@@ -67,6 +67,59 @@ unilib.config = {
 	jsBase: <?php echo "'".JSCONFIG_BASE."'";?>
 };
 
+
+/*
+ * Utilities
+ */
+
+/**
+ * copy an object and recursively copy all objects contained.
+ * IMPORTANT: this works only with Tree-like objects 
+ * i.e. without self references, moreover if the constructor of the given
+ * source needs some parameters, the clone object where to copy the source
+ * must be provided since there is no way to know which parameters are needed.
+ * Same requirements must be fulfilled by nested objects.
+ * In other cases the copy must be done manually.
+ * @param {Object} source source object
+ * @param {Object=} clone clone object where the copy of the 
+ * 	source will be done
+ * @returns {Object}
+ */
+unilib.cloneObject = function(source, clone) {
+  clone = clone || new source.constructor();
+  for (property in source) {
+  	if (source.hasOwnProperty(property)) {
+  		if (typeof source[property] != 'object' ) {
+  			clone[property] = source[property];
+  		}
+  		else {
+  			clone[property] = unilib.cloneObject(source[property]);
+  		}
+  	}
+  }
+  return clone;
+};
+
+/**
+ * copy an object without recursing in contained objects (shallow copy).
+ * Note that if the constructor of the given source needs some parameters, 
+ * the clone object where to copy the source must be provided since there 
+ * is no way to know which parameters are needed.
+ * @param {Object} source source object
+ * @param {Object=} clone clone object where the copy of the 
+ * 	source will be done
+ * @returns {Object}
+ */
+unilib.copyObject = function(source, clone) {
+	clone = clone || new source.constructor();
+  for (property in source) {
+  	if (source.hasOwnProperty(property)) {
+  			clone[property] = source[property];
+  	}
+  }
+  return clone;
+};
+
 /*
  * Event helpers
  */
@@ -86,7 +139,7 @@ unilib.addEventListener = function(element, eventType, listener) {
 		element.attachEvent('on' + eventType, listener);
 		}
 		catch (e) {
-			throw new Error('Unableto add event listener ' + eventType + 
+			throw new Error('Unable to add event listener ' + eventType + 
 					' to ' + element.toString());
 		}
 	}
@@ -107,7 +160,7 @@ unilib.removeEventListener = function(element, eventType, listener) {
 		element.detachEvent('on' + eventType, listener);
 		}
 		catch (e) {
-			throw new Error('Unableto remove event listener ' + eventType + 
+			throw new Error('Unable to remove event listener ' + eventType + 
 					' to ' + element.toString());
 		}
 	}

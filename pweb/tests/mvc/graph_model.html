@@ -9,48 +9,403 @@
 <script type="text/JavaScript">
 unilib.include('unilib/mvc/graph/model.js');
 
-test('Iterator', function() {
-  //@todo
-});
-
-test('base GraphModel operations', function() {
-  //some tests are done using private variables to make the test independent from Iterators
+test('GraphModel interface', function() {
+  //constructor
   var model = new unilib.mvc.graph.GraphModel();
-  var node = model.createNode();
-  assertTrue(node instanceof unilib.mvc.graph.Node, 'create node');
-  assertEqual(node.getOwner(), model, 'postcondition: node owner is model');
-  assertNotThrow(new Call(model, model.addNode, [node]), 'add node to model');
-  assertEqual(model.nodes_[0], node , 'postcondition: node added to model.nodes_[]');
-  assertNotThrow(new Call(model, model.removeNode, [node]), 'remove node from model');
-  assertEqual(model.nodes_.length, 0, 'postcondition: node removed from model.nodes_[]');
-  //readd node
-  model.addNode(node);
-  var pin = node.createPin();
-  assertTrue(pin instanceof unilib.mvc.graph.Pin, 'create pin');
-  assertEqual(pin.getOwner(), node, 'postcondition: pin owner is node');
-  assertNotThrow(new Call(node, node.addPin, [pin]), 'add pin to node');
-  assertEqual(node.pins_[0], pin, 'postcondition: pin added to node.pins_[]');
-  assertNotThrow(new Call(node, node.removePin, [pin]), 'remove pin from node');
-  assertEqual(node.pins_.length, 0, 'postcondition: pin removed from node.pins_[]');
-  //readd Pin
-  node.addPin(pin);
-  var link = pin.createLink();
-  assertTrue(link instanceof unilib.mvc.graph.Link, 'create Link');
-  assertEqual(link.getStartPin(), null, 'postcondition: default direction = UNKNOWN');
-  assertFalse(link.getEndPin(), 'postcondition: end pin defaults to null/false');
-  var pin2 = node.createPin();
-  assertNotThrow(new Call(link, link.setEndPin, [pin2]), 'set end pin');
-  assertEqual(link.getEndPin(), pin2, 'postcondition: end pin is set');
-  assertNotThrow(new Call(link, link.setStartPin, [null]), 'null start pin');
-  assertEqual(link.getStartPin(), null, 'postcondition: start pin set');
+  //createNode
+  var node = model.addNode();
+  var iter = model.createIterator();
+  assertEqual(iter.item(), node, 'node added to model');
+  //removeNode
+  var node2 = model.addNode();
+  model.removeNode(node2);
+  assertThrow(new Call(model, model.removeNode, [node2]), unilib.mvc.graph.GraphModelError, 'duplicate removeNode');
+  assertThrow(new Call(model, model.removeNode, [null]), unilib.mvc.graph.GraphModelError, 'removeNode with wrong param type');
+  node2 = model.addNode();
+  iter = model.createIterator();
+  //createNodeIterator
+  iter.begin();
+  assertEqual(iter.item(), node, 'first node present');
+  iter.next();
+  assertEqual(iter.item(), node2, 'second node present');
+});
+test('Node interface', function() {
+  //constructor
+  var model = new unilib.mvc.graph.GraphModel();
+  var node = model.addNode();
+  //get owner
+  assertEqual(node.getModel(), model, 'node bound to model');
+  //add pin
+  var pin = node.makePin();
+  assertEqual(pin.getDirection(), unilib.mvc.graph.PinDirection.UNKNOWN, 'created default undirected pin');
+  var pinI = node.makePin(unilib.mvc.graph.PinDirection.IN);
+  assertEqual(pinI.getDirection(), unilib.mvc.graph.PinDirection.IN, 'created custom directed pin');
+  //remove pin
+  node.removePin(pinI);
+  assertFalse(node.hasPin(pinI), 'removed pin is no longer in the node');
+  assertEqual(pinI.getOwner(), null, 'removed pin has null owner');
+  assertThrow(new Call(node, node.removePin, [null]), unilib.mvc.graph.GraphModelError, 'removeNode with wrong argument type');
+  //readd pin
+  node.addPin(pinI);
+  assertTrue(node.hasPin(pinI), 'readded pin is in node');
+  assertEqual(pinI.getOwner(), node, 'readded pin has right owner');
+  //(re-remove pin since it is no more used for the test)
+  node.removePin(pinI);
+  //createPinIterator
+  var pin2 = node.makePin();
+  var iter = node.createIterator();
+  iter.begin();
+  assertEqual(iter.item(), pin, 'first pin present');
+  iter.next();
+  assertEqual(iter.item(), pin2, 'second pin present');
+  //get model
+  assertEqual(node.getModel(), model, 'Node model getter correct');
+});
+test('Pin and Link interface / general', function() {
+  //init variables
+  var model = new unilib.mvc.graph.GraphModel();
+  var node = model.addNode();
+  var node2 = model.addNode();
+  var pin = node.makePin();
+  //get owner
+  assertTrue(pin.getOwner(), node, 'pin owner set');
+  //set direction
+  //get direction
+  assertEqual(pin.getDirection(), unilib.mvc.graph.PinDirection.UNKNOWN, 'default direction set');
+  pin.setDirection(unilib.mvc.graph.PinDirection.IN);
+  assertEqual(pin.getDirection(), unilib.mvc.graph.PinDirection.IN, 'direction changed');
+  //get model
+  assertEqual(pin.getModel(), model, 'Pin model getter correct');
+  //double connection errors
+  var pin2 = node.makePin();
+  pin.setDirection(unilib.mvc.graph.PinDirection.UNKNOWN);
+  pin.makeConnection(pin2);
+  //check for double connection errors in makeConnection
+  assertThrow(new Call(pin, pin.makeConnection, [pin2]), unilib.mvc.graph.GraphModelError, 
+              'double connection error between already linked pins');
+  //check double connection errors in link()
+  var tmpPin = node.makePin();
+  var bogusEdge = pin.makeConnection(tmpPin);
+  assertThrow(new Call(tmpPin, tmpPin.moveEdge, [bogusEdge, pin2]), unilib.mvc.graph.GraphModelError, 
+               'try to create a double connection with Pin::moveEdge');
+  //check that previous error have left a consistent state.
+  assertFalse(pin2.hasEdge(bogusEdge), 'Pin::moveEdge dst pin consistent after double conn. error');
+  assertFalse(bogusEdge.linksTo(pin2), 'Pin::moveEdge do not add dst pin after double conn. error');
+  
+  bogusEdge.setStartPin(null);
+  bogusEdge.setEndPin(null);
+  bogusEdge.setStartPin(pin);
+  assertThrow(new Call(bogusEdge, bogusEdge.setEndPin, [pin2]), unilib.mvc.graph.GraphModelError,
+              'try to create duble connection manually assigning edge ends');
+  //check that previous error have left a consistent state.
+  assertFalse(pin2.hasEdge(bogusEdge), 'Edge::set(End)Pin dst pin consistent after double conn. error');
+  assertFalse(bogusEdge.linksTo(pin2), 'Edge::set(End)Pin do not add dst pin after double conn. error');
+  
+  bogusEdge.setStartPin(null);
+  bogusEdge.setEndPin(null);
+  bogusEdge.setStartPin(pin);
+  //connect to edge.end should fail
+  assertThrow(new Call(pin2, pin2.link, [bogusEdge, unilib.mvc.graph.PinDirection.IN]), 
+              unilib.mvc.graph.GraphModelError, 'try to create a double connection with Pin::link');
+   //check that previous error have left a consistent state.
+  assertFalse(pin2.hasEdge(bogusEdge), 'Pin::link dst pin consistent after double conn. error');
+  assertFalse(bogusEdge.linksTo(pin2), 'Pin::link do not add dst pin after double conn. error');
+});
+test('Pin and Link interface / directed Graph', function() {
+  //init variables
+  var model = new unilib.mvc.graph.GraphModel();
+  var node = model.addNode();
+  var pin = node.makePin(unilib.mvc.graph.PinDirection.IN);
+  //create Edge within a directed graph
+  var pin2 = node.makePin(unilib.mvc.graph.PinDirection.OUT);
+  var edge = pin.makeConnection(pin2);
+  assertEqual(edge.getEndPin(), pin, 'input pin links correctly');
+  assertEqual(edge.getStartPin(), pin2, 'output pin links correctly');
+  //unlink
+  pin.unlink(edge);
+  assertEqual(edge.getEndPin(), null, 'input pin unlinks correctly');
+  iter = pin.createIterator();
+  assertTrue(iter.end(), 'edge removed from input pin');
+  pin2.unlink(edge);
+  assertEqual(edge.getStartPin(), null, 'output pin unlinks correclty');
+  iter = pin2.createIterator();
+  assertTrue(iter.end(), 'edge removed from output pin');
+  //directed graph does not allow inconsistent linking (i.e. IN-IN OUT-OUT)
+  assertThrow(new Call(edge, edge.setStartPin, [pin]), unilib.mvc.graph.GraphModelError, 'setStart does not generate inconsistencies');
+  assertThrow(new Call(edge, edge.setEndPin, [pin2]), unilib.mvc.graph.GraphModelError, 'setEnd does not generate inconsistencies');
+  //move operations
+  pin.link(edge);
+  pin2.link(edge);
+  var pin3 = node.makePin(unilib.mvc.graph.PinDirection.OUT);
+  var pin4 = node.makePin(unilib.mvc.graph.PinDirection.IN);
+  pin3.link(edge);
+  assertEqual(edge.getStartPin(), pin3, 'start of edge moved correctly');
+  assertEqual(edge.getEndPin(), pin, 'end of pin stays the same');
+  assertFalse(pin2.hasEdge(edge), 'edge removed from pin2 when moving to pin3');
+  pin4.link(edge);
+  assertEqual(edge.getStartPin(), pin3, 'start of edge stays the same');
+  assertEqual(edge.getEndPin(), pin4, 'end of pin moved correctly');
+  assertFalse(pin.hasEdge(edge), 'edge removed from pin when moving to pin4');
+  pin4.moveEdge(edge, pin);
+  assertEqual(edge.getEndPin(), pin, 'edge moved correctly to destination (check #1)');
+  assertTrue(pin.hasEdge(edge), 'edge moved correctly to destination (check #2)');
+  assertFalse(pin4.hasEdge(edge), 'edge removed correctly after moving');
+  //test errors in moving operations
+  assertThrow(new Call(pin3, pin3.moveEdge, [edge, pin4]), unilib.mvc.graph.GraphModelError, 'try to move edge from IN pin to OUT pin');
+});
+test('Pin and Link interface / undirected Graph', function() {
+  //init variables
+  var model = new unilib.mvc.graph.GraphModel();
+  var node = model.addNode();
+  var pin = node.makePin();
+  var pin2 = node.makePin();
+  var iter;
+  //create Edge within an undirected graph
+  edge = pin.makeConnection(pin2);
+  assertTrue(edge.getEndPin() == pin || edge.getStartPin() == pin, 'pin #1 links correctly');
+  assertTrue(edge.getStartPin() == pin2 || edge.getEndPin() == pin2, 'pin #2 links correctly');
+  //unlink
+  pin.unlink(edge);
+  var condition = (edge.getEndPin() == null || edge.getStartPin() == null) && (
+    edge.getEndPin() == pin2 || edge.getStartPin() == pin2)
+  assertTrue(condition, 'pin #1 unlinks correctly');
+  iter = pin.createIterator();
+  assertTrue(iter.end(), 'edge removed from input pin');
+  pin2.unlink(edge);
+  assertTrue((edge.getEndPin() == null && edge.getStartPin() == null), 'pin #2 unlinks correclty');
+  iter = pin2.createIterator();
+  assertTrue(iter.end(), 'edge removed from output pin');
+  //error checking
+  //undirected graph cannot decide which end of the wire should be overwritten
+  var pin3 = node.makePin();
+  pin.link(edge);
+  pin2.link(edge);
+  assertThrow(new Call(pin3, pin3.link, [edge]), unilib.mvc.graph.GraphModelError, 'require direction if pin.direction = unknown');
+  //move operations
+  var end = edge.getEndPin();
+  pin3.link(edge, unilib.mvc.graph.PinDirection.IN);
+  assertEqual(edge.getEndPin(), pin3, 'edge moved correctly');
+  assertFalse(end.hasEdge(edge), 'edge removed');
+  var pin4 = node.makePin();
+  pin3.moveEdge(edge, pin4);
+  condition = (edge.getEndPin() == pin4 || edge.getStartPin() == pin4);
+  assertTrue(condition, 'edge moved correctly to destination (check #1)');
+  assertTrue(pin4.hasEdge(edge), 'edge moved correctly to destination (check #2)');
+  assertFalse(pin3.hasEdge(edge), 'edge removed correctly after moving');
+});
+test("[BUG] break consistency in unlink loop: caused by array lentgh implicit modification due to splice() calls", function(){
+  var model = new unilib.mvc.graph.GraphModel();
+  var testNode = model.addNode();
+  var dstNode = model.addNode();
+  var dstPin = dstNode.makePin();
+  var pins = [];
+  var conns = [];
+  for (var i = 0; i < 100; i++) {
+    var pin = testNode.makePin();
+    pins.push(pin);
+    conns.push(pin.makeConnection(dstPin));
+  }
+  for (var i = dstPin.createIterator(); ! i.end(); i.next()) {
+    dstPin.unlink(i.item());
+  }
+  //are really all removed??
+  var iter = dstPin.createIterator();
+  var residue = 0;
+  for (; !iter.end(); iter.next()) {
+    residue++;
+  }
+  assertEqual(residue, 0, 'unlink cycle works');
+});
+test("cascade graph removal", function(){
+  var model = new unilib.mvc.graph.GraphModel();
+  var node1 = model.addNode();
+  var node2 = model.addNode();
+  var pin1_1 = node1.makePin();
+  var pin1_2 = node1.makePin();
+  var pin2_1 = node2.makePin();
+  var e1 = pin1_1.makeConnection(pin2_1);
+  var e2 = pin1_2.makeConnection(pin2_1);
+  //cascade remove of a pin
+  node1.removePin(pin1_1, false);
+  assertEqual(pin1_1.getModel(), null, 'pin 1_1 removed');
+  assertTrue(pin2_1.hasEdge(e1), 'edge e1 is still linked to 2_1 after removal');
+  assertFalse(e1.linksTo(pin1_1), 'edge e1 has been unlinked from 1_1'); //<<-----
+  assertFalse(pin1_1.hasEdge(e1), 'edge e1 removed from 1_1');
+  //cascade remove of a node
+  model.removeNode(node1);
+  assertEqual(node1.getModel(), null, 'node1 removed');
+  assertEqual(pin1_2.getModel(), null, 'pin 1_2 removed');
+  assertTrue(pin2_1.hasEdge(e2), 'edge e2 still linked to 2_1 after removal');
+  assertTrue(e2.getStartPin() == null || e2.getEndPin() == null, 'edge e2 has been unlinked from 1_2');
+  assertFalse(pin1_2.hasEdge(e2), 'edge e2 removed from 1_2');
 });
 
-test('GraphModel interface', function() {});
-test('Node interface', function() {});
-test('Pin interface', function() {});
-test('Link iterface', function() {});
-test('Graph access', function() {});
+test('GraphElement interface', function(){
+  var element = new unilib.mvc.graph.GraphElement();
+  element.getModel = function() {return null;};
+  /*
+   * for each getter & setter check functioning and data hiding
+   */
 
+  var tmp;
+  element.setLabel('my elem');
+  assertEqual(element.getLabel(), 'my elem', 'label getter & setter');
+  tmp = element.getLabel();
+  tmp = 'modified';
+  assertEqual(element.getLabel(), 'my elem', 'label data hiding');
+  
+  element.setID(11);
+  assertEqual(element.getID(), 11, 'ID getter & setter');
+  tmp = element.getID();
+  tmp = 929394;
+  assertEqual(element.getID(), 11, 'ID data hiding');
+  
+  var point = new unilib.geometry.Point(10,15);
+  element.setPosition(point);
+  assertDeepEqual(element.getPosition(), point, 'position getter & setter');
+  tmp = element.getPosition();
+  tmp.x = 348984;
+  tmp.y = 44200;
+  assertDeepEqual(element.getPosition(), point, 'position data hiding');
+  
+  var shape = new unilib.geometry.Shape();
+  element.setShape(shape);
+  assertDeepEqual(element.getShape(), shape, 'shape getter & setter');
+  tmp = element.getShape();
+  tmp['someproperty'] = 555; //<<---------------------------------------may change this after defining shape interface
+  assertDeepEqual(element.getShape(), shape, 'shape data hiding');
+  
+  element.setStyleID(55);
+  assertEqual(element.getStyleID(), 55, 'styleID getter & setter');
+  tmp = element.getStyleID();
+  tmp = 499494;
+  assertEqual(element.getStyleID(), 55, 'styleID data hiding');
+  
+});
+
+//helper function for testing any order notifications
+//@param {Array.<ObserverEvent>}
+//@param {Array.<type, src>}
+function exists(buff, expect) {
+  for (var i = 0; i < buff.length; i++) {
+      if (buff[i].eventType == expect[0] &&
+        buff[i].source == expect[1]) {
+          return true;
+        }
+  }
+  return false;
+}
+
+test('observer interface', function() {
+  expect(26);
+  //some general variables
+  var observer = new unilib.interfaces.observer.Observer();
+  var model = new unilib.mvc.graph.GraphModel();
+  model.attachObserver(observer);
+  var notifications = [];
+  //update test function
+  observer.update = function(evt) {
+    notifications.push(evt);
+  };
+  var node2 = model.addNode();
+  //GraphModel handling
+  //test model.addNode
+  notifications = [];
+  var node = model.addNode();
+  assertEqual(notifications.length, 1, 'GraphModel::addNode raises single notification');
+  assertEqual(notifications[0].eventType, unilib.interfaces.observer.ObserverEventType.ADD, 'node ADD evt received');
+  assertEqual(notifications[0].source, node, 'node ADD src received');
+  notifications = [];
+  //test model.removeNode
+  model.removeNode(node);
+  assertEqual(notifications.length, 1, 'GraphModel::removeNode raises single notification');
+  assertEqual(notifications[0].eventType, unilib.interfaces.observer.ObserverEventType.REMOVE, 'node REMOVE evt received');
+  assertEqual(notifications[0].source, node, 'node REMOVE src received');
+  //test node.makePin
+  node = model.addNode();
+  notifications = [];
+  var pin = node.makePin();
+  assertEqual(notifications.length, 1, 'Node::makePin raises single notification');
+  assertEqual(notifications[0].eventType, unilib.interfaces.observer.ObserverEventType.ADD, 'pin ADD evt received');
+  assertEqual(notifications[0].source, pin, 'pin ADD src received');
+  //test node.removePin
+  notifications = [];
+  node.removePin(pin);
+  assertEqual(notifications.length, 1, 'Node::removePin raises single notification');
+  assertEqual(notifications[0].eventType, unilib.interfaces.observer.ObserverEventType.REMOVE, 'pin REMOVE evt received');
+  assertEqual(notifications[0].source, pin, 'pin REMOVE src received');
+  //test node.movePin
+  node.addPin(pin);
+  notifications = [];
+  node.movePin(pin, node2);
+  assertEqual(notifications.length, 3, 'Node::movePin raises 3 notifications');
+  assertTrue(exists(notifications, [unilib.interfaces.observer.ObserverEventType.UPDATE, pin]), 'pin UPDATE evt received');
+  assertTrue(exists(notifications, [unilib.interfaces.observer.ObserverEventType.UPDATE, node]), 'node UPDATE evt received');
+  assertTrue(exists(notifications, [unilib.interfaces.observer.ObserverEventType.UPDATE, node2]), 'node2 UPDATE evt received');
+  
+  
+  //test pin.link
+  observer.update = function(evt){};
+  pin = node.makePin();
+  var pin2 = node.makePin();
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.ADD, 'ADD evt received');
+    assertEqual(evt.source, pin, 'link ADD successful');
+  };
+  var link = pin.makeConnection(pin2);
+  //test pin.unlink
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.REMOVE, 'REMOVE evt received');
+    assertEqual(evt.source, pin, 'link REMOVE successful');
+  };
+  pin.unlink(link);
+  //test link.setStartPin
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.ADD, 'ADD evt received');
+    assertEqual(evt.source, link, 'link start ADD successful');
+  };
+  link.setStartPin(pin);
+  //test link.setEndPin
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.REMOVE, 'REMOVE evt received');
+    assertEqual(evt.source, link, 'link end ADD successful');
+  };
+  link.setEndPin(pin2);
+  
+  // IDrawableDescriptor setters
+  //test graphElement.setLabel
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.UPDATE, 'UPDATE evt received');
+    assertEqual(evt.source, pin2, 'label UPDATE successful');
+  };
+  pin2.setLabel('new_label');
+  
+  //test graphElement.setID
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.UPDATE, 'UPDATE evt received');
+    assertEqual(evt.source, pin2, 'ID UPDATE successful');
+  };
+  pin2.setID(166);
+  //test graphElement.setPosition
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.UPDATE, 'UPDATE evt received');
+    assertEqual(evt.source, pin2, 'Position UPDATE successful');
+  };
+  pin2.setPosition(new unilib.geometry.Point(10, 10));
+  //test graphElement.setShape
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.UPDATE, 'UPDATE evt received');
+    assertEqual(evt.source, pin2, 'label UPDATE successful');
+  };
+  pin2.setShape(new unilib.geometry.Shape());
+  //test graphElement.setStyleID
+  observer.update = function(evt) {
+    assertEqual(evt.eventType, unilib.interfaces.observer.ObserverEventType.UPDATE, 'UPDATE evt received');
+    assertEqual(evt.source, pin2, 'StyleID UPDATE successful');
+  };
+  pin2.setStyleID(1);
+  //cascade operations
+});
 </script>
 </head>
 <body>
