@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+unilib.include('unilib/interface/observer.js');
+test('observable basics', function(){
+	expect(5);
+	var observer1 = new unilib.interfaces.observer.Observer();
+	var observable = new unilib.interfaces.observer.Observable();
+	function update(event) {
+		assertTrue(event, 'notify() dispatched');
+		assertEqual(event.getType(), unilib.interfaces.observer.ObserverEventType.UNKNOWN, 'default eventType ok');
+		assertDeepEqual(event.getSource(), observable, 'default source ok');
+	};
+	observer1.update = update;
+	observable.attachObserver(observer1);
+	//must access a protected var to check
+	assertEqual(observable.observers_.length, 1, 'observer registered');
+	observable.notify();
+	observable.detachObserver(observer1);
+	assertEqual(observable.observers_.length, 0, 'observer deregistered');
+});
+test('observable error scenarios', function() {
+	var observer = new unilib.interfaces.observer.Observer();
+	var observable = new unilib.interfaces.observer.Observable();
+	//assertThrow(new Call(observable.detachObserver, [observer]),
+	//	ObserverNotFoundException, 'detaching unexisting observer');
+	assertThrow(new Call(observable, observable.detachObserver, [null]),
+		unilib.interfaces.observer.InvalidObserverError, 'detaching null');
+	assertThrow(new Call(observable, observable.attachObserver, [null]),
+		unilib.error.UnilibError, 'attaching null');
+});
+
+//helper function to check the number of events in a composite event
+function getEventsNum(composite) {
+  var num = 0;
+  for (var i = composite.getEventIterator(); ! i.end(); i.next()){
+    num ++;
+  }  
+  return num;
+}
+
+//helper function to search for an item
+function hasEvt(composite, evt) {
+  for (var i = composite.getEventIterator(); ! i.end(); i.next()) {
+    if (i.item() == evt) return true;
+  }
+  return false;
+}
+
+test('ObserverEvent', function() {
+  var src1 = new unilib.interfaces.observer.Observable();
+  var src2 = new unilib.interfaces.observer.Observable();
+  var evt1 = new unilib.interfaces.observer.CompositeObserverEvent();
+  var evt2 = new unilib.interfaces.observer.CompositeObserverEvent();
+  assertThrow(new Call(evt1, evt1.addEvent, [evt2]), unilib.interfaces.observer.ObserverEventError, 'composite addition forbidden');
+  var add1 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.ADD, src1);
+  var rem1 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.REMOVE, src1);
+  var upd1 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.UPDATE, src1);
+  var add2 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.ADD, src2);
+  var rem2 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.REMOVE, src2);
+  var upd2 = new unilib.interfaces.observer.SimpleObserverEvent(unilib.interfaces.observer.ObserverEventType.UPDATE, src2);
+  //test simple addEvent operation
+  evt1.addEvent(add1);
+  var iter = evt1.getEventIterator();
+  assertEqual(iter.item(), add1, 'CompositeObserverEvent::addEvent add the event');
+  iter.next();
+  assertTrue(iter.end(), 'CompositeObserverEvent::addEvent add one item');
+  //test conflict resolution
+  /**
+   * (quote from source code comments)
+   * 
+   * Conflicting notifications:
+   * i) occur only with notifications with same source
+   * i.i) REMOVE notification deletes all other notifications from
+   *  that object since ADD or UPDATES are rendered useless by the removal but
+   *  REMOVE event is added to the buffer
+   * i.ii) ADD after a REMOVE is changed to an UPDATE since some changes may
+   *  have been made while the element was removed
+   * i.iii) UPDATE after an ADD is ignored since the ADD event is supposed to
+   *  cause a full read of the state of the element added
+   * i.iv) UPDATE after a REMOVE is illegal, causes exception
+   * i.v) ADD after an UPDATE is illegal, causes exception
+   * i.vi) in case of same event present in buffer evt is ignored
+   * ii) due to this handling only a resulting event is kept in the buffer
+   *  for each source
+   */
+  //add another independent event to test a more real-life case
+  evt1.addEvent(add2);
+  //now there are 2 events in the composite
+  // (i.vi) duplicate event
+  evt1.addEvent(add1);
+  assertEqual(getEventsNum(evt1), 2, 'CompositeObserverEvent::addEvent ignore duplicate event');
+  // (i.i) remove
+  evt1.addEvent(rem1);
+  assertEqual(getEventsNum(evt1), 2, 'CompositeObserverEvent::addEvent REMOVE event deletes same source evts');
+  assertTrue(hasEvt(evt1, add2), 'REMOVE event leave other events');
+  assertFalse(hasEvt(evt1, add1), 'REMOVE event removes right event');
+  assertTrue(hasEvt(evt1, rem1), 'REMOVE event is in the buffer');
+  // (i.iv) update after remove
+  assertThrow(new Call(evt1, evt1.addEvent, [upd1]), unilib.interfaces.observer.ObserverEventError, 'illegal update after remove');
+  assertEqual(getEventsNum(evt1), 2, 'update after remove event leave composite unchanged');
+  assertFalse(hasEvt(evt1, upd1), 'update after remove event is not in the buffer');
+  // (i.ii) add after remove
+  evt1.addEvent(add1);
+  assertEqual(getEventsNum(evt1), 2, 'CompositeObserverEvent::addEvent ADD event change remove in update');
+  assertTrue(hasEvt(evt1, add2), 'ADD event leave other events');
+  assertFalse(hasEvt(evt1, add1), 'ADD event is not in the buffer');
+  assertEqual(rem1.getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'REMOVE event changed in UPDATE');
+  //note: rem1 is changed to UPDATE, do not use it anymore
+  // (i.v) add after update
+  assertThrow(new Call(evt1, evt1.addEvent, [add1]), unilib.interfaces.observer.ObserverEventError, 'illegal add after update');
+  assertEqual(getEventsNum(evt1), 2, 'add after update event leave composite unchanged');
+  assertFalse(hasEvt(evt1, add1), 'add after update event is not in the buffer');
+  // (i.iii) update after add
+  evt1.addEvent(upd2); // upd2 after add2
+  assertEqual(getEventsNum(evt1), 2, 'update after add event ignored');
+  assertTrue(hasEvt(evt1, add2), 'update after add event leave previous add event');
+  assertTrue(hasEvt(evt1, rem1), 'update after add does not change other events');
+});
+</script>
+</head>
+<body>
+<div id='unittest'></div>
+</body>
+</html>

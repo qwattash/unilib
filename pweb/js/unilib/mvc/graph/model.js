@@ -6,11 +6,16 @@
 
 /**
  * @todo
- * [FEAT] add flags to remove edges from both ends when keepEdges==false
- * [FEAT] make notifications be issued by user or library and not automatically by all functions? Or make a function to blind
- * 	an object or the model itself from sending notifications(i.e. RLock object) in order to avoid duplicate notifications?
- * 	better to revert back to not having getter/setters for all variables, make user/library functions notify changes ans in 
- * 	first implementation idea.
+ * [FEAT] add flags to Pin::removeEdge to remove edges from both ends when keepEdges==false
+ * [FEAT] add flag to Pin::clearConnections to remove edge from both ends of the connection
+ * [FEAT] check for cross-model inconsistencies (something in a model linked to something in another model)
+ * [REFACTORING] reduce possible errors in accessing the model from GraphElements by getModel.
+ * 	May decide to change visibility to GraphModel from parameter to internal instance in GraphElement
+ * so that it is always accessible no matter if the GraphElement is currently in the model or not.
+ * 	This will reduce error likelihood since removes:
+ * 	i) strict order dependency among certain function calls
+ * 	ii) (maybe) possibility to change model of an element while it is linked
+ * 			to elements from the model, resulting in a cross-model inconsistency
  */
 
 
@@ -43,49 +48,94 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	
 	// --------------------------- Notification Manager -----------------------
 	
-	/**
-	 * enumeration for NotificationManager status
-	 * @enum {number}
+	/* General rules followed when implementing the notification of changes;
+	 * event types are shown in round brackets.
+	 * i) after creation of an element the creator is responsible of notifying
+	 * 	the addition (ADD) and eventually a change in its internal state (UPDATE)
+	 * 	other than the addition of the object in the internal buffer
+	 * ii) after removal of an element the remover is responsible of notifying
+	 * 	the removal (REMOVE) of the element and the change in its internal state
+	 * 	(UPDATE) other than the removal of the object in the internal buffer; 
+	 * 	cascade operations MUST be notified.
+	 * iii) after the update of and element, the element updated is responsible of
+	 * 	notifying the change in its state (UPDATE)
 	 */
-	unilib.mvc.graph.NotificationManagerStatus = {
-			FREE: 1,
-			LOCKED: 0
-	};
 	
 	/**
-	 * helper class used to reserve access to notifications to a specific object
-	 * preventing others to send notifications
+	 * helper class used to merge notification requests in a unique event
+	 * to be sent to Observers
+	 * @class
 	 */
 	unilib.mvc.graph.NotificationManager = function() {
 		/**
-		 * specify if notifications are blocked or not
-		 * @type {unilib.mvc.graph.NotificationManagerStatus}
+		 * composite event used to regroup all received events
+		 * @type {unilib.interfaces.observer.CompositeObserverEvent}
 		 * @private
 		 */
-		this.status_ = unilib.mvc.graph.NotificationManagerStatus.FREE;
-		
+		this.compositeEvt_ = new unilib.interfaces.observer.CompositeObserverEvent();
 	};
 	
 	/**
-	 * lock the notification manager
+	 * add notification event to the buffer if same event is not present.
+	 * In addition conflicting events are resolved i.e. ADD + REMOVE of same
+	 * element results in a null modification, so the will not be in the final
+	 * notification.
+	 * @param {unilib.interfaces.observer.SimpleObserverEvent} evt
+	 * @throws {unilib.mvc.graph.GraphModelError}
 	 */
-	unilib.mvc.graph.NotificationManager.prototype.lock = function() {
-		this.status_ = unilib.mvc.graph.NotificationManagerStatus.LOCKED;
+	unilib.mvc.graph.NotificationManager.prototype.notify = function(evt) {
+		if (! (evt instanceof unilib.interfaces.observer.SimpleObserverEvent)) {
+			throw new unilib.mvc.graph.GraphModelError('Invalid ' + 
+					'NotificationManager::notify arguments');
+		}
+		this.compositeEvt_.addEvent(evt);
 	};
 	
 	/**
-	 * unlock the notification manager
+	 * flush event buffer, all stored notifications are lost
 	 */
-	unilib.mvc.graph.NotificationManager.prototype.free = function() {
-		this.status_ = unilib.mvc.graph.NotificationManagerStatus.FREE;
+	unilib.mvc.graph.NotificationManager.prototype.flush = function() {
+		this.compositeEvt_ = 
+			new unilib.interfaces.observer.CompositeObserverEvent();
 	};
 	
 	/**
-	 * check if notification manager is free
-	 * @returns {boolean}
+	 * return the unique notification event
+	 * @returns {unilib.interfaces.observer.CompositeObserverEvent}
 	 */
-	unilib.mvc.graph.NotificationManager.prototype.isFree = function() {
-		return this.status_ == unilib.mvc.graph.NotificationManagerStatus.FREE;
+	unilib.mvc.graph.NotificationManager.prototype.getCompositeEvent = 
+		function() {
+		return this.compositeEvt_;
+	};
+	
+	/**
+	 * notification helper for update events
+	 * @param {?object} source source of the event
+	 */
+	unilib.mvc.graph.NotificationManager.prototype.notifyUpdate = 
+		function(source) {
+			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
+					unilib.interfaces.observer.ObserverEventType.UPDATE, source));
+	};
+	
+	/**
+	 * notification helper for remove events
+	 * @param {?object} source source of the event
+	 */
+	unilib.mvc.graph.NotificationManager.prototype.notifyRemoval = 
+		function(source) {
+			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
+					unilib.interfaces.observer.ObserverEventType.REMOVE, source));
+	};
+	
+	/**
+	 * notification helper for add events
+	 * @param {?object} source source of the event
+	 */
+	unilib.mvc.graph.NotificationManager.prototype.notifyAddition = 
+		function(source) {
+			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
+					unilib.interfaces.observer.ObserverEventType.ADD, source));
 	};
 	
 	// ----------------------------- Graph Model --------------------------------
@@ -118,10 +168,31 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * create a node and add it to the graph
 	 * @returns {unilib.mvc.graph.Node}
 	 */
-	unilib.mvc.graph.GraphModel.prototype.addNode = function() {
+	unilib.mvc.graph.GraphModel.prototype.makeNode = function() {
 		var node = new unilib.mvc.graph.Node(this);
 		this.nodes_.push(node);
+		//the adder notifies the addition
+		if (this.notificationManager)
+			this.notificationManager.notifyAddition(node);
 		return node;
+	};
+	
+	/**
+	 * add given node to the graph
+	 * @param {unilib.mvc.graph.Node} node
+	 */
+	unilib.mvc.graph.GraphModel.prototype.addNode = function(node) {
+		if (! (node instanceof unilib.mvc.graph.Node)) { 
+			throw new unilib.mvc.graph.GraphModelError('Invalid node instance');
+		}
+		var index = this.nodes_.indexOf(node);
+		if (index == -1) {
+			this.nodes_.push(node);
+			//adder notify addition
+			this.notificationManager.notifyAddition(node);
+			if (node.getModel() != this) node.setModel(this);
+		}
+		//else node is already in the graph
 	};
 	
 	/**
@@ -137,16 +208,19 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		var index = this.nodes_.indexOf(node);
 		if (index != -1) {
 			this.nodes_.splice(index, 1);
+			//remover notify removal
+			this.notificationManager.notifyRemoval(node);
 			if (node.getModel() == this) {
-				//update node if needed
-				node.setModel(null);
+				//update node since node::model == this
 				for (var i = node.createIterator(); ! i.end(); i.next()) {
-					var pin = i.item();
-					for (var j = pin.createIterator(); ! j.end(); j.next()) {
-						//iterate all edges connected to the node and unlink them
-						pin.unlink(j.item());
-					}
+					node.removePin(i.item(), false);
 				}
+				/*
+				 * WARNING: it is crucial to issue a setModel(null) AFTER having 
+				 * removed the pins, otherwise the node will not be able to
+				 * send notifications to the model
+				 */
+				node.setModel(null);
 			}
 		}
 		else {
@@ -174,8 +248,30 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * @returns {unilib.interfaces.iterator.Iterator}
 	 */
 	unilib.mvc.graph.GraphModel.prototype.createIterator = function() {
-		return new unilib.interfaces.iterator.ArrayIterator(unilib.copyObject(this.nodes_));
+		//note that copyObject make a shallow copy
+		return new unilib.interfaces.iterator.ArrayIterator(
+				unilib.copyObject(this.nodes_));
 	};
+	
+	/**
+	 * override Observable::notify to check notificationManager status
+	 * @see {unilib.interfaces.observer.Observable#notify}
+	 */
+	unilib.mvc.graph.GraphModel.prototype.notify = function(evt) {
+		//evt passed is ignored since what has to be notified is found in the
+		//notification manager
+		if (this.notificationManager) {
+			var composite = this.notificationManager.getCompositeEvent();
+			this.notificationManager.flush();
+			//superclass implementation
+			unilib.interfaces.observer.Observable.prototype.notify.apply(this,
+					[composite]);
+		}
+		else {
+			throw new unilib.mvc.graph.GraphModelError('Missing ' +
+					'notification manager');
+		}
+	}
 	
 	//----------------------------------- GraphElement -------------------------
 	
@@ -232,7 +328,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setLabel = function(label) {
 		this.label_ = label;
-		this.notifyUpdate_();
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -249,7 +345,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setID = function(id) {
 		this.id_ = id;
-		this.notifyUpdate_();
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -266,7 +362,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setPosition = function(point) {
 		this.position_ = point;
-		this.notifyUpdate_();
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -284,7 +380,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setShape = function(shape) {
 		this.shape_ = shape;
-		this.notifyUpdate_();
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -301,7 +397,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setStyleID = function(id) {
 		this.styleID_ = id;
-		this.notifyUpdate_();
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -323,41 +419,35 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	
 	/**
 	 * notification helper for update events
+	 * @param {unilib.mvc.graph.GraphElement} src source of the event
 	 * @private
-	 * @throws {unilib.mvc.graph.GraphModelError}
 	 */
-	unilib.mvc.graph.GraphElement.prototype.notifyUpdate_ = function() {
+	unilib.mvc.graph.GraphElement.prototype.notifyUpdate_ = function(src) {
 		var model = this.getModel();
-		if (model) {
-			model.notify(new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.UPDATE, this));
-		}
+		if (model && model.notificationManager) 
+			model.notificationManager.notifyUpdate(src);
 	};
 	
 	/**
 	 * notification helper for remove events
+	 * @param {unilib.mvc.graph.GraphElement} src source of the event
 	 * @private
-	 * @throws {unilib.mvc.graph.GraphModelError}
 	 */
-	unilib.mvc.graph.GraphElement.prototype.notifyRemoval_ = function() {
+	unilib.mvc.graph.GraphElement.prototype.notifyRemoval_ = function(src) {
 		var model = this.getModel();
-		if (model) {
-			model.notify(new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.REMOVE, this));
-		}
+		if (model && model.notificationManager) 
+			model.notificationManager.notifyRemoval(src);
 	};
 	
 	/**
 	 * notification helper for add events
+	 * @param {unilib.mvc.graph.GraphElement} src source of the event
 	 * @private
-	 * @throws {unilib.mvc.graph.GraphModelError}
 	 */
-	unilib.mvc.graph.GraphElement.prototype.notifyAddition_ = function() {
+	unilib.mvc.graph.GraphElement.prototype.notifyAddition_ = function(src) {
 		var model = this.getModel();
-		if (model) {
-			model.notify(new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.ADD, this));
-		}
+		if (model && model.notificationManager) 
+			model.notificationManager.notifyAddition(src);
 	};
 	
 	// --------------------------------- Node -----------------------------------
@@ -365,7 +455,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	/**
 	 * Node class represents a node of the graph, it provides some drawing
 	 * informations and a number of Pins that are used to group Edges.
-	 * @private
 	 * @class
 	 * @extends {unilib.mvc.graph.GraphElement}
 	 * @param {unilib.mvc.graph.GraphModel} model model that created the node
@@ -389,9 +478,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 * @private
 		 */
 		this.pins_ = [];
-		
-		//notify node addition
-		this.notifyAddition_();
 	};
 	unilib.mvc.graph.Node.prototype = new unilib.mvc.graph.GraphElement();
 	
@@ -419,16 +505,13 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		//but just passes from null to a model or from a model to null.
 		if (oldModel) {
 			if (oldModel.hasNode(this)) oldModel.removeNode(this);
-			//notify removal to old model
-			var evt = new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.REMOVE, this);
-			oldModel.notify(evt);
+			//notify removal to old model is done by removeNode since 
+			//the model is the remover
 		}
-		if (model) {
-			//notify addition to new model
-			var evt = new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.ADD, this);
-			model.notify(evt);
+		if (model && ! model.hasNode(this)) {
+			model.addNode(this);
+			//addition to new model is notified by model since it is the
+			//adder that has to notify
 		}
 	};
 	
@@ -442,6 +525,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	unilib.mvc.graph.Node.prototype.makePin = function(direction) {
 			var pin = new unilib.mvc.graph.Pin(this, direction);
 			this.pins_.push(pin);
+			//adder notify addition
+			this.notifyAddition_(pin);
 			return pin;
 	};
 	
@@ -457,6 +542,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		}
 		if (this.pins_.indexOf(pin) == -1) {
 			this.pins_.push(pin);
+			this.notifyAddition_(pin);
 			if (pin.getOwner() != this) pin.setOwner(this);
 		}
 	};
@@ -493,13 +579,19 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		var index = this.pins_.indexOf(pin);
 		if (index != -1) {
 			this.pins_.splice(index, 1);
+			//remover notify removal
+			this.notifyRemoval_(pin);
 			//unlink pin from all edges and set pin model to null
-			pin.setOwner(null);
 			if (! keepEdges) {
 				for (i = pin.createIterator(); ! i.end(); i.next()) {
 					pin.unlink(i.item());
 				}
 			}
+			/*
+			 * WARNING setOwner(null) MUST be issued AFTER unlinking
+			 * otherwise the pin will non be able to notify to model
+			 */
+			pin.setOwner(null);
 		}
 	};
 	
@@ -570,9 +662,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 * @private
 		 */
 		this.owner_ = owner;
-		
-		//notify addition
-		this.notifyAddition_();
 	};
 	unilib.mvc.graph.Pin.prototype = new unilib.mvc.graph.GraphElement();
 	
@@ -633,17 +722,11 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		if (oldOwner) {
 			//remove pin from old node
 			if (oldOwner.hasPin(this)) oldOwner.removePin(this);
-			var evt = new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.REMOVE, this);
-			var oldModel = oldOwner.getModel();
-			if (oldModel) oldModel.notify(evt);
+			//old owner will notify the removal as it is the remover
 		}
 		if (node) {
 			if (! node.hasPin(this)) node.addPin(this);
-			var evt = new unilib.interfaces.observer.ObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.ADD, this);
-			var model = node.getModel();
-			if (model) model.notify(evt);
+			//node will notify the addition as it is the adder
 		}
 	};
 	
@@ -654,6 +737,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.Pin.prototype.setDirection = function(direction) {
 		this.direction_ = direction;
+		this.notifyUpdate_(this);
 	};
 	
 	/**
@@ -687,6 +771,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			}
 		}
 		var edge = new unilib.mvc.graph.Edge();
+		//this.notifyAddition_(edge); not needed, link function does that
 		this.link(edge);
 		pin.link(edge);
 		return edge;
@@ -697,7 +782,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * @param {unilib.mvc.graph.Pin} pin pin to be unlinked
 	 * @throws {unilib.mvc.graph.GraphModelError}
 	 * @todo {FEATURE} add flag (preserveEdge) to give possibility to remove 
-	 * edges from model instead of leaving them pending from other pins 
+	 * edges from model instead of leaving them pending from other pins
 	 */
 	unilib.mvc.graph.Pin.prototype.clearConnections = function(pin) {
 		if (! pin || ! pin instanceof unilib.mvc.graph.Pin) {
@@ -708,10 +793,9 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			/* keep in mind that unlink uses a splice() that each time shortens 
 			 * the array.
 			 */
-			while (this.edges_[0]) {
-				if (this.edges_[0].getStartPin() == pin || 
-						this.edges_[0].getEndPin() == pin) {
-					this.unlink(this.edges_[0]);
+			for (var i = this.createIterator(); ! i.end(); i.next()) {
+				if (i.item().linksTo(pin)) {
+					this.unlink(i.item());
 				}
 			}
 		}
@@ -826,7 +910,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		}
 	};
 	
-	
 	/**
 	 * Adds an Edge to this Pin. This function can be used to register in the pin
 	 * an already setup edge (that have a reference to this pin in it), to move
@@ -843,6 +926,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		if (! (edge instanceof unilib.mvc.graph.Edge)) {
 			throw new unilib.mvc.graph.GraphModelError('Invalid Edge');
 		}
+		//notification of addition or update of the edge is done by the edge
 		//in case of undirected graph
 		if (this.direction_ == unilib.mvc.graph.PinDirection.UNKNOWN) {
 			this.undirectedLink_(edge, position);
@@ -866,7 +950,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		}
 		var removed = this.removeEdge_(edge);
 		if (removed) {
-			//note that removal can not lead to inconsistency
+			//removal or update of the edge is notified by setEndPin or setStartPin
+			//note that removal can not lead to inconsistency (see Pin::link)
 			if (edge.getEndPin() == this) {
 				edge.setEndPin(null);
 			}
@@ -898,6 +983,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Cannot move an edge not ' +
 					'linked to this Pin');
 		}
+		console.log('mv');
 		var start = (this == edge.getStartPin()) ? dst : edge.getStartPin();
 		var end = (this == edge.getEndPin()) ? dst : edge.getEndPin();
 		if (edge.canLink(start, end)) {
@@ -1000,8 +1086,27 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Invalid Pin');
 		}
 		if (this.canLink(pin, this.end_)) {
+			//notification must be done before assignment of the pin, since
+			//the model is reachable only before removing the Edge
+			if (this.start_ != null && this.end_ == null && pin == null) {
+				//edge removed from model
+				this.notifyRemoval_(this);
+			}
+			else if ((this.start_ != null || this.end_ != null) && 
+								(pin != null || this.end_ != null)) {
+				//edge changed start pin
+				this.notifyUpdate_(this);
+			}
+			//proceed with assignment
 			var old = this.start_;
 			this.start_ = pin;
+			//notification of the addition must be done after assignment since
+			//the model is not reachable before.
+			if (old == null && this.end_ == null && pin != null) {
+				//edge added to the model
+				this.notifyAddition_(this);
+			}
+			//update connected nodes
 			this.updatePin_(pin);
 			this.updatePin_(old);
 		}
@@ -1029,8 +1134,27 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Invalid Pin');
 		}
 		if (this.canLink(this.start_, pin)) {
+			//notification must be done before assignment of the pin, since
+			//the model is reachable only before removing the Edge
+			if (this.end_ != null && this.start_ == null && pin == null) {
+				//edge removed from model
+				this.notifyRemoval_(this);
+			}
+			else if ((this.end_ != null || this.start_ != null) && 
+					(pin != null || this.start_ != null)) {
+				//edge changed start pin
+				this.notifyUpdate_(this);
+			}
+			//proceed with assignment
 			var old = this.end_;
 			this.end_ = pin;
+			//notification of the addition must be done after assignment since
+			//the model is not reachable before.
+			if (old == null && this.start_ == null && pin != null) {
+				//edge added to the model
+				this.notifyAddition_(this);
+			}
+			//update connected nodes
 			this.updatePin_(pin);
 			this.updatePin_(old);
 		}
@@ -1108,10 +1232,10 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * @see {unilib.mvc.graph.GraphElement#getModel}
 	 */
 	unilib.mvc.graph.Edge.prototype.getModel = function() {
-		if (this.start_) {
+		if (this.start_ && this.start_.getModel()) {
 			return this.start_.getModel();
 		}
-		else if (this.end_) {
+		else if (this.end_ && this.end_.getModel()) {
 			return this.end_.getModel();
 		}
 		else {
