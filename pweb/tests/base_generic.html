@@ -111,6 +111,38 @@
       cloneB['e']['f'] = 'modified';
       assertEqual(objB['e']['f'], 'modified', 'modification on copy for nested object not hidden');
     });
+    test('unilib::inherit', function(){
+      var A = function() {
+        this.a = 'class A';
+      };
+      var B = function() {
+        this.b = 'class B';
+      };
+      unilib.inherit(A, new B());
+      var c = new A();
+      assertEqual(c.a, 'class A', 'A constructor called');
+      assertEqual(c.b, 'class B', 'superclass inherited');
+      assertFalse(c instanceof B, 'break instanceof operator');
+      var X = function() {
+        this.x = 1;
+      };
+      X.prototype.getX = function() {
+        return this.x;
+      };
+      var Y = function() {
+        this.y = 2;
+      };
+      var Z = function() {
+        X.call(this);
+        Y.call(this);
+        this.x = this.x + this.y;
+      };
+      unilib.inherit(Z, Y.prototype, X.prototype);
+      var z = new Z();
+      assertEqual(z.x, 3, 'super constructor called ok');
+      assertEqual(z.y, 2, 'data inherited ok');
+      assertEqual(z.getX(), 3, 'functions inherited ok');
+    });
 </script>
 </head>
 <body>

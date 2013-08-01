@@ -120,6 +120,22 @@ unilib.copyObject = function(source, clone) {
   return clone;
 };
 
+/**
+ * merge 2 objects, in case of conflicting properties leave the value from
+ * first param
+ * @param {object} obj1
+ * @param {object} obj2
+ * @returns {object} merged object
+ */
+unilib.mergeObjects = function(obj1, obj2) {
+	var dst = unilib.copyObject(obj1);
+	for (prop in obj2) {
+		if (obj2.hasOwnProperty(prop) && !obj1.hasOwnProperty(prop))
+			dst[prop] = obj2[prop];
+	}
+	return dst;
+};
+
 /*
  * Event helpers
  */
@@ -183,7 +199,7 @@ unilib.createCallback = function(object, method, args) {
 
 /**
  * helper class that handle multiple callbacks of the same type on an element
- * @constructor
+ * @class
  * @param {Object=} element DOM element to register to
  * @param {string=} type callback type to handle, 
  * 	MUST be given if element is specified
@@ -870,4 +886,21 @@ unilib.provideNamespace = function(name, init, deps, inline) {
  */
 unilib.include = function(path, base) {
   unilib.dependencyManager.include(path, base);
+};
+
+
+/**
+ * Better class simulation with multiple inheritance.
+ * WARNING this breaks instanceof checks, so they should never be used
+ * @param {function} child child constructor
+ * @param {...object} parents instances of parents of the class to 
+ * 	be used as prototypes
+ */
+unilib.inherit = function(child, parents) {
+	var proto = {};
+	for (var i = 1; i < arguments.length; i++) {
+		proto = unilib.mergeObjects(proto, arguments[i]);
+	}
+	child.prototype = proto;
+	child.prototype.constructor = child;
 };
