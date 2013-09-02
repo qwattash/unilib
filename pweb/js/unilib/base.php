@@ -20,10 +20,10 @@
  header('Content-Type: application/x-javascript');
 ?>
 
-/*
+/**
  * @todo:
- * provide support for lazy loading
- * remove deprecated parts and move CallbackGroup & CallbackGroupManager
+ * [FEAT] provide support for lazy loading
+ * [REFACTOR] remove deprecated parts and move CallbackGroup & CallbackGroupManager
  */
 
 /*
@@ -81,22 +81,27 @@ unilib.config = {
  * Same requirements must be fulfilled by nested objects.
  * In other cases the copy must be done manually.
  * @param {Object} source source object
- * @param {Object=} clone clone object where the copy of the 
+ * @param {Object} [clone] clone object where the copy of the 
  * 	source will be done
+ * @param {Array.<string>} [skip] array of properties to skip
  * @returns {Object}
  */
-unilib.cloneObject = function(source, clone) {
-  clone = clone || new source.constructor();
-  for (property in source) {
-  	if (source.hasOwnProperty(property)) {
-  		if (typeof source[property] != 'object' ) {
-  			clone[property] = source[property];
-  		}
-  		else {
-  			clone[property] = unilib.cloneObject(source[property]);
-  		}
-  	}
-  }
+unilib.cloneObject = function(source, clone, skip) {
+	//if (source == null) return null;
+	if (clone == undefined) clone = new source.constructor();
+	for (property in source) {
+		if (skip && skip.indexOf(property) != -1) continue;
+		if (typeof source[property] == 'object' && source[property] != null) {
+			//console.log(typeof source[property] + ':' + property + '->' + source[property]);
+			clone[property] = unilib.cloneObject(source[property]);
+		}
+		else if ((clone instanceof Array && 
+				typeof source[property] == 'function') || 
+				typeof source[property] != 'function') {
+			//console.log(typeof source[property] + ':' + property + '->' + source[property]);
+			clone[property] = source[property];
+		}
+	}
   return clone;
 };
 
@@ -108,11 +113,13 @@ unilib.cloneObject = function(source, clone) {
  * @param {Object} source source object
  * @param {Object=} clone clone object where the copy of the 
  * 	source will be done
+ * @param {Array.<string>} [skip] array of properties to skip
  * @returns {Object}
  */
-unilib.copyObject = function(source, clone) {
+unilib.copyObject = function(source, clone, skip) {
 	clone = clone || new source.constructor();
   for (property in source) {
+  	if (skip && skip.indexOf(property) != -1) continue;
   	if (source.hasOwnProperty(property)) {
   			clone[property] = source[property];
   	}
@@ -134,6 +141,22 @@ unilib.mergeObjects = function(obj1, obj2) {
 			dst[prop] = obj2[prop];
 	}
 	return dst;
+};
+
+/**
+ * get computed style of an element cross Browser
+ * @param {DOMElement} elem
+ * @returns {CSSStyleDeclaration}
+ */
+unilib.getComputedStyle = function(elem) {
+	var style;
+	try {
+		style = window.getComputedStyle(elem);
+	}
+	catch(e) {
+		style = elem.currentStyle;
+	}
+	return style;
 };
 
 /*
@@ -191,10 +214,16 @@ unilib.removeEventListener = function(element, eventType, listener) {
  * @param {?Array} args parameters of the method as passed to method.apply() 
  */
 unilib.createCallback = function(object, method, args) {
-	return function() {
-		if (!args) args = arguments;
-		method.apply(object, args || arguments);
-	};
+	if (!args) {
+		return function() {
+			method.apply(object, arguments);
+		}
+	}
+	else {
+		return function() {
+			method.apply(object, args);
+		}
+	}
 };
 
 /**

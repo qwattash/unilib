@@ -5,6 +5,23 @@ div#unittest {
 	padding: 2px;
 }
 
+/* container for generic test output usage*/
+div.test-output-container-small {
+  border: 1px dashed #555555;
+  width: 65%;
+  height: 100px;
+  margin: auto;
+  overflow: scroll;
+}
+
+div.test-output-container-big {
+  border: 1px dashed #555555;
+  width: 65%;
+  height: 300px;
+  margin: auto;
+  overflow: scroll;
+}
+
 /* main test container test*/
 div.test-container {
 	border: 1px dashed #555555;

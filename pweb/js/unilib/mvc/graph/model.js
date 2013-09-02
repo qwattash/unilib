@@ -16,6 +16,9 @@
  * 	i) strict order dependency among certain function calls
  * 	ii) (maybe) possibility to change model of an element while it is linked
  * 			to elements from the model, resulting in a cross-model inconsistency
+ * [REFACTORING] remove ID from graphElement.
+ * [REFACTORING] add type to GraphElement and GraphElementType enumeration.
+ * [REFACTORING] add text field to BaseGraphElementData
  */
 
 
@@ -31,10 +34,11 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * @param {string} message
 	 */
 	unilib.mvc.graph.GraphModelError = function(message) {
-		message = 'GraphModelError: ' + message;
+		message = 'GraphModelError > ' + message;
 		unilib.error.UnilibError.apply(this, [message]);
 	};
-	unilib.mvc.graph.GraphModelError.prototype = new unilib.error.UnilibError();
+	unilib.inherit(unilib.mvc.graph.GraphModelError,
+			unilib.error.UnilibError.prototype);
 	
 	/**
 	 * enumeration for pin directions, i.e. output, input, etc.
@@ -68,11 +72,121 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.NotificationManager = function() {
 		/**
-		 * composite event used to regroup all received events
-		 * @type {unilib.interfaces.observer.CompositeObserverEvent}
+		 * event list used to regroup all received events
+		 * @type {Array.<unilib.mvc.model.ModelEvent>}
 		 * @private
 		 */
-		this.compositeEvt_ = new unilib.interfaces.observer.CompositeObserverEvent();
+		this.eventList_ = [];
+	};
+	
+	/**
+	 * handle notification conflicts among notifications.
+	 * Conflicting notifications:
+	 * <ul>
+	 * <li>
+	 * i) occur only with notifications with same source
+	 * </li>
+	 * <li>
+	 * i.i) REMOVE notification deletes all other notifications from
+	 * 	that object since ADD or UPDATES are rendered useless by the removal but
+	 * 	REMOVE event is added to the buffer.
+	 * </li>
+	 * <li>
+	 * i.ii) ADD after a REMOVE is changed to an UPDATE since some changes may
+	 * 	have been made while the element was removed
+	 * </li>
+	 * <li>
+	 * i.iii) UPDATE after an ADD is ignored since the ADD event is supposed to
+	 * 	cause a full read of the state of the element added
+	 * </li>
+	 * <li>
+	 * i.iv) UPDATE after a REMOVE is illegal, causes exception
+	 * </li>
+	 * <li>
+	 * i.v) ADD after an UPDATE is illegal, causes exception
+	 * </li>
+	 * <li>
+	 * i.vi) in case of same event present in buffer evt is ignored
+	 * </li>
+	 * <li>
+	 * ii) due to this handling only a resulting event is kept in the buffer
+	 * 	for each source
+	 * </li>
+	 * <ul>
+	 * @param {unilib.mvc.model.ModelEvent} evt
+	 * @returns {boolean} true if the evt passed should be added to the buffer
+	 * @private
+	 */
+	unilib.mvc.graph.NotificationManager.prototype.handleConflicts_ = 
+		function(evt) {
+		var i = 0;
+		var keepEvt = true; //tells if evt should be added to the buffer
+		while (i < this.eventList_.length) {
+			/* (see other notes on break below)
+			 * note: for reason (ii) after having found a match the cycle breaks
+			 * since no other event can be in the buffer with the same source.
+			 */
+			// if (i) is true: check for conflicts
+			if (this.eventList_[i].getTarget() == evt.getTarget()) {
+				switch (evt.getEventType()) {
+				//if (i.vi)
+				case this.eventList_[i].getEventType():
+				  //same event is already in the buffer, ignore
+					keepEvt = false;
+					break;
+				//if (i.i) REMOVE
+				case unilib.mvc.model.ModelEventType.REMOVE:
+					//remove events from notifications buffer
+					this.eventList_.splice(i, 1);
+					break;
+				//if (i.ii) || (i.v) ADD after REMOVE or UPDATE
+				case unilib.mvc.model.ModelEventType.ADD:
+					switch (this.eventList_[i].getEventType()) {
+					//if (i.ii) ADD after REMOVE
+					case unilib.mvc.model.ModelEventType.REMOVE:
+						//change to UPDATE
+						this.eventList_[i] = new unilib.mvc.model.ModelEvent(
+								unilib.mvc.model.ModelEventType.UPDATE,
+								this.eventList_[i].getTarget()); 
+						//note that this UPDATE event can not be duplicate in the buffer
+						//because of (i.i) and (i.iv)
+						keepEvt = false;
+						break;
+					//if (i.v) ADD after UPDATE
+					case unilib.mvc.model.ModelEventType.UPDATE:
+						//illegal
+						throw new unilib.mvc.graph.GraphModelError('Illegal event found:' +
+								' ADD after UPDATE');
+						break; //useless but included for readability
+					}
+					break;
+				//if (i.iii) || (i.iv) UPDATE after ADD or REMOVE
+				case unilib.mvc.model.ModelEventType.UPDATE:
+					switch (this.eventList_[i].getEventType()) {
+					//if (i.iii) UPDATE after ADD
+					case unilib.mvc.model.ModelEventType.ADD:
+						//ignore
+						keepEvt = false;
+						break;
+					//if (i.iv) UPDATE after REMOVE
+					case unilib.mvc.model.ModelEventType.REMOVE:
+						//illegal
+						throw new unilib.mvc.graph.GraphModelError('Illegal event: ' + 
+								'UPDATE after REMOVE');
+						break; //useless  but included for readability
+					}
+					break; //useless  but included for readability
+				}
+			/* break while cycle since it has been found a correspondence in
+			 * the event buffer.
+			 * For reason (ii) after having found a match the cycle breaks
+			 * since no other event can be in the buffer with the same source.
+			 */
+			break; 
+			}
+			i++;
+		}
+		return keepEvt;
 	};
 	
 	/**
@@ -80,42 +194,43 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * In addition conflicting events are resolved i.e. ADD + REMOVE of same
 	 * element results in a null modification, so the will not be in the final
 	 * notification.
-	 * @param {unilib.interfaces.observer.SimpleObserverEvent} evt
-	 * @throws {unilib.mvc.graph.GraphModelError}
+	 * @param {!unilib.mvc.model.ModelEvent} evt
 	 */
 	unilib.mvc.graph.NotificationManager.prototype.notify = function(evt) {
-		if (! (evt instanceof unilib.interfaces.observer.SimpleObserverEvent)) {
+		if (! evt) {
 			throw new unilib.mvc.graph.GraphModelError('Invalid ' + 
 					'NotificationManager::notify arguments');
 		}
-		this.compositeEvt_.addEvent(evt);
+		var addEvt = this.handleConflicts_(evt);
+		if (addEvt) this.eventList_.push(evt);
 	};
 	
 	/**
 	 * flush event buffer, all stored notifications are lost
 	 */
 	unilib.mvc.graph.NotificationManager.prototype.flush = function() {
-		this.compositeEvt_ = 
-			new unilib.interfaces.observer.CompositeObserverEvent();
+		this.eventList_ = [];
 	};
 	
 	/**
 	 * return the unique notification event
-	 * @returns {unilib.interfaces.observer.CompositeObserverEvent}
+	 * @param {unilib.interfaces.observer.Observer} observer
 	 */
-	unilib.mvc.graph.NotificationManager.prototype.getCompositeEvent = 
-		function() {
-		return this.compositeEvt_;
+	unilib.mvc.graph.NotificationManager.prototype.notifyTo = 
+		function(observer) {
+		for (var i = 0; i < this.eventList_.length; i++) {
+			observer.update(this.eventList_[i]);
+		}
 	};
 	
 	/**
 	 * notification helper for update events
-	 * @param {?object} source source of the event
+	 * @param {unilib.mvc.graph.GraphElement} source source of the event
 	 */
 	unilib.mvc.graph.NotificationManager.prototype.notifyUpdate = 
 		function(source) {
-			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.UPDATE, source));
+			this.notify(new unilib.mvc.model.ModelEvent(
+					unilib.mvc.model.ModelEventType.UPDATE, source));
 	};
 	
 	/**
@@ -124,8 +239,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.NotificationManager.prototype.notifyRemoval = 
 		function(source) {
-			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.REMOVE, source));
+			this.notify(new unilib.mvc.model.ModelEvent(
+					unilib.mvc.model.ModelEventType.REMOVE, source));
 	};
 	
 	/**
@@ -134,8 +249,43 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 */
 	unilib.mvc.graph.NotificationManager.prototype.notifyAddition = 
 		function(source) {
-			this.notify(new unilib.interfaces.observer.SimpleObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.ADD, source));
+			this.notify(new unilib.mvc.model.ModelEvent(
+					unilib.mvc.model.ModelEventType.ADD, source));
+	};
+	
+	// ----------------------------- Graph Element Data -------------------------
+	
+	/**
+	 * basic data needed for the position, shape and resize of elements of 
+	 * the graph
+	 * @class
+	 * @extends {unilib.interfaces.clonable.IClonable}
+	 */
+	unilib.mvc.graph.BaseGraphElementData = function() {
+		
+		/**
+		 * positioning of the element
+		 * @type {unilib.geometry.Point3D}
+		 * @public
+		 */
+		this.position = new unilib.geometry.Point3D(0, 0, 0);
+		
+		/**
+		 * array of points used to create the shape of the element using
+		 * some rule
+		 * @type {Array.<unilib.geometry.Point}
+		 * @public
+		 */
+		this.points = [];
+	};
+	unilib.inherit(unilib.mvc.graph.BaseGraphElementData, 
+			unilib.interfaces.clonable.IClonable.prototype);
+	
+	/**
+	 * @see {unilib.interfaces.clonable.IClonable#clone}
+	 */
+	unilib.mvc.graph.BaseGraphElementData.prototype.clone = function() {
+		return unilib.cloneObject(this);
 	};
 	
 	// ----------------------------- Graph Model --------------------------------
@@ -148,6 +298,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * 	for checking the consistency of the graph
 	 */
 	unilib.mvc.graph.GraphModel = function() {
+		unilib.interfaces.observer.Observable.call(this);
 		/**
 		 * nodes array
 		 * @type {Array.<unilib.mvc.graph.Node>}
@@ -156,13 +307,15 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		this.nodes_ = [];
 		
 		/**
-		 * notification manager, used by GraphElements to handle cascade notifications
+		 * notification manager, used by GraphElements to handle cascade 
+		 * 	notifications
 		 * @type {unilib.mvc.graph.NotificationManager}
 		 * @public
 		 */
 		this.notificationManager = new unilib.mvc.graph.NotificationManager();
 	};
-	unilib.mvc.graph.GraphModel.prototype = new unilib.interfaces.observer.Observable();
+	unilib.inherit(unilib.mvc.graph.GraphModel,
+			unilib.interfaces.observer.Observable.prototype);
 	
 	/**
 	 * create a node and add it to the graph
@@ -261,11 +414,10 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		//evt passed is ignored since what has to be notified is found in the
 		//notification manager
 		if (this.notificationManager) {
-			var composite = this.notificationManager.getCompositeEvent();
+			for (var i = 0; i < this.observers_.length; i++) {
+				this.notificationManager.notifyTo(this.observers_[i]);
+			}
 			this.notificationManager.flush();
-			//superclass implementation
-			unilib.interfaces.observer.Observable.prototype.notify.apply(this,
-					[composite]);
 		}
 		else {
 			throw new unilib.mvc.graph.GraphModelError('Missing ' +
@@ -281,35 +433,11 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * notification interface that is used to implement the observer pattern
 	 * in the model.
 	 * @private
-	 * @extends {unilib.graphics.IDrawableDescriptor}
+	 * @extends {unilib.graphics.IDrawableProvider}
 	 * @abstract
 	 * @class
 	 */
 	unilib.mvc.graph.GraphElement = function() {
-		
-		/** position of the element
-		 * @type {unilib.geometry.Point}
-		 * @protected
-		 */
-		this.position_ = new unilib.geometry.Point(0, 0);
-		
-		/** shape informations
-		 * @type {unilib.geometry.Shape}
-		 * @protected
-		 */
-		this.shape_ = null;
-		
-		/** style assigned
-		 * @type {string | number}
-		 * @protected
-		 */
-		this.styleID_ = null;
-		
-		/** text associated with the drawable
-		 * @type {string}
-		 * @protected
-		 */
-		this.label_ = '';
 		
 		/**
 		 * ID of the descriptor, useful for distinguishing elements
@@ -318,30 +446,17 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 * @protected
 		 */
 		this.id_;
-	};
-	unilib.mvc.graph.GraphElement.prototype = 
-		new unilib.graphics.IDrawableDescriptor();
-	
-	/**
-	 * setter for element's label
-	 * @param {string} label
-	 */
-	unilib.mvc.graph.GraphElement.prototype.setLabel = function(label) {
-		this.label_ = label;
-		this.notifyUpdate_(this);
+		
+		/**
+		 * data object that can be used to customise graph informations
+		 * @type {unilib.interfaces.clonable.IClonable}
+		 * @protected
+		 */
+		this.data_ = new unilib.mvc.graph.BaseGraphElementData();
 	};
 	
 	/**
-	 * getter for element's label
-	 * @returns {string}
-	 */
-	unilib.mvc.graph.GraphElement.prototype.getLabel = function() {
-		return new String(this.label_);
-	};
-	
-	/**
-	 * setter for id
-	 * @param {string | number} id
+	 * @see {unilib.interfaces.graphics.IDrawableProvider#setID}
 	 */
 	unilib.mvc.graph.GraphElement.prototype.setID = function(id) {
 		this.id_ = id;
@@ -349,63 +464,27 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	};
 	
 	/**
-	 * getter for id
-	 * @returns {number | string}
+	 * @see {unilib.interfaces.graphics.IDrawableProvider#getID}
 	 */
 	unilib.mvc.graph.GraphElement.prototype.getID = function() {
 		return this.id_;
 	};
 	
 	/**
-	 * setter for position
-	 * @param {unilib.geometry.Point} point
+	 * set custom data for the element
+	 * @param {unilib.interfaces.clonable.IClonable} data data to be set
 	 */
-	unilib.mvc.graph.GraphElement.prototype.setPosition = function(point) {
-		this.position_ = point;
+	unilib.mvc.graph.GraphElement.prototype.setData = function(data) {
+		this.data_ = data.clone();
 		this.notifyUpdate_(this);
 	};
 	
 	/**
-	 * getter for position
-	 * @returns {unilib.geometry.Point}
+	 * get custom data for the element
+	 * @returns {unilib.interfaces.clonable.IClonable} the custom data
 	 */
-	unilib.mvc.graph.GraphElement.prototype.getPosition = function() {
-		//protect private var from not notified modifications 
-		return unilib.cloneObject(this.position_);
-	};
-	
-	/**
-	 * setter for shape
-	 * @param {unilib.geometry.Shape} shape
-	 */
-	unilib.mvc.graph.GraphElement.prototype.setShape = function(shape) {
-		this.shape_ = shape;
-		this.notifyUpdate_(this);
-	};
-	
-	/**
-	 * getter for shape
-	 * @returns {unilib.geometry.Shape}
-	 */
-	unilib.mvc.graph.GraphElement.prototype.getShape = function() {
-		return unilib.cloneObject(this.shape_);
-	};
-	
-	/**
-	 * setter for style ID
-	 * @param {string | number} id
-	 */
-	unilib.mvc.graph.GraphElement.prototype.setStyleID = function(id) {
-		this.styleID_ = id;
-		this.notifyUpdate_(this);
-	};
-	
-	/**
-	 * getter for style ID
-	 * @returns {string | number}
-	 */
-	unilib.mvc.graph.GraphElement.prototype.getStyleID = function() {
-		return this.styleID_;
+	unilib.mvc.graph.GraphElement.prototype.getData = function() {
+		return this.data_.clone();
 	};
 	
 	/**
@@ -465,7 +544,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Invalid Node ' + 
 					'constructor arguments');
 		}
-		
+		unilib.mvc.graph.GraphElement.call(this);
 		/**
 		 * @see unilib.mvc.graph.GraphElement
 		 * @private
@@ -479,7 +558,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 */
 		this.pins_ = [];
 	};
-	unilib.mvc.graph.Node.prototype = new unilib.mvc.graph.GraphElement();
+	unilib.inherit(unilib.mvc.graph.Node, 
+			unilib.mvc.graph.GraphElement.prototype);
 	
 	/**
 	 * getter returns the model
@@ -643,6 +723,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Invalid Pin ' + 
 					'constructor arguments');
 		}
+		unilib.mvc.graph.GraphElement.call(this);
 		/**
 		 * Edges attached to this pin
 		 * @type {Array.<unilib.mvc.graph.Pin>}
@@ -663,7 +744,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 */
 		this.owner_ = owner;
 	};
-	unilib.mvc.graph.Pin.prototype = new unilib.mvc.graph.GraphElement();
+	unilib.inherit(unilib.mvc.graph.Pin,
+			unilib.mvc.graph.GraphElement.prototype);
 	
 	/**
 	 * helper for adding an edge
@@ -983,7 +1065,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 			throw new unilib.mvc.graph.GraphModelError('Cannot move an edge not ' +
 					'linked to this Pin');
 		}
-		console.log('mv');
 		var start = (this == edge.getStartPin()) ? dst : edge.getStartPin();
 		var end = (this == edge.getEndPin()) ? dst : edge.getEndPin();
 		if (edge.canLink(start, end)) {
@@ -1036,6 +1117,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	 * @class
 	 */
 	unilib.mvc.graph.Edge = function(start, end) {
+		unilib.mvc.graph.GraphElement.call(this);
 		/**
 		 * start Pin
 		 * @type {?unilib.mvc.graph.Pin}
@@ -1050,7 +1132,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 */
 		this.end_ = end || null;
 	};
-	unilib.mvc.graph.Edge.prototype = new unilib.mvc.graph.GraphElement();
+	unilib.inherit(unilib.mvc.graph.Edge, 
+			unilib.mvc.graph.GraphElement.prototype);
 	
 	/**
 	 * get start Pin of this Edge
@@ -1244,5 +1327,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	};
 	
 }, ['unilib/error.js', 'unilib/interface/observer.js', 
-    'unilib/interface/iterator.js', 'unilib/graphics/drawable.js']);
+    'unilib/interface/iterator.js', 'unilib/graphics/drawable.js', 
+    'unilib/mvc/model.js', 'unilib/interface/clonable.js']);
 unilib.notifyLoaded();

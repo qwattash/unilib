@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>HTML4Renderer test</title>
+  <link rel="stylesheet" href="../../css/unittest.css"/>
+  <script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+  <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+  <script type="text/JavaScript">
+    unilib.include('unilib/graphics/renderer.js');
+    
+    test('HTML4Renderer events', function() {
+      expect(3);
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      //style assignment
+      var style = new unilib.graphics.StyleInformations();
+      renderer.setStyleInformations(style);
+      renderer.drawRect(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 40));
+      var cbk = function(evt) {
+        assertTrue(evt, 'evt received');
+        assertEqual(evt.targetRenderer, renderer, 'event target set');
+        assertEqual(evt.type, 'click', 'event type set');
+      };
+      renderer.addEventListener('click', cbk);
+      elem = container.childNodes[0];
+      var evt;
+      if (document.createEvent) {
+        evt = document.createEvent('MouseEvents');
+        evt.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        elem.dispatchEvent(evt);
+      }
+      else {
+        //IE 8
+        evt = document.createEventObject();
+        //evt.eventType = 'click';
+        elem.fireEvent('onclick', evt);
+      }
+      renderer.clearRect(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 40));
+    });
+    
+    test('HTML4Renderer drawing', function() {
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      //style assignment
+      var style = new unilib.graphics.StyleInformations();
+      renderer.setStyleInformations(style);
+      assertEqual(renderer.getStyleInformations(), style, 'style info getter and setter');
+      
+      //SOLID line
+      style.lineWidth = 4;
+      style.lineColor = '#00AA22';
+      style.lineStyle = unilib.graphics.LineStyle.LINE_SOLID;
+      renderer.drawLine(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 20));
+      //check that a new group has been created and added in the renderer
+      var elem = container.childNodes[0];
+      assertEqual(elem.style.position, 'absolute', 'renderer::drawLine position attribute');
+      assertEqual(elem.style.top, '20px', 'renderer::drawLine position Y attribute');
+      assertEqual(elem.style.left, '20px', 'renderer::drawLine position X attribute');
+      var bgcolor = new unilib.graphics.RGBVector(elem.style.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#00AA22', 'renderer::drawLine BGColor attribute');
+      assertEqual(elem.style.height, '4px', 'renderer::drawLine line width');
+      assertEqual(elem.style.width, '50px', 'renderer::drawLine line length');
+      //DASHED line
+      style.lineWidth = 4;
+      style.lineColor = '#22AA00';
+      style.lineStyle = unilib.graphics.LineStyle.LINE_DASHED;
+      style.backgroundColor = '#FFFFFF';
+      renderer.drawLine(new unilib.geometry.Point(20, 30), new unilib.geometry.Point(70, 30));
+      elem = container.childNodes[1];
+      assertEqual(elem.childNodes.length, 16, 'renderer::drawLine correct number of dashes created');
+      
+      //RECTANGLES
+      style.lineWidth = 1;
+      style.lineColor = '#000000';
+      style.lineStyle = unilib.graphics.LINE_SOLID;
+      style.backgroundColor = '#888888';
+      renderer.drawRect(new unilib.geometry.Point(100, 20), new unilib.geometry.Point(170, 40));
+      elem = container.childNodes[2];
+      assertEqual(elem.style.position, 'absolute', 'renderer::drawRect position attribute');
+      assertEqual(elem.style.top, '20px', 'renderer::drawRect position Y attribute');
+      assertEqual(elem.style.left, '100px', 'renderer::drawRect position X attribute');
+      var bgcolor = new unilib.graphics.RGBVector(elem.style.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#888888', 'renderer::drawRect BGColor attribute');
+      var borderColor = new unilib.graphics.RGBVector(elem.style.borderColor);
+      assertEqual(borderColor.toHexString(), '#000000', 'renderer::drawRect Border Color attribute');
+      assertEqual(elem.style.borderWidth, '1px', 'renderer::drawRect border width');
+      assertEqual(elem.style.borderStyle, 'solid', 'renderer::drawRect border style');
+      assertEqual(elem.style.height, '20px', 'renderer::drawRect rect height');
+      assertEqual(elem.style.width, '70px', 'renderer::drawRect rect width');
+      
+      //TEXT
+      style.lineWidth = 1;
+      style.lineColor = '#000000';
+      style.lineStyle = unilib.graphics.LINE_SOLID;
+      style.backgroundColor = '#888888';
+      style.textColor = '#AA00AA';
+      style.textFont = 'arial';
+      style.textSize = 12;
+      renderer.drawText(new unilib.geometry.Point(100, 80), new unilib.geometry.Point(170, 120), 'Hello World');
+      elem = container.childNodes[3];
+      assertEqual(elem.style.position, 'absolute', 'renderer::drawRect position attribute');
+      assertEqual(elem.style.top, '80px', 'renderer::drawText position Y attribute');
+      assertEqual(elem.style.left, '100px', 'renderer::drawText position X attribute');
+      var bgcolor = new unilib.graphics.RGBVector(elem.style.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#888888', 'renderer::drawText BGColor attribute');
+      var borderColor = new unilib.graphics.RGBVector(elem.style.borderColor);
+      assertEqual(borderColor.toHexString(), '#000000', 'renderer::drawText Border Color attribute');
+      assertEqual(elem.style.borderWidth, '1px', 'renderer::drawText border width');
+      assertEqual(elem.style.borderStyle, 'solid', 'renderer::drawText border style');
+      assertEqual(elem.style.height, '40px', 'renderer::drawText rect height');
+      assertEqual(elem.style.width, '70px', 'renderer::drawText rect width');
+      assertEqual(elem.childNodes[0].textContent, 'Hello World', 'renderer::drawText text inserted in right place');
+      
+    });
+    
+    test('HTML4Renderer deleting', function() {
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var style = new unilib.graphics.StyleInformations();
+      style.lineWidth = 1;
+      style.lineColor = '#000000';
+      style.lineStyle = unilib.graphics.LINE_SOLID;
+      style.backgroundColor = '#236723';
+      style.textColor = '#FFFFFF';
+      style.textFont = 'sans-serif';
+      style.textSize = 10;
+      renderer.setStyleInformations(style);
+      //translation is done to simplify the test reading
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(170, 50, 0));
+      renderer.drawText(new unilib.geometry.Point(10, 0), new unilib.geometry.Point(20, 10), '1');
+      renderer.drawText(new unilib.geometry.Point(10, 20), new unilib.geometry.Point(20, 30), '2');
+      renderer.drawText(new unilib.geometry.Point(30, 0), new unilib.geometry.Point(40, 10), '3');
+      renderer.drawText(new unilib.geometry.Point(30, 20), new unilib.geometry.Point(40, 30), '4');
+      renderer.drawText(new unilib.geometry.Point(50, 0), new unilib.geometry.Point(60, 10), '5');
+      renderer.drawText(new unilib.geometry.Point(50, 20), new unilib.geometry.Point(60, 30), '6');
+      renderer.drawText(new unilib.geometry.Point(70, 0), new unilib.geometry.Point(80, 10), '7');
+      renderer.drawText(new unilib.geometry.Point(70, 20), new unilib.geometry.Point(80, 30), '8');
+      renderer.drawText(new unilib.geometry.Point(75, -5), new unilib.geometry.Point(85, 5), '9');
+      //CLEAR RECT delete central elements (3,4,5,6) from groups 1 and 2
+      renderer.clearRect(new unilib.geometry.Point(30, 0), new unilib.geometry.Point(55, 30));
+      //check that right elements are deleted by reading the number in them
+      var remaining = [];
+      for (var i = 4; i < container.childNodes.length; i++) {
+        remaining.push(container.childNodes[i].childNodes[0].textContent);
+      }
+      assertTrue(remaining.indexOf('1') != -1, 'renderer::clearRect left element 1');
+      assertTrue(remaining.indexOf('2') != -1, 'renderer::clearRect left element 2');
+      assertTrue(remaining.indexOf('7') != -1, 'renderer::clearRect left element 7');
+      assertTrue(remaining.indexOf('8') != -1, 'renderer::clearRect left element 8');
+      assertTrue(remaining.indexOf('9') != -1, 'renderer::clearRect left element 9');
+      assertTrue(remaining.indexOf('3') == -1, 'renderer::clearRect deleted element 3');
+      assertTrue(remaining.indexOf('4') == -1, 'renderer::clearRect deleted element 4');
+      assertTrue(remaining.indexOf('5') == -1, 'renderer::clearRect deleted element 5');
+      assertTrue(remaining.indexOf('6') == -1, 'renderer::clearRect deleted element 6');
+      //CLEAR ELEMENTS AT
+      //delete element 7 and 9
+      renderer.clearElementsAt(new unilib.geometry.Point(80, 0));
+      remaining = [];
+      for (var i = 4; i < container.childNodes.length; i++) {
+          remaining.push(container.childNodes[i].childNodes[0].textContent);
+      }
+      assertTrue(remaining.indexOf('1') != -1, 'renderer::clearElementsAt left element 1');
+      assertTrue(remaining.indexOf('2') != -1, 'renderer::clearElementsAt left element 2');
+      assertTrue(remaining.indexOf('8') != -1, 'renderer::clearElementsAt left element 8');
+      assertTrue(remaining.indexOf('7') == -1, 'renderer::clearElementsAt deleted element 7');
+      assertTrue(remaining.indexOf('9') == -1, 'renderer::clearElementsAt deleted element 9');
+    });
+  </script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>

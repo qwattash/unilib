@@ -13,12 +13,14 @@ unilib.provideNamespace('unilib.error', function() {
 	 * @param {string} message error message
 	 */
 	unilib.error.UnilibError = function(message) {
+		Error.call(this);
 		/** error message
 		 * @type {string}
 		 */
 		this.message = message;
 	};
-	unilib.error.UnilibError.prototype = new Error();
+	unilib.inherit(unilib.error.UnilibError,
+			Error.prototype);
 	
 	/**
 	 * override toString method to display correct informations
@@ -36,8 +38,8 @@ unilib.provideNamespace('unilib.error', function() {
 		this.message = 'Not yet Implemented';
 	};
 
-	unilib.error.NotYetImplementedError.prototype = 
-		new unilib.error.UnilibError();
+	unilib.inherit(unilib.error.NotYetImplementedError, 
+		unilib.error.UnilibError.prototype);
 	
 	/**
 	 * exception for abstract methods
@@ -47,8 +49,8 @@ unilib.provideNamespace('unilib.error', function() {
 	unilib.error.AbstractMethodError = function() {
 		this.message = 'Invoked an abstract method';
 	};
-	unilib.error.AbstractMethodError.prototype = 
-		new unilib.error.UnilibError();
+	unilib.inherit(unilib.error.AbstractMethodError, 
+		unilib.error.UnilibError.prototype);
 
 });
 

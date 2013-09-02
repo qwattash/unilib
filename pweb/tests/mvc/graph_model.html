@@ -4,6 +4,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<title>Graph Model test</title>
 <script type="text/JavaScript" src="../../js/unilib/base.php"></script>
 <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
 <script type="text/JavaScript">
@@ -271,13 +272,6 @@ test('GraphElement interface', function(){
   /*
    * for each getter & setter check functioning and data hiding
    */
-
-  var tmp;
-  element.setLabel('my elem');
-  assertEqual(element.getLabel(), 'my elem', 'label getter & setter');
-  tmp = element.getLabel();
-  tmp = 'modified';
-  assertEqual(element.getLabel(), 'my elem', 'label data hiding');
   
   element.setID(11);
   assertEqual(element.getID(), 11, 'ID getter & setter');
@@ -285,68 +279,38 @@ test('GraphElement interface', function(){
   tmp = 929394;
   assertEqual(element.getID(), 11, 'ID data hiding');
   
-  var point = new unilib.geometry.Point(10,15);
-  element.setPosition(point);
-  assertDeepEqual(element.getPosition(), point, 'position getter & setter');
-  tmp = element.getPosition();
-  tmp.x = 348984;
-  tmp.y = 44200;
-  assertDeepEqual(element.getPosition(), point, 'position data hiding');
-  
-  var shape = new unilib.geometry.Shape();
-  element.setShape(shape);
-  assertDeepEqual(element.getShape(), shape, 'shape getter & setter');
-  tmp = element.getShape();
-  tmp['someproperty'] = 555; //<<---------------------------------------may change this after defining shape interface
-  assertDeepEqual(element.getShape(), shape, 'shape data hiding');
-  
-  element.setStyleID(55);
-  assertEqual(element.getStyleID(), 55, 'styleID getter & setter');
-  tmp = element.getStyleID();
-  tmp = 499494;
-  assertEqual(element.getStyleID(), 55, 'styleID data hiding');
-  
+  var data = new unilib.mvc.graph.BaseGraphElementData();
+  var checkData = new unilib.mvc.graph.BaseGraphElementData();
+  element.setData(data);
+  assertDeepEqual(element.getData(), data, 'shape getter & setter');
+  tmp = element.getData();
+  tmp.position.x = 555;
+  assertDeepEqual(element.getData(), checkData, 'shape data hiding');
 });
 
 //helper function for testing any order notifications
-//@param {CompositeObserverEvent}
+//@param {Array.<ModelEvent>}
 //@param {Array.<type, src>}
-function exists(evt, expect) {
-  for (var i = evt.getEventIterator(); ! i.end(); i.next()) {
-      if (i.item().getType() == expect[0] &&
-        i.item().getSource() == expect[1]) {
+function exists(evtArr, expect) {
+  for (var i = 0; i < evtArr.length; i++) {
+      if (evtArr[i].getEventType() == expect[0] &&
+        evtArr[i].getTarget() == expect[1]) {
           return true;
         }
   }
   return false;
 }
 
-//helper for number of events in the composite
-function lengthOf(evt) {
-  var num = 0;
-  for (var i = evt.getEventIterator(); ! i.end(); i.next()) {
-    num ++;
-  }
-  return num;
-}
-
-//helper to get an item in the composite
-function getItem(evt, index) {
-  var i = evt.getEventIterator();
-  for (var j = index; j > 0; j--) i.next();
-  return i.item();
-}
-
 test('observer interface', function() {
-  expect(93);
+  expect(84);
   //some general variables and setup for the test
   var observer = new unilib.interfaces.observer.Observer();
   var model = new unilib.mvc.graph.GraphModel();
   model.attachObserver(observer);
-  var notification;
+  var notification = [];
   //update test function
   observer.update = function(evt) {
-    notification = evt;
+    notification.push(evt);
   };
   var node2 = model.makeNode();
   model.notificationManager.flush();
@@ -360,69 +324,69 @@ test('observer interface', function() {
    */
   //GraphModel handling
   //test model.makeNode
-  notification = null;
+  notification = [];
   var node = model.makeNode();
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphModel::makeNode raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'node ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), node, 'node ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'GraphModel::makeNode raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'node ADD evt received');
+  assertEqual(notification[0].getTarget(), node, 'node ADD src received');
+  notification = [];
   //test model.removeNode (without cascade operations)
   model.removeNode(node);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphModel::removeNode raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'node REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), node, 'node REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'GraphModel::removeNode raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'node REMOVE evt received');
+  assertEqual(notification[0].getTarget(), node, 'node REMOVE src received');
+  notification = [];
   //test model.addNode
   model.addNode(node);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphModel::addNode raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'node ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), node, 'node ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'GraphModel::addNode raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'node ADD evt received');
+  assertEqual(notification[0].getTarget(), node, 'node ADD src received');
+  notification = [];
   //test node.makePin
   var pin = node.makePin();
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::makePin raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'pin ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::makePin raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'pin ADD evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin ADD src received');
+  notification = [];
   //test node.removePin (without cascade operations)
   node.removePin(pin);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::removePin raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'pin REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::removePin raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'pin REMOVE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin REMOVE src received');
+  notification = [];
   //test node.addPin
   node.addPin(pin);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::addPin raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'pin ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::addPin raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'pin ADD evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin ADD src received');
+  notification = [];
   //test node.movePin
   node.movePin(pin, node2);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::movePin raises 3 notifications');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::movePin raises 3 notifications');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'pin UPDATE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin UPDATE src received');
+  notification = [];
   //test node.setModel
   node.setModel(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::setModel(null) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'node REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), node, 'node REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::setModel(null) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'node REMOVE evt received');
+  assertEqual(notification[0].getTarget(), node, 'node REMOVE src received');
+  notification = [];
   //test node.setModel
   node.setModel(model);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Node::setModel(model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'node ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), node, 'node ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Node::setModel(model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'node ADD evt received');
+  assertEqual(notification[0].getTarget(), node, 'node ADD src received');
+  notification = [];
   //pin interface testing setup
   pin = node.makePin();
   var pin2 = node.makePin();
@@ -430,74 +394,74 @@ test('observer interface', function() {
   //test pin.makeConnection
   var link = pin.makeConnection(pin2);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::makeConnection raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'edge ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::makeConnection raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'edge ADD evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge ADD src received');
+  notification = [];
   //test pin.unlink (with an end still linked to something else, so the edge is still in the model)
   pin.unlink(link);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::unlink (edge left in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::unlink (edge left in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //test pin.link (with an end linked to something else, so the edge is in the model)
   pin.link(link);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::link (edge already in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::link (edge already in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //setup for next test
   pin2.unlink(link);
   model.notificationManager.flush();
   //test pin.unlink (with edge not linked to anything else, so edge is not in the model) 
   pin.unlink(link);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::unlink (edge removed from model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'edge REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::unlink (edge removed from model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'edge REMOVE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge REMOVE src received');
+  notification = [];
   //test pin.link (with edge not linked to anything else, so edge is not in the model)
   pin.link(link);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::link (edge not in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'edge ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::link (edge not in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'edge ADD evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge ADD src received');
+  notification = [];
   //test pin.moveEdge
   pin.moveEdge(link, pin2);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::moveEdge raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::moveEdge raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //test pin.setDirection
   pin.setDirection(unilib.mvc.graph.PinDirection.IN);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::setDirection raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::setDirection raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'pin UPDATE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin UPDATE src received');
+  notification = [];
   pin.setDirection(unilib.mvc.graph.PinDirection.UNKNOWN);
   model.notificationManager.flush();
   //test pin.setOwner (not-null owner)
   pin.setOwner(node2);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::setOwner (not-null owner) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::setOwner (not-null owner) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'pin UPDATE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin UPDATE src received');
+  notification = [];
   //make sure no cascade operation is done
   pin.clearConnections(pin2);
   model.notificationManager.flush();
   //test pin.setOwner (null owner) (non-cascade edge removal)
   pin.setOwner(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Pin::setOwner (null owner) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'pin REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Pin::setOwner (null owner) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'pin REMOVE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin REMOVE src received');
+  notification = [];
   
   //some setup, need to know the position of the pin (start or end) so use directed graph
   var pin3 = node.makePin(unilib.mvc.graph.PinDirection.OUT);
@@ -510,17 +474,17 @@ test('observer interface', function() {
   //test edge.setStartPin (not-null pin, edge in the model)
   link.setStartPin(pin3);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setStartPin (not-null pin, edge in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setStartPin (not-null pin, edge in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //test edge.setStartPin (null pin, edge in the model, stays in the model)
   link.setStartPin(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setStartPin (null pin, edge in the model, stays in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setStartPin (null pin, edge in the model, stays in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //setup for next test
   link.setEndPin(null);
   link.setStartPin(pin);
@@ -528,17 +492,17 @@ test('observer interface', function() {
   //test edge.setStartPin (null pin, edge in the model, should exit from model)
   link.setStartPin(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setStartPin (null pin, edge in the model, should exit from model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'edge REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setStartPin (null pin, edge in the model, should exit from model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'edge REMOVE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge REMOVE src received');
+  notification = [];
   //test edge.setStartPin (not-null pin, edge not in the model, should be added to model)
   link.setStartPin(pin);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setStartPin (not-null pin, edge not in the model, should enter model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'edge ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setStartPin (not-null pin, edge not in the model, should enter model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'edge ADD evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge ADD src received');
+  notification = [];
   
   //some setup, need to know the position of the pin (start or end) so use directed graph
   pin.setOwner(node);
@@ -549,17 +513,17 @@ test('observer interface', function() {
   //test edge.setEndPin (not-null pin, edge in the model)
   link.setEndPin(pin3);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setEndPin (not-null pin, edge in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setEndPin (not-null pin, edge in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //test edge.setEndPin (null pin, edge in the model, stays in the model)
   link.setEndPin(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setEndPin (null pin, edge in the model, stays in the model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'edge UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setEndPin (null pin, edge in the model, stays in the model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'edge UPDATE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge UPDATE src received');
+  notification = [];
   //setup for next test
   link.setStartPin(null);
   link.setEndPin(pin2);
@@ -567,64 +531,43 @@ test('observer interface', function() {
   //test edge.setEndPin (null pin, edge in the model, should exit from model)
   link.setEndPin(null);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setEndPin (null pin, edge in the model, should exit from model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.REMOVE, 'edge REMOVE evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge REMOVE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setEndPin (null pin, edge in the model, should exit from model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.REMOVE, 'edge REMOVE evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge REMOVE src received');
+  notification = [];
   //test edge.setStartPin (not-null pin, edge not in the model, should be added to model)
   link.setEndPin(pin2);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'Edge::setEndPin (not-null pin, edge not in the model, should enter model) raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.ADD, 'edge ADD evt received');
-  assertEqual(getItem(notification, 0).getSource(), link, 'edge ADD src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'Edge::setEndPin (not-null pin, edge not in the model, should enter model) raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.ADD, 'edge ADD evt received');
+  assertEqual(notification[0].getTarget(), link, 'edge ADD src received');
+  notification = [];
   
-  //test IDrawableDescriptor setters
-  //test graphElement.setLabel
-  pin.setLabel('new_label');
-  model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphElement::setLabel raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  //test IDrawableProvider setters
   //test graphElement.setID
   pin.setID(166);
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphElement::setID raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
-  //test graphElement.setPosition
-  pin.setPosition(new unilib.geometry.Point(10, 10));
-  model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphElement::setPosition raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'GraphElement::setID raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'pin UPDATE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin UPDATE src received');
+  notification = [];
   //test graphElement.setShape
-  pin.setShape(new unilib.geometry.Shape());
+  pin.setData(new unilib.mvc.graph.BaseGraphElementData());
   model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphElement::setShape raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
-  //test graphElement.setStyleID
-  pin.setStyleID(1);
-  model.notify();
-  assertEqual(lengthOf(notification), 1, 'GraphElement::setStyleID raises single notification');
-  assertEqual(getItem(notification, 0).getType(), unilib.interfaces.observer.ObserverEventType.UPDATE, 'pin UPDATE evt received');
-  assertEqual(getItem(notification, 0).getSource(), pin, 'pin UPDATE src received');
-  notification = null;
+  assertEqual(notification.length, 1, 'GraphElement::setData raises single notification');
+  assertEqual(notification[0].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'pin UPDATE evt received');
+  assertEqual(notification[0].getTarget(), pin, 'pin UPDATE src received');
+  notification = [];
 });
 test('Observer interface with cascade operations', function() {
   //some general variables and setup for the test
   var observer = new unilib.interfaces.observer.Observer();
   var model = new unilib.mvc.graph.GraphModel();
   model.attachObserver(observer);
-  var notification = null;
+  var notification = [];
   //update test function
   observer.update = function(evt) {
-    notification = evt;
+    notification.push(evt);
   };
   var node = model.makeNode();
   model.notificationManager.flush();
@@ -647,11 +590,11 @@ test('Observer interface with cascade operations', function() {
   model.notificationManager.flush();
   model.removeNode(node);
   model.notify();
-  assertEqual(lengthOf(notification), 3, 'GraphModel::removeNode (2 pin attached) raises 3 notifications');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, node]), 'node REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin1]), 'pin1 REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin2]), 'pin2 REMOVE received');
-  notification = null;
+  assertEqual(notification.length, 3, 'GraphModel::removeNode (2 pin attached) raises 3 notifications');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, node]), 'node REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin1]), 'pin1 REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin2]), 'pin2 REMOVE received');
+  notification = [];
   
   //test cascade removal of edges from Pin
   model.addNode(node);
@@ -663,11 +606,11 @@ test('Observer interface with cascade operations', function() {
   model.notificationManager.flush();
   node.removePin(pin1, false);
   model.notify();
-  assertEqual(lengthOf(notification), 3, 'Node::removePin (2 edges attached) raises 3 notifications');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin1]), 'pin REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.UPDATE, edge1]), 'edge1 UPDATE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.UPDATE, edge2]), 'edge2 UPDATE received');
-  notification = null;
+  assertEqual(notification.length, 3, 'Node::removePin (2 edges attached) raises 3 notifications');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin1]), 'pin REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.UPDATE, edge1]), 'edge1 UPDATE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.UPDATE, edge2]), 'edge2 UPDATE received');
+  notification = [];
   //test cascade removal of pins and edges
   node.addPin(pin1);
   pin1.link(edge1);
@@ -675,14 +618,113 @@ test('Observer interface with cascade operations', function() {
   model.notificationManager.flush();
   model.removeNode(node);
   model.notify();
-  assertEqual(lengthOf(notification), 6, 'GraphModel::removeNode (3 pin, 2 edges attached) raises 6 notifications');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, node]), 'node REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin1]), 'pin #1 REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin2]), 'pin #2 REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, pin3]), 'pin #3 REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, edge1]), 'edge1 REMOVE received');
-  assertTrue(exists(notification, [unilib.interfaces.observer.ObserverEventType.REMOVE, edge2]), 'edge2 REMOVE received');
-  notification = null;
+  assertEqual(notification.length, 6, 'GraphModel::removeNode (3 pin, 2 edges attached) raises 6 notifications');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, node]), 'node REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin1]), 'pin #1 REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin2]), 'pin #2 REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, pin3]), 'pin #3 REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, edge1]), 'edge1 REMOVE received');
+  assertTrue(exists(notification, [unilib.mvc.model.ModelEventType.REMOVE, edge2]), 'edge2 REMOVE received');
+  notification = [];
+});
+
+
+//helper function to check the number of events in a composite event
+function getEventsNum(manager) {
+  var events = 0;
+  var observer = new unilib.interfaces.observer.Observer();
+  observer.update = function(evt) {
+    events++;
+  }
+  manager.notifyTo(observer);
+  return events;
+}
+
+//helper function to search for an item
+function hasEvt(manager, evt) {
+  var events = [];
+  var observer = new unilib.interfaces.observer.Observer();
+  observer.update = function(evt) {
+    events.push(evt);
+  }
+  manager.notifyTo(observer);
+  return (events.indexOf(evt) != -1);
+}
+
+test('ModelEvent and NotificationManager', function() {
+  var src1 = new unilib.interfaces.observer.Observable();
+  var src2 = new unilib.interfaces.observer.Observable();
+  var manager = new unilib.mvc.graph.NotificationManager();
+  var add1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, src1);
+  var rem1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.REMOVE, src1);
+  var upd1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.UPDATE, src1);
+  var add2 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, src2);
+  var rem2 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.REMOVE, src2);
+  var upd2 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.UPDATE, src2);
+  //test conflict resolution
+  /*
+   * (quote from source code comments)
+   * 
+   * Conflicting notifications:
+   * i) occur only with notifications with same source
+   * i.i) REMOVE notification deletes all other notifications from
+   *  that object since ADD or UPDATES are rendered useless by the removal but
+   *  REMOVE event is added to the buffer
+   * i.ii) ADD after a REMOVE is changed to an UPDATE since some changes may
+   *  have been made while the element was removed
+   * i.iii) UPDATE after an ADD is ignored since the ADD event is supposed to
+   *  cause a full read of the state of the element added
+   * i.iv) UPDATE after a REMOVE is illegal, causes exception
+   * i.v) ADD after an UPDATE is illegal, causes exception
+   * i.vi) in case of same event present in buffer evt is ignored
+   * ii) due to this handling only a resulting event is kept in the buffer
+   *  for each source
+   */
+  //add another independent event to test a more real-life case
+  manager.notify(add1);
+  manager.notify(add2);
+  //now there are 2 events in the composite
+  // (i.vi) duplicate event
+  manager.notify(add1);
+  assertEqual(getEventsNum(manager), 2, 'NotificationManager::notify ignore duplicate event');
+  // (i.i) remove
+  manager.notify(rem1);
+  assertEqual(getEventsNum(manager), 2, 'NotificationManager::notify REMOVE event deletes same source evts');
+  assertTrue(hasEvt(manager, add2), 'REMOVE event leave other events');
+  assertFalse(hasEvt(manager, add1), 'REMOVE event removes right event');
+  assertTrue(hasEvt(manager, rem1), 'REMOVE event is in the buffer');
+  // (i.iv) update after remove
+  assertThrow(new Call(manager, manager.notify, [upd1]), unilib.mvc.graph.GraphModelError, 'illegal update after remove');
+  assertEqual(getEventsNum(manager), 2, 'update after remove event leave composite unchanged');
+  assertFalse(hasEvt(manager, upd1), 'update after remove event is not in the buffer');
+  // (i.ii) add after remove
+  manager.notify(add1);
+  assertEqual(getEventsNum(manager), 2, 'NotificationManager::notify ADD event change remove in update');
+  assertTrue(hasEvt(manager, add2), 'ADD event leave other events');
+  assertFalse(hasEvt(manager, add1), 'ADD event is not in the buffer');
+  var events = [];
+  var observer = new unilib.interfaces.observer.Observer();
+  observer.update = function(evt) {
+    events.push(evt);
+  }
+  manager.notifyTo(observer);
+  //index of other event stored
+  var indexOfAdd2 = events.indexOf(add2);
+  //index of the REMOVE event that should have changed
+  var indexOfOther = (indexOfAdd2 == 0) ? 1 : 0;
+  assertEqual(events[indexOfOther].getEventType(), unilib.mvc.model.ModelEventType.UPDATE, 'REMOVE event changed in UPDATE');
+  //remember changed rem1 for future use
+  var changedRem1 = events[indexOfOther];
+  //note: rem1 is changed to UPDATE, do not use it anymore
+  // (i.v) add after update
+  assertThrow(new Call(manager, manager.notify, [add1]), unilib.mvc.graph.GraphModelError, 'illegal add after update');
+  assertEqual(getEventsNum(manager), 2, 'add after update event leave composite unchanged');
+  assertFalse(hasEvt(manager, add1), 'add after update event is not in the buffer');
+  // (i.iii) update after add
+  manager.notify(upd2); // upd2 after add2
+  assertEqual(getEventsNum(manager), 2, 'NotificationManager::notify UPDATE after ADD event ignored');
+  assertTrue(hasEvt(manager, add2), 'update after add event leave previous add event');
+  assertTrue(hasEvt(manager, changedRem1), 'update after add does not change other events');
 });
 </script>
 </head>

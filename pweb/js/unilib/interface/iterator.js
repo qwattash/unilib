@@ -5,13 +5,6 @@
  */
 
 /**
- * 
- * @todo [FIX] ArrayIterator does not correctly handle the end of the iterator
- * 				write a test for this module idiot!
- * 
- */
-
-/**
  * @namespace unilib.interfaces.iterator
  */
 unilib.provideNamespace('unilib.interfaces.iterator', function() {
@@ -25,17 +18,15 @@ unilib.provideNamespace('unilib.interfaces.iterator', function() {
 		errorMessage = 'IterationError: ' + message;
 		unilib.error.UnilibError.apply(this, [errorMessage]);
 	};
-	unilib.interfaces.iterator.IterationError.prototype = 
-		new unilib.error.UnilibError();
+	unilib.inherit(unilib.interfaces.iterator.IterationError,
+			unilib.error.UnilibError.prototype);
 	
 	/**
 	 * iterator interface
 	 * @abstract
 	 * @class
 	 */
-	unilib.interfaces.iterator.Iterator = function() {
-		
-	};
+	unilib.interfaces.iterator.Iterator = function() {};
 	
 	/**
 	 * reset iterator item pointer to beginning
@@ -97,7 +88,8 @@ unilib.provideNamespace('unilib.interfaces.iterator', function() {
 		this.begin();
 	};
 	
-	unilib.interfaces.iterator.ArrayIterator.prototype = new unilib.interfaces.iterator.Iterator();
+	unilib.inherit(unilib.interfaces.iterator.ArrayIterator,
+			unilib.interfaces.iterator.Iterator.prototype);
 	
 	/**
 	 * reset iterator item pointer to beginning

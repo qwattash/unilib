@@ -65,13 +65,9 @@ unilib.provideNamespace('unilib.interfaces.observer',  function() {
 
 	/**
 	 * notify observers of a change
-	 * @param {unilib.interfaces.observer.ObserverEvent=} evt
+	 * @param {unilib.interfaces.event.IEvent} [evt]
 	 */
 	unilib.interfaces.observer.Observable.prototype.notify = function(evt) {
-		if (!evt) {
-			evt = new unilib.interfaces.observer.SimpleObserverEvent(
-					unilib.interfaces.observer.ObserverEventType.UNKNOWN, this);
-		}
 	  for (var i = 0; i < this.observers_.length; i++) {
 	    this.observers_[i].update(evt);
 	  }
@@ -161,8 +157,8 @@ unilib.provideNamespace('unilib.interfaces.observer',  function() {
 		 */
 		this.source_ = (source == undefined) ? null : source;
 	};
-	unilib.interfaces.observer.SimpleObserverEvent.prototype = 
-		new unilib.interfaces.observer.ObserverEvent();
+	unilib.inherit(unilib.interfaces.observer.SimpleObserverEvent, 
+			unilib.interfaces.observer.ObserverEvent.prototype);
 	
 	/**
 	 * @see {unilib.interfaces.observer.ObserverEvent#getType}
@@ -213,8 +209,8 @@ unilib.provideNamespace('unilib.interfaces.observer',  function() {
 		 */
 		this.evtBuffer_ = [];
 	};
-	unilib.interfaces.observer.CompositeObserverEvent.prototype = 
-		new unilib.interfaces.observer.ObserverEvent();
+	unilib.inherit(unilib.interfaces.observer.CompositeObserverEvent, 
+			unilib.interfaces.observer.ObserverEvent.prototype);
 
 	/**
 	 * @see {unilib.interfaces.observer.ObserverEvent#getType}
@@ -390,8 +386,8 @@ unilib.provideNamespace('unilib.interfaces.observer',  function() {
 		this.source = source;
 		this.message = message || 'Invalid observer';
 	};
-	unilib.interfaces.observer.InvalidObserverError.prototype = 
-		new unilib.error.UnilibError();
+	unilib.inherit(unilib.interfaces.observer.InvalidObserverError, 
+		unilib.error.UnilibError.prototype);
 	
 	/**
 	 * exception thrown if something goes wrong with an ObserverEvent
@@ -405,8 +401,8 @@ unilib.provideNamespace('unilib.interfaces.observer',  function() {
 		this.source = source;
 		this.message = message || 'ObserverEvent error';
 	};
-	unilib.interfaces.observer.ObserverEventError.prototype = 
-		new unilib.error.UnilibError();
+	unilib.inherit(unilib.interfaces.observer.ObserverEventError,
+		unilib.error.UnilibError.prototype);
 	
 	/**
 	 * override toString method

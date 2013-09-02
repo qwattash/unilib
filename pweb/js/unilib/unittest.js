@@ -661,9 +661,12 @@ assertion = {
 				throw new Error('value or expected are not Array instances');
 			}
 		},
+		
 		/**
 		 * @private
-		 * @description <p>test if two objects has same internal structure</p>
+		 * @description <p>test if two objects has same internal structure,
+		 * WARNING the function is not stable in case of circular references
+		 * in the tested objects</p>
 		 * <ul>
 		 * <li>AssertionResult.resultCode
 		 * <li>AssertionResult.errorMessage
@@ -678,34 +681,40 @@ assertion = {
 				//traverse key value pairs
 				result.resultCode = Result.PASS;
 				for (key in value) {
-					if (expected[key]) {
+					if (value[key] != undefined && expected[key] != undefined && 
+							value[key] != expected[key]) { //simple test case that may save a lot of traversing
 						if (value[key] instanceof Array && 
 								expected[key] instanceof Array) {
 							assertion.testDeepEqualArray(value[key], expected[key], result);
 							if (result.resultCode == Result.FAIL) {
 								//result is already set up correctly
-								return;
+								break;
 							}
 						}
 						else if (typeof value[key] == 'object' && 
-								typeof expected[key] == 'object') {
+									typeof expected[key] == 'object') {
 							assertion.testDeepEqualObject(value[key], expected[key], result);
 							if (result.resultCode == Result.FAIL) {
 								//result is already set up correctly
-								return;
+								break;
 							}
-							//else go on
 						}
+							//else go on
 						else if (expected[key] != value[key]) {
 							result.resultCode = Result.FAIL;
 							result.errorMessage = 'different values for ' + key;
-							return;
+							break;
 						}
 					}
 					else {
-						result.resultCode = Result.FAIL;
-						result.errorMessage = 'value has extra property ' + key;
-						return;
+						if (value[key] != undefined && expected[key] == undefined){
+							result.resultCode = Result.FAIL;
+							result.errorMessage = 'value has extra property ' + key;
+						}
+						else if (value[key] == undefined && expected[key] != undefined) {
+							result.resultCode = Result.FAIL;
+							result.errorMessage = 'value is missing property ' + key;
+						}
 					}
 				
 				}

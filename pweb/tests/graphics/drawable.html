@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>drawable test with HTML4 renderer</title>
+  <link rel="stylesheet" href="../../css/unittest.css"/>
+  <link rel="stylesheet" href="../css/renderer.css"/>
+  <script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+  <script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+  <script type="text/JavaScript">
+    unilib.include('unilib/graphics/drawable.js');
+    
+    test('Line shape', function() {
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var lineStart = new unilib.geometry.Point(10, 10);
+      var lineEnd = new unilib.geometry.Point(10, 50);
+      var pos = new unilib.geometry.Point3D(10, 10, 0);
+      var line = new unilib.graphics.Line(lineStart, lineEnd);
+      var styleInfo = line.getStyleInformations();
+      styleInfo.lineColor = '#11AA11';
+      styleInfo.lineWidth = 5;
+      line.setStyleInformations(styleInfo);
+      line.setPosition(pos);
+      assertEqual(line.getPosition(), pos, 'position getter and setter');
+      assertEqual(line.getStart(), lineStart, 'first point is start');
+      assertEqual(line.getEnd(), lineEnd, 'second point is end');
+      line.setID(1);
+      assertEqual(line.getID(), 1, 'ID getter and setter');
+      line.draw(renderer);
+      var lineElem = container.childNodes[0];
+      var lineElemStyle = lineElem.style;
+      var bgcolor = new unilib.graphics.RGBVector(lineElemStyle.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#11AA11', 'style information applied');
+      assertEqual(parseInt(lineElemStyle.top), lineStart.y + pos.y, 'line Y coord set');
+      assertEqual(parseInt(lineElemStyle.left), lineStart.x + pos.x, 'line X coord set');
+      assertEqual(parseInt(lineElemStyle.width), 5, 'line width set');
+      assertEqual(parseInt(lineElemStyle.height), Math.abs(lineStart.y - lineEnd.y), 'line length set');
+      //IClonable
+      var clone = line.clone();
+      assertDeepEqual(clone, line, 'IClonable interface impementation');
+      //IDrawable::clear
+      line.clear(renderer);
+      assertEqual(container.childNodes.length, 0, 'line cleared in renderer');
+    });
+    test('Rectangle shape', function(){
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var tl = new unilib.geometry.Point(10, 10);
+      var br = new unilib.geometry.Point(50, 50);
+      var pos = new unilib.geometry.Point3D(50, 10, 0);
+      var rect = new unilib.graphics.Rectangle(tl, br);
+      var styleInfo = rect.getStyleInformations();
+      styleInfo.lineColor = '#11AA11';
+      styleInfo.backgroundColor = '#333333'
+      styleInfo.lineWidth = 2;
+      rect.setStyleInformations(styleInfo);
+      rect.setPosition(pos);
+      assertEqual(rect.getPosition(), pos, 'position getter and setter');
+      assertEqual(rect.getTopLeft(), tl, 'first point is start');
+      assertEqual(rect.getBottomRight(), br, 'second point is end');
+      rect.setID(1);
+      assertEqual(rect.getID(), 1, 'ID getter and setter');
+      rect.draw(renderer);
+      var rectElem = container.childNodes[0];
+      var rectElemStyle = rectElem.style;
+      var bgcolor = new unilib.graphics.RGBVector(rectElemStyle.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
+      assertEqual(parseInt(rectElemStyle.top), tl.y + pos.y, 'rect Y coord set');
+      assertEqual(parseInt(rectElemStyle.left), tl.x + pos.x, 'rect X coord set');
+      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x), 'rect width set');
+      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y), 'rect length set');
+      //IClonable
+      var clone = rect.clone();
+      assertDeepEqual(clone, rect, 'IClonable interface impementation');
+      //IDrawable::clear
+      rect.clear(renderer);
+      assertEqual(container.childNodes.length, 0, 'rect  cleared in renderer');
+    });
+    test('TextRect shape', function(){
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var tl = new unilib.geometry.Point(10, 10);
+      var br = new unilib.geometry.Point(100, 50);
+      var pos = new unilib.geometry.Point3D(50, 10, 0);
+      var rect = new unilib.graphics.TextRect(tl, br, 'Hello World');
+      var styleInfo = rect.getStyleInformations();
+      styleInfo.lineColor = '#11AA11';
+      styleInfo.backgroundColor = '#333333'
+      styleInfo.lineWidth = 2;
+      rect.setStyleInformations(styleInfo);
+      rect.setPosition(pos);
+      assertEqual(rect.getPosition(), pos, 'position getter and setter');
+      assertEqual(rect.getTopLeft(), tl, 'first point is start');
+      assertEqual(rect.getBottomRight(), br, 'second point is end');
+      rect.setID(1);
+      assertEqual(rect.getID(), 1, 'ID getter and setter');
+      rect.draw(renderer);
+      var rectElem = container.childNodes[0];
+      var rectElemStyle = rectElem.style;
+      var bgcolor = new unilib.graphics.RGBVector(rectElemStyle.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
+      assertEqual(parseInt(rectElemStyle.top), tl.y + pos.y, 'rect Y coord set');
+      assertEqual(parseInt(rectElemStyle.left), tl.x + pos.x, 'rect X coord set');
+      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x), 'rect width set');
+      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y), 'rect length set');
+      //IClonable
+      var clone = rect.clone();
+      assertDeepEqual(clone, rect, 'IClonable interface impementation');
+      //IDrawable::clear
+      rect.clear(renderer);
+      assertEqual(container.childNodes.length, 0, 'rect cleared in renderer');
+    });
+    test('Composite shape', function(){
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var tl = new unilib.geometry.Point(80, 10);
+      var br = new unilib.geometry.Point(200, 50);
+      var pos = new unilib.geometry.Point3D(10, 10, 0);
+      var rect = new unilib.graphics.Rectangle(tl, br, pos);
+      var tpos = new unilib.geometry.Point3D(10, 10, 1);
+      var ttl = new unilib.geometry.Point(100, 20);
+      var tbr = new unilib.geometry.Point(180, 30);
+      var trect = new unilib.graphics.TextRect(ttl, tbr, 'Inside', tpos);
+      var styleInfo = rect.getStyleInformations();
+      styleInfo.lineColor = '#11AA11';
+      styleInfo.backgroundColor = '#333333'
+      styleInfo.lineWidth = 2;
+      styleInfo.textColor = '#FFFFFF';
+      styleInfo.textSize = 10;
+      trect.setStyleInformations(styleInfo);
+      var composite = new unilib.graphics.CompositeDrawableShape();
+      var cpos = new unilib.geometry.Point3D(10, 10, 0);
+      composite.setPosition(cpos);
+      composite.addDrawable(rect);
+      composite.addDrawable(trect);
+      composite.draw(renderer);
+      item = container.childNodes[0];
+      var bgcolor = new unilib.graphics.RGBVector(item.style.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
+      assertEqual(parseInt(item.style.top), 30, 'rect Y coord set');
+      assertEqual(parseInt(item.style.left), 100, 'rect X coord set');
+      assertEqual(parseInt(item.style.width), Math.abs(tl.x - br.x), 'rect width set');
+      assertEqual(parseInt(item.style.height), Math.abs(tl.y - br.y), 'rect height set');
+      assertEqual(parseInt(item.style.zIndex), 0, 'rect z-index set');
+      item = container.childNodes[1];
+      var bgcolor = new unilib.graphics.RGBVector(item.style.backgroundColor);
+      assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
+      assertEqual(parseInt(item.style.top), 40, 'textRect Y coord set');
+      assertEqual(parseInt(item.style.left), 120, 'textRect X coord set');
+      assertEqual(parseInt(item.style.width), Math.abs(ttl.x - tbr.x), 'textRect width set');
+      assertEqual(parseInt(item.style.height), Math.abs(ttl.y - tbr.y), 'textRect height set');
+      assertEqual(parseInt(item.style.zIndex), 1, 'textRect z-index set');
+      composite.clear(renderer);
+      assertEqual(container.childNodes.length, 0, 'composite cleared in renderer');
+    });
+    test('overlapping', function() {
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var tl = new unilib.geometry.Point(80, 10);
+      var br = new unilib.geometry.Point(200, 50);
+      var pos = new unilib.geometry.Point3D(10, 10, 0);
+      var rect = new unilib.graphics.Rectangle(tl, br, pos);
+      var tpos = new unilib.geometry.Point3D(10, 10, 1);
+      var ttl = new unilib.geometry.Point(100, 20);
+      var tbr = new unilib.geometry.Point(180, 30);
+      var trect = new unilib.graphics.TextRect(ttl, tbr, 'Inside', tpos);
+      var styleInfo = rect.getStyleInformations();
+      rect.draw(renderer);
+      trect.draw(renderer);
+      //deleting
+      trect.clear(renderer);
+      assertEqual(container.childNodes.length, 1, 'rectangle left after deleting text');
+      trect.draw(renderer);
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(10, 10, null));
+      renderer.clearElementsAt(new unilib.geometry.Point(110, 30));
+      assertEqual(container.childNodes.length, 0, 'both elements deleted');
+    });
+  </script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+
