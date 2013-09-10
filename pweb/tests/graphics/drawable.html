@@ -33,10 +33,10 @@
       var lineElemStyle = lineElem.style;
       var bgcolor = new unilib.graphics.RGBVector(lineElemStyle.backgroundColor);
       assertEqual(bgcolor.toHexString(), '#11AA11', 'style information applied');
-      assertEqual(parseInt(lineElemStyle.top), lineStart.y + pos.y, 'line Y coord set');
-      assertEqual(parseInt(lineElemStyle.left), lineStart.x + pos.x, 'line X coord set');
+      assertEqual(parseInt(lineElemStyle.top), lineStart.y + pos.y - Math.floor(styleInfo.lineWidth / 2), 'line Y coord set');
+      assertEqual(parseInt(lineElemStyle.left), lineStart.x + pos.x - Math.floor(styleInfo.lineWidth / 2), 'line X coord set');
       assertEqual(parseInt(lineElemStyle.width), 5, 'line width set');
-      assertEqual(parseInt(lineElemStyle.height), Math.abs(lineStart.y - lineEnd.y), 'line length set');
+      assertEqual(parseInt(lineElemStyle.height), Math.abs(lineStart.y - lineEnd.y) + 2 * Math.floor(styleInfo.lineWidth / 2), 'line length set');
       //IClonable
       var clone = line.clone();
       assertDeepEqual(clone, line, 'IClonable interface impementation');
@@ -69,8 +69,8 @@
       assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
       assertEqual(parseInt(rectElemStyle.top), tl.y + pos.y, 'rect Y coord set');
       assertEqual(parseInt(rectElemStyle.left), tl.x + pos.x, 'rect X coord set');
-      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x), 'rect width set');
-      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y), 'rect length set');
+      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x) - 2 * styleInfo.lineWidth, 'rect width set');
+      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y) - 2 * styleInfo.lineWidth, 'rect length set');
       //IClonable
       var clone = rect.clone();
       assertDeepEqual(clone, rect, 'IClonable interface impementation');
@@ -103,8 +103,8 @@
       assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
       assertEqual(parseInt(rectElemStyle.top), tl.y + pos.y, 'rect Y coord set');
       assertEqual(parseInt(rectElemStyle.left), tl.x + pos.x, 'rect X coord set');
-      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x), 'rect width set');
-      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y), 'rect length set');
+      assertEqual(parseInt(rectElemStyle.width), Math.abs(tl.x - br.x) - 2 * styleInfo.lineWidth, 'rect width set');
+      assertEqual(parseInt(rectElemStyle.height), Math.abs(tl.y - br.y) - 2 * styleInfo.lineWidth, 'rect length set');
       //IClonable
       var clone = rect.clone();
       assertDeepEqual(clone, rect, 'IClonable interface impementation');
@@ -141,16 +141,16 @@
       assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
       assertEqual(parseInt(item.style.top), 30, 'rect Y coord set');
       assertEqual(parseInt(item.style.left), 100, 'rect X coord set');
-      assertEqual(parseInt(item.style.width), Math.abs(tl.x - br.x), 'rect width set');
-      assertEqual(parseInt(item.style.height), Math.abs(tl.y - br.y), 'rect height set');
+      assertEqual(parseInt(item.style.width), Math.abs(tl.x - br.x) - 2 * styleInfo.lineWidth, 'rect width set');
+      assertEqual(parseInt(item.style.height), Math.abs(tl.y - br.y) - 2 * styleInfo.lineWidth, 'rect height set');
       assertEqual(parseInt(item.style.zIndex), 0, 'rect z-index set');
       item = container.childNodes[1];
       var bgcolor = new unilib.graphics.RGBVector(item.style.backgroundColor);
       assertEqual(bgcolor.toHexString(), '#333333', 'style information applied');
       assertEqual(parseInt(item.style.top), 40, 'textRect Y coord set');
       assertEqual(parseInt(item.style.left), 120, 'textRect X coord set');
-      assertEqual(parseInt(item.style.width), Math.abs(ttl.x - tbr.x), 'textRect width set');
-      assertEqual(parseInt(item.style.height), Math.abs(ttl.y - tbr.y), 'textRect height set');
+      assertEqual(parseInt(item.style.width), Math.abs(ttl.x - tbr.x) - 2 * styleInfo.lineWidth, 'textRect width set');
+      assertEqual(parseInt(item.style.height), Math.abs(ttl.y - tbr.y) - 2 * styleInfo.lineWidth, 'textRect height set');
       assertEqual(parseInt(item.style.zIndex), 1, 'textRect z-index set');
       composite.clear(renderer);
       assertEqual(container.childNodes.length, 0, 'composite cleared in renderer');
@@ -176,6 +176,36 @@
       renderer.setRelativeOrigin(new unilib.geometry.Point3D(10, 10, null));
       renderer.clearElementsAt(new unilib.geometry.Point(110, 30));
       assertEqual(container.childNodes.length, 0, 'both elements deleted');
+    });
+    test('IDrawable::isAt position checking', function(){
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var tl = new unilib.geometry.Point(80, 10);
+      var br = new unilib.geometry.Point(200, 50);
+      var pos = new unilib.geometry.Point3D(10, 10, 0);
+      var rect = new unilib.graphics.Rectangle(tl, br, pos);
+      assertFalse(rect.isAt(new unilib.geometry.Point3D(10, 10, 0)), 'Rectangle::isAt false condition#1');
+      assertFalse(rect.isAt(new unilib.geometry.Point3D(90, 20, 4)), 'Rectangle::isAt false condition#2');
+      assertFalse(rect.isAt(new unilib.geometry.Point3D(10, 10, null)), 'Rectangle::isAt no z axis check, false condition');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 20, null)), 'Rectangle::isAt no z axis check, inside shape');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 20, 0)), 'Rectangle::isAt topLeft corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(210, 20, 0)), 'Rectangle::isAt topRight corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(210, 60, 0)), 'Rectangle::isAt bottomRight corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 60, 0)), 'Rectangle::isAt bottomLeft corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(210, 50, 0)), 'Rectangle::isAt edge');
+      
+      tl = new unilib.geometry.Point(80, 10);
+      br = new unilib.geometry.Point(80, 50);
+      var line = new unilib.graphics.Line(tl, br, pos);
+      var style = new unilib.graphics.StyleInformations();
+      style.lineSize = 10;
+      line.setStyleInformations(style);
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 20, 0)), 'Line::isAt topLeft corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 20, 0)), 'Line::isAt topRight corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 60, 0)), 'Line::isAt bottomRight corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 60, 0)), 'Line::isAt bottomLeft corner');
+      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 50, 0)), 'Line::isAt edge');
+      
     });
   </script>
 </head>

@@ -778,6 +778,7 @@ unilib.dependencyManager = {
 		provideNamespace: function(name, init, deps, inline) {
 			//set defaults
 			inline = (inline == undefined) ? false : inline;
+			//console.log('<' + name + '>');
 			if (deps) {
 				for (var i = 0; i < deps.length; i++) {
 					if (typeof deps[i] == 'string' || deps[i] instanceof String) {
@@ -785,7 +786,7 @@ unilib.dependencyManager = {
 						this.include(deps[i]);
 					}
 					else if (deps[i] instanceof Array) {
-						//dependency in the form [path, base
+						//dependency in the form [path, base]
 						this.include(deps[i][0], deps[i][1]);
 					}
 					else {

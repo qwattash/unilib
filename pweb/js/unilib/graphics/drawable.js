@@ -30,6 +30,18 @@ unilib.provideNamespace('unilib.graphics', function() {
 	//-------------------------- Drawable Shapes --------------------------------
 	
 	/**
+	 * drawable shape types
+	 * @enum {number}
+	 */
+	unilib.graphics.DrawableShapeType = {
+			SHAPE_TEXT: 0,
+			SHAPE_VOID: 1,
+			SHAPE_RECT: 2,
+			SHAPE_LINE: 3,
+			SHAPE_COMPOSITE: 4
+	};
+	
+	/**
 	 * base Drawable Shape class
 	 * @class
 	 * @abstract
@@ -46,7 +58,7 @@ unilib.provideNamespace('unilib.graphics', function() {
 		this.position_ = new unilib.geometry.Point3D(0, 0, 0);
 		
 		/**
-		 * ID of the drawable shape
+		 * ID of the drawable shape, it is not assumed to be unique
 		 * @type {number | string}
 		 * @protected
 		 */
@@ -58,15 +70,6 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @protected
 		 */
 		this.style_ = new unilib.graphics.StyleInformations();
-		
-		/**
-		 * event listeners registered on the drawable
-		 * @type {Array.<Array.<string, 
-		 * 	function(unilib.interfaces.graphics.IDrawable)>>}
-		 * @deprecated
-		 * @protected
-		 */
-		this.listeners_ = [];
 	};
 	unilib.inherit(unilib.graphics.DrawableShape, 
 			unilib.interfaces.graphics.IDrawable.prototype);
@@ -125,6 +128,8 @@ unilib.provideNamespace('unilib.graphics', function() {
 	 */
 	unilib.graphics.VoidShape = function() {
 		unilib.graphics.DrawableShape.call(this);
+		
+		this.setID(unilib.graphics.DrawableShapeType.SHAPE_VOID);
 	};
 	unilib.inherit(unilib.graphics.VoidShape, 
 			unilib.graphics.DrawableShape.prototype);
@@ -192,6 +197,7 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 */
 		this.end_ = end;
 		
+		this.setID(unilib.graphics.DrawableShapeType.SHAPE_LINE);
 	};
 	unilib.inherit(unilib.graphics.Line, 
 			unilib.graphics.DrawableShape.prototype);
@@ -374,6 +380,8 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @private
 		 */
 		this.bottomRight_ = bottomRight;
+		
+		this.setID(unilib.graphics.DrawableShapeType.SHAPE_RECT);
 	};
 	unilib.inherit(unilib.graphics.Rectangle,
 			unilib.graphics.DrawableShape.prototype);
@@ -405,8 +413,14 @@ unilib.provideNamespace('unilib.graphics', function() {
 			//if z axis does not match and point.z != null
 			return false;
 		}
+		var boxTopLeft = new unilib.geometry.Point(
+				this.topLeft_.x + this.position_.x,
+				this.topLeft_.y + this.position_.y);
+		var boxBottomRight = new unilib.geometry.Point(
+				this.bottomRight_.x + this.position_.x,
+				this.bottomRight_.y + this.position_.y);
 		return unilib.geometry.boundingBoxOverlap(point, point, 
-				this.topLeft_, this.bottomRight_);
+				boxTopLeft, boxBottomRight);
 	};
 	
 	/**
@@ -470,6 +484,8 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @private
 		 */
 		this.text_ = text || '';
+		
+		this.setID(unilib.graphics.DrawableShapeType.SHAPE_TEXT);
 	};
 	unilib.inherit(unilib.graphics.TextRect, 
 			unilib.graphics.Rectangle.prototype);
@@ -527,6 +543,8 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @private
 		 */
 		this.drawables_ = [];
+		
+		this.setID(unilib.graphics.DrawableShapeType.SHAPE_COMPOSITE);
 	};
 	unilib.inherit(unilib.graphics.CompositeDrawableShape, 
 			unilib.graphics.DrawableShape.prototype);
@@ -540,11 +558,6 @@ unilib.provideNamespace('unilib.graphics', function() {
 		function(drawable) {
 		if (this.drawables_.indexOf(drawable) == -1) {
 			this.drawables_.push(drawable);
-			var pos = drawable.getPosition();
-			pos.x += this.position_.x;
-			pos.y += this.position_.y;
-			pos.z += this.position_.z;
-			//drawable.setPosition(pos); //useless, private pos is already updated
 		}
 	};
 	
@@ -578,13 +591,6 @@ unilib.provideNamespace('unilib.graphics', function() {
 	unilib.graphics.CompositeDrawableShape.prototype.setPosition = 
 		function(position) {
 			this.position_ = position;
-			for (var i = 0; i < this.drawables_.length; i++) {
-				var pos = this.drawables_[i].getPosition();
-				pos.x += this.position_.x;
-				pos.y += this.position_.y;
-				pos.z += this.position_.z;
-				//this.drawables_[i].setPosition(pos); useless, pos is already modified
-			}
 	};
 	
 	/**
@@ -600,7 +606,12 @@ unilib.provideNamespace('unilib.graphics', function() {
 	 */
 	unilib.graphics.CompositeDrawableShape.prototype.draw = function(renderer) {
 		for (var i = 0; i < this.drawables_.length; i++) {
+			var oldPos = this.drawables_[i].getPosition();
+			var newPos = new unilib.geometry.Point3D(oldPos.x + this.position_.x,
+					oldPos.y + this.position_.y, oldPos.z + this.position_.z);
+			this.drawables_[i].setPosition(newPos);
 			this.drawables_[i].draw(renderer);
+			this.drawables_[i].setPosition(oldPos);
 		}
 	};
 	
@@ -609,7 +620,12 @@ unilib.provideNamespace('unilib.graphics', function() {
 	 */
 	unilib.graphics.CompositeDrawableShape.prototype.clear = function(renderer) {
 		for (var i = 0; i < this.drawables_.length; i++) {
+			var oldPos = this.drawables_[i].getPosition();
+			var newPos = new unilib.geometry.Point3D(oldPos.x + this.position_.x,
+					oldPos.y + this.position_.y, oldPos.z + this.position_.z);
+			this.drawables_[i].setPosition(newPos);
 			this.drawables_[i].clear(renderer);
+			this.drawables_[i].setPosition(oldPos);
 		} 
 	};
 	

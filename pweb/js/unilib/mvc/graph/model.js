@@ -16,9 +16,6 @@
  * 	i) strict order dependency among certain function calls
  * 	ii) (maybe) possibility to change model of an element while it is linked
  * 			to elements from the model, resulting in a cross-model inconsistency
- * [REFACTORING] remove ID from graphElement.
- * [REFACTORING] add type to GraphElement and GraphElementType enumeration.
- * [REFACTORING] add text field to BaseGraphElementData
  */
 
 
@@ -277,6 +274,13 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		 * @public
 		 */
 		this.points = [];
+		
+		/**
+		 * text associated with the element
+		 * @type {string}
+		 * @public
+		 */
+		this.text = '';
 	};
 	unilib.inherit(unilib.mvc.graph.BaseGraphElementData, 
 			unilib.interfaces.clonable.IClonable.prototype);
@@ -441,7 +445,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 		
 		/**
 		 * ID of the descriptor, useful for distinguishing elements
-		 * it is assumed to be unique
+		 * it is not assumed to be unique
 		 * @type {string | number}
 		 * @protected
 		 */
@@ -1327,6 +1331,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
 	};
 	
 }, ['unilib/error.js', 'unilib/interface/observer.js', 
-    'unilib/interface/iterator.js', 'unilib/graphics/drawable.js', 
-    'unilib/mvc/model.js', 'unilib/interface/clonable.js']);
+    'unilib/interface/iterator.js', 'unilib/mvc/model.js', 
+    'unilib/interface/clonable.js', 'unilib/geometry/geometry.js']);
 unilib.notifyLoaded();

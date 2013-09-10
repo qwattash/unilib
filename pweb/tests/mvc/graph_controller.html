@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<title>Graph Controller test</title>
+<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/graph/drawable_strategy.js');
+  unilib.include('unilib/mvc/graph/model.js');
+ /*
+  test('mvc GraphDrawableManager', function() {
+   var provider = new unilib.mvc.controller.StyleProvider();
+   var s1 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#888888';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   var s2 = new unilib.graphics.StyleInformations();
+   s2.backgroundColor = '#4444CC';
+   s2.lineWidth = 0;
+   s2.textSize = 10;
+   s2.textFonr = 'monospace';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   var s3 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#22DD22';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.PIN, unilib.mvc.graph.StyleType.BODY, s3);
+   var sLine = new unilib.graphics.StyleInformations();
+   sLine.lineWidth = 4;
+   sLine.lineColor = '#AA00AA';
+   sLine.textSize = 10;
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.EDGE, unilib.mvc.graph.StyleType.BODY, sLine);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.EDGE, unilib.mvc.graph.StyleType.TEXT, s2);
+   var strategy = new unilib.mvc.view.DrawableManagerStrategy();
+   var nodeModule = new unilib.mvc.graph.NodeDrawableManagerStrategy(provider);
+   var edgeModule = new unilib.mvc.graph.EdgeDrawableManagerStrategy(provider);
+   strategy.addModule(nodeModule);
+   strategy.addModule(edgeModule);
+   //setup model
+   var model = new unilib.mvc.graph.GraphModel();
+   var node = model.makeNode();
+   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   var data = node.getData();
+   data.position = new unilib.geometry.Point3D(150, 100, 3);
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(100, 100)];
+   data.text = 'aNode';
+   node.setData(data);
+   var nodeDrawable = strategy.build(node);
+   var pin1 = node.makePin();
+   var pin2 = node.makePin();
+   var edge = pin1.makeConnection(pin2);
+   edge.setID(unilib.mvc.graph.GraphElementType.EDGE);
+   data = edge.getData();
+   data.position = new unilib.geometry.Point3D(150, 100, 4);
+   //try a realistic pin to pin path that connects topLeft corner of the node with the bottomRight one
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(0, -50), 
+      new unilib.geometry.Point(150, -50), new unilib.geometry.Point(150, 100), new unilib.geometry.Point(100, 100)];
+   data.text = '<start:><end:>';
+   edge.setData(data);
+   var lineDrawable = strategy.build(edge);
+   //graphic feedback (not strictly needed)
+   var container = document.getElementById('container');
+   var renderer = new unilib.graphics.HTML4Renderer(container);
+   nodeDrawable.draw(renderer);
+   lineDrawable.draw(renderer);
+   data = edge.getData();
+   data.position = new unilib.geometry.Point3D(400, 100, 4);
+   //try a realistic pin to pin path that connects topLeft corner of the node with the bottomRight one
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(0, -50), 
+      new unilib.geometry.Point(50, -50), new unilib.geometry.Point(50, 0), new unilib.geometry.Point(0, 0)];
+   data.text = '<start:start><end:>';
+   edge.setData(data);
+   lineDrawable = strategy.build(edge);
+   lineDrawable.draw(renderer);
+  });*/
+ 
+ test('GraphDrawableManagerStrategy creation of drawables', function(){
+   //setup strategy
+   var provider = new unilib.mvc.controller.StyleProvider();
+   var s1 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#888888';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   var s2 = new unilib.graphics.StyleInformations();
+   s2.backgroundColor = '#4444CC';
+   s2.lineWidth = 0;
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   var s3 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#22DD22';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.PIN, unilib.mvc.graph.StyleType.BODY, s3);
+   var sLine = new unilib.graphics.StyleInformations();
+   sLine.lineWidth = 2;
+   sLine.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.EDGE, unilib.mvc.graph.StyleType.BODY, sLine);
+   var strategy = new unilib.mvc.view.DrawableManagerStrategy();
+   var nodeModule = new unilib.mvc.graph.NodeDrawableManagerStrategy(provider);
+   var edgeModule = new unilib.mvc.graph.EdgeDrawableManagerStrategy(provider);
+   strategy.addModule(nodeModule);
+   strategy.addModule(edgeModule);
+   //setup model
+   var model = new unilib.mvc.graph.GraphModel();
+   var node = model.makeNode();
+   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   var data = node.getData();
+   data.position = new unilib.geometry.Point3D(10, 10, 3);
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
+   data.text = 'aNode';
+   node.setData(data);
+   
+   var nodeDrawable = strategy.build(node);
+   assertTrue(nodeDrawable.isAt(new unilib.geometry.Point3D(10, 10, 3)), 'node created in correct TopLeft position');
+   assertTrue(nodeDrawable.isAt(new unilib.geometry.Point3D(20, 20, 3)), 'node created in correct BottomRight position');
+   var i = nodeDrawable.createDrawableIterator();
+   assertDeepEqual(i.item().getStyleInformations(), s1, 'node body style applied');
+   i.next();
+   assertDeepEqual(i.item().getStyleInformations(), s2, 'node label style applied');
+   /*
+    * pin drawing algorithm is the same as the node, so skip testing it
+    */
+   
+   var pin1 = node.makePin();
+   var pin2 = node.makePin();
+   var edge = pin1.makeConnection(pin2);
+   edge.setID(unilib.mvc.graph.GraphElementType.EDGE);
+   data = edge.getData();
+   data.position = new unilib.geometry.Point3D(10, 10, 3);
+   //try a realistic pin to pin path that connects topLeft corner of the node with the bottomRight one
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(0, -10), 
+      new unilib.geometry.Point(20, -10), new unilib.geometry.Point(20, 10), new unilib.geometry.Point(10, 10)];
+   data.text = '<start:aEdge><end:>';
+   edge.setData(data);
+   var lineDrawable = strategy.build(edge);
+   var lineDrawableIter = lineDrawable.createDrawableIterator();
+   var lineBody = lineDrawableIter.item();
+   var index = 0;
+   assertDeepEqual(lineBody.getPosition(), new unilib.geometry.Point3D(10, 10, 3), 'polyline position set');
+   i = lineBody.createDrawableIterator();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(0, 0), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(0, -10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(0, -10), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(20, -10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(20, -10), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(20, 10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(20, 10), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(10, 10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   i.next();
+   assertTrue(i.end(), 'polyline ended');
+   lineDrawableIter.next();
+   assertFalse(lineDrawableIter.end(), 'label attached');
+   
+   //graphic feedback (not strictly needed)
+   var container = document.getElementById('container');
+   var renderer = new unilib.graphics.HTML4Renderer(container);
+   nodeDrawable.draw(renderer);
+   lineDrawable.draw(renderer);
+ });
+ 
+ test('GraphDrawableManagerStrategy update of drawables', function(){
+   // ---------------------------------------setup strategy
+   var provider = new unilib.mvc.controller.StyleProvider();
+   var s1 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#888888';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   var s2 = new unilib.graphics.StyleInformations();
+   s2.backgroundColor = '#4444CC';
+   s2.lineWidth = 0;
+   s2.textColor = '#FFFFFF';
+   s2.textSize = 10;
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   var s3 = new unilib.graphics.StyleInformations();
+   s1.backgroundColor = '#22DD22';
+   s1.lineWidth = 1;
+   s1.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.PIN, unilib.mvc.graph.StyleType.BODY, s3);
+   var sLine = new unilib.graphics.StyleInformations();
+   sLine.lineWidth = 2;
+   sLine.lineColor = '#AA00AA';
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.EDGE, unilib.mvc.graph.StyleType.BODY, sLine);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.EDGE, unilib.mvc.graph.StyleType.TEXT, s2);
+   var strategy = new unilib.mvc.view.DrawableManagerStrategy();
+   var nodeModule = new unilib.mvc.graph.NodeDrawableManagerStrategy(provider);
+   var edgeModule = new unilib.mvc.graph.EdgeDrawableManagerStrategy(provider);
+   strategy.addModule(nodeModule);
+   strategy.addModule(edgeModule);
+   //--------------------------------------------------setup model
+   var model = new unilib.mvc.graph.GraphModel();
+   var node = model.makeNode();
+   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   var data = node.getData();
+   data.position = new unilib.geometry.Point3D(50, 50, 3);
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
+   data.text = 'aNode';
+   node.setData(data);
+   var pin1 = node.makePin();
+   var pin2 = node.makePin();
+   var edge = pin1.makeConnection(pin2);
+   edge.setID(unilib.mvc.graph.GraphElementType.EDGE);
+   data = edge.getData();
+   data.position = new unilib.geometry.Point3D(50, 50, 3);
+   //try a realistic pin to pin path that connects topLeft corner of the node with the bottomRight one
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(0, -10), 
+      new unilib.geometry.Point(20, -10), new unilib.geometry.Point(20, 10), new unilib.geometry.Point(10, 10)];
+   data.text = '<start:><end:>';
+   edge.setData(data);
+   // ----------------------------------------------first creation of drawables
+   var nodeDrawable = strategy.build(node);
+   var lineDrawable = strategy.build(edge);
+   //-----------------------------------------------modification of the model elements
+   data = node.getData();
+   data.points[1] = new unilib.geometry.Point(20, 20);
+   data.text = 'modified';
+   node.setData(data);
+   data = edge.getData();
+   data.points[2] = new unilib.geometry.Point(30, -10);
+   data.points[3] = new unilib.geometry.Point(30, 20);
+   data.points[4] = new unilib.geometry.Point(20, 20);
+   edge.setData(data);
+   nodeDrawable = strategy.update(nodeDrawable, node);
+   lineDrawable = strategy.update(lineDrawable, edge);
+   //---------------------------------------------check values
+   assertTrue(nodeDrawable.isAt(new unilib.geometry.Point3D(50, 50, 3)), 'node created in correct TopLeft position');
+   assertTrue(nodeDrawable.isAt(new unilib.geometry.Point3D(70, 70, 3)), 'node created in correct BottomRight position');
+   var i = nodeDrawable.createDrawableIterator();
+   assertDeepEqual(i.item().getStyleInformations(), s1, 'node body style applied');
+   i.next();
+   assertDeepEqual(i.item().getStyleInformations(), s2, 'node label style applied');
+   //check line values
+   var lineDrawableIter = lineDrawable.createDrawableIterator();
+   var lineBody = lineDrawableIter.item();
+   var index = 0;
+   assertDeepEqual(lineBody.getPosition(), new unilib.geometry.Point3D(50, 50, 3), 'polyline position set');
+   i = lineBody.createDrawableIterator();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(0, 0), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(0, -10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(0, -10), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(30, -10), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(30, -10), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(30, 20), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   index++;
+   i.next();
+   assertDeepEqual(i.item().getPosition(), new unilib.geometry.Point3D(0, 0, 0), 'line#' + index + ' position set');
+   assertDeepEqual(i.item().getStart(), new unilib.geometry.Point(30, 20), 'line#' + index + ' start set');
+   assertDeepEqual(i.item().getEnd(), new unilib.geometry.Point(20, 20), 'line#' + index + ' end set');
+   assertDeepEqual(i.item().getStyleInformations(), sLine, 'line#' + index + ' body style applied');
+   i.next();
+   assertTrue(i.end(), 'polyline ended');
+   lineDrawableIter.next();
+   assertTrue(lineDrawableIter.end(), 'no label attached');
+   //graphic feedback (not strictly needed)
+   var container = document.getElementById('container');
+   var renderer = new unilib.graphics.HTML4Renderer(container);
+   nodeDrawable.draw(renderer);
+   lineDrawable.draw(renderer);
+ });
+ 
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>

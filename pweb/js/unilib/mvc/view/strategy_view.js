@@ -51,34 +51,66 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 		return this.target_;
 	};
 	
-	// ------------------- abstract DrawableManagerStrategy ---------------------
+	// ------------------------ modular DrawableManagerStrategy -------------------
+	
 	/**
-	 * base class for DrawablemanagerStrategy
+	 * handle creation and update of drawables using a composite model,
+	 * each create/update request is dispatched to all modules until one
+	 * answer positively to the request and handle it.
+	 * It is required that requests from each model element are handled by
+	 * only one module, this is not checked when adding modules to the manager.
+	 * unilib.mvc.view.DrawableManagerStrategy have the following 
+	 * 	advantages:
+	 * 	i) increased extensibility and ease of extensibility
+ 	 * 	ii) increased amount of reusable code
+ 	 * 	iii) potentially nullified use of switch/case logic that is a severe 
+ 	 * 		weakness for variation points (such as this) (Protected Variations GRASP)
 	 * @class
-	 * @abstract
+	 * @extends {unilib.interfaces.factory.ModularFactory}
 	 */
-	unilib.mvc.view.DrawableManagerStrategy = function() {};
-	
-	/**
-	 * create a drawable to represent given element
-	 * @param {Object} elem typically an element from the model
-	 * @returns {unilib.interfaces.graphics.IDrawable}
-	 */
-	unilib.mvc.view.DrawableManagerStrategy.prototype.createDrawable = 
-		function(elem) {
-			throw new unilib.error.AbstractMethodError();
+	unilib.mvc.view.DrawableManagerStrategy = function() {
+		unilib.interfaces.factory.ModularFactory.call(this);
 	};
+	unilib.inherit(unilib.mvc.view.DrawableManagerStrategy,
+			unilib.interfaces.factory.ModularFactory.prototype);
 	
 	/**
-	 * update a drawable to match specified element, typically an
-	 * element from the model
+	 * update given drawable and related element from model
 	 * @param {unilib.interfaces.graphics.IDrawable} drawable 
 	 * 	drawable to be updated
-	 * @param {Object} elem element to be used as source
+	 * @param {Object} elem related element used for input values
+	 * @returns {unilib.interfaces.graphics.IDrawable}
 	 */
-	unilib.mvc.view.DrawableManagerStrategy.prototype.updateDrawable =
+	unilib.mvc.view.DrawableManagerStrategy.prototype.update =
 		function(drawable, elem) {
-			throw new unilib.error.AbstractMethodError();
+		for (var i = 0; i < this.modules_.length; i++) {
+			if (this.modules_[i].canHandle(elem)) {
+				return this.modules_[i].update(drawable, elem);
+			}
+		}
+	};
+	
+	// ----------------------------------
+	/**
+	 * @class
+	 * @abstract
+	 * @extends {unilib.interfaces.factory.IFactoryModule}
+	 */
+	unilib.mvc.view.DrawableManagerStrategyModule = function() {};
+	unilib.inherit(unilib.mvc.view.DrawableManagerStrategyModule,
+			unilib.interfaces.factory.IFactoryModule.prototype);
+	
+	/**
+	 * update given drawable and related element from model
+	 * @abstract
+	 * @param {unilib.interfaces.graphics.IDrawable} drawable 
+	 * 	drawable to be updated
+	 * @param {Object} elem related element used for input values
+	 * @returns {unilib.interfaces.graphics.IDrawable}
+	 */
+	unilib.mvc.view.DrawableManagerStrategyModule.prototype.update = 
+		function() {
+		throw new unilib.error.AbstractMethodError();
 	};
 	
 	// ---------------------------------- StrategyView --------------------------
@@ -87,6 +119,8 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 	 * @class
 	 * @extends {unilib.interfaces.observe.Observer}
 	 * @param {unilib.interfaces.graphics.IRenderer}
+	 * @param {unilib.mvc.view.DrawableManagerStrategy} drawableManager 
+	 * strategy for creation and updating of Drawables for the view
 	 */
 	unilib.mvc.view.StrategyView = function(renderer, drawableManager) {
 		unilib.interfaces.observer.Observer.call(this);
@@ -149,7 +183,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 	 */
 	unilib.mvc.view.StrategyView.prototype.getDrawableIndexAtPoint_ = 
 		function(point) {
-		var match;
+		var match = [];
 		for (var i = 0; i < this.drawables_.length; i++) {
 			if (this.drawables_[i][0].isAt(point)) {
 				match.push(i);
@@ -182,8 +216,9 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 			}
 		}
 		//build a ViewEvent to be sent to the controller
-		var viewEvent = new unilib.mvc.view.ViewEvent(event, 
-				targetDrawableRecord[1]);
+		var targetElement = (targetDrawableRecord != null) ?
+				targetDrawableRecord[1] : null;
+		var viewEvent = new unilib.mvc.view.ViewEvent(event, targetElement);
 		this.notify(viewEvent);
 	};
 	
@@ -208,7 +243,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 				//update the drawable using the strategy object
 				if (drawable) {
 					drawable.clear(this.renderer_);
-					this.drawableManager_.updateDrawable(drawable, event.getTarget());
+					this.drawableManager_.update(drawable, event.getTarget());
 					drawable.draw(this.renderer_);
 				}
 				else {
@@ -230,7 +265,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 			case unilib.mvc.model.ModelEventType.ADD:
 				//add a new drawable representing the model element to the view
 				if (! drawable) {
-					drawable = this.drawableManager_.createDrawable(event.getTarget());
+					drawable = this.drawableManager_.build(event.getTarget());
 					this.drawables_.push([drawable, event.getTarget()]);
 					drawable.draw(this.renderer_);
 				}
@@ -247,5 +282,5 @@ unilib.provideNamespace('unilib.mvc.view', function() {
 	
 	
 }, ['unilib/interface/observer.js', 'unilib/error.js', 
-    'unilib/graphics/renderer.js']);
+    'unilib/graphics/renderer.js', 'unilib/interface/modular_factory.js']);
 unilib.notifyLoaded();

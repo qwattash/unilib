@@ -36,6 +36,13 @@ unilib.provideNamespace('unilib.interfaces.iterator', function() {
 	};
 	
 	/**
+	 * reset iterator item pointer to the end
+	 */
+	unilib.interfaces.iterator.Iterator.prototype.finish = function() {
+		throw new unilib.error.AbstractMethodError();
+	};
+	
+	/**
 	 * check if iterator has reached the end
 	 * @returns {boolean}
 	 */
@@ -96,6 +103,14 @@ unilib.provideNamespace('unilib.interfaces.iterator', function() {
 	 */
 	unilib.interfaces.iterator.ArrayIterator.prototype.begin = function() {
 		this.index_ = 0;
+		this.endFlag_ = (this.vector_.length == 0) ? true : false;
+	};
+	
+	/**
+	 * reset iterator item pointer to the end
+	 */
+	unilib.interfaces.iterator.ArrayIterator.prototype.finish = function() {
+		this.index_ = this.vector_.length - 1;
 		this.endFlag_ = (this.vector_.length == 0) ? true : false;
 	};
 	

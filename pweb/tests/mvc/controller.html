@@ -1,0 +1,60 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<title>generic Controller test</title>
+<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/controller.js');
+
+  test('StyleProvider', function() {
+    var defaultStyle = new unilib.graphics.StyleInformations();
+    defaultStyle.lineWidth = 999;
+    var provider = new unilib.mvc.controller.StyleProvider(defaultStyle);
+    //styles
+    var s1 = new unilib.graphics.StyleInformations();
+    var s2 = new unilib.graphics.StyleInformations();
+    var s3 = new unilib.graphics.StyleInformations();
+    var s4 = new unilib.graphics.StyleInformations();
+    //use lineWidth to identify styles
+    s1.lineWidth = 1;
+    s2.lineWidth = 2;
+    s3.lineWidth = 3;
+    s4.lineWidth = 4;
+    //elem types and style types
+    var styleType = {
+      TYPE_1: 1,
+      TYPE_2: 2
+    };
+    var elemType = {
+      TYPE_A: 'a',
+      TYPE_B: 'b',
+      TYPE_C: 'c'
+    };
+    //register styles
+    //s1 as default for elem type A
+    provider.registerStyle(elemType.TYPE_A, unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, s1);
+    provider.registerStyle(elemType.TYPE_A, styleType.TYPE_2, s2);
+    provider.registerStyle(elemType.TYPE_B, styleType.TYPE_1, s3);
+    provider.registerStyle(elemType.TYPE_B, styleType.TYPE_2, s4);
+    assertDeepEqual(provider.getStyle(elemType.TYPE_A, styleType.TYPE_1), s1, 'ask default style for element A');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_A, styleType.TYPE_2), s2, 'ask type2 style for element A');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_B, styleType.TYPE_1), s3, 'ask type1 style for element B');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_B, styleType.TYPE_2), s4, 'ask type2 style for element B');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_C, styleType.TYPE_1), defaultStyle, 'ask global default style');
+  });
+  
+  test('Command Controller', function() {
+    
+  });
+</script>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+

@@ -361,8 +361,8 @@ testManager = {
 			}
 		}
 		catch(ex) {
-				this.globalFailure('on ' + this.current.name + ' ' 
-						+ ex.toString());
+				this.globalFailure('on test:' + this.name + ' > ' 
+						+ ex.toString() + ', ' + ex.fileName + ':' + ex.lineNumber);
 			}
 		this.current = null;
 	},
@@ -495,7 +495,8 @@ Test.prototype.run = function() {
 		this.body();
 	}
 	catch(ex){
-		testManager.globalFailure(ex);
+		testManager.globalFailure('on test:' + this.name + ' > ' 
+				+ ex.toString() + ', ' + ex.fileName + ':' + ex.lineNumber);
 	}
 	testManager.endTest();
 };
@@ -681,8 +682,8 @@ assertion = {
 				//traverse key value pairs
 				result.resultCode = Result.PASS;
 				for (key in value) {
-					if (value[key] != undefined && expected[key] != undefined && 
-							value[key] != expected[key]) { //simple test case that may save a lot of traversing
+					if (value[key] !== undefined && expected[key] !== undefined && 
+							value[key] !== expected[key]) { //simple test case that may save a lot of traversing
 						if (value[key] instanceof Array && 
 								expected[key] instanceof Array) {
 							assertion.testDeepEqualArray(value[key], expected[key], result);

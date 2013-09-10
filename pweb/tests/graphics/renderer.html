@@ -20,8 +20,8 @@
       renderer.drawRect(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 40));
       var cbk = function(evt) {
         assertTrue(evt, 'evt received');
-        assertEqual(evt.targetRenderer, renderer, 'event target set');
-        assertEqual(evt.type, 'click', 'event type set');
+        assertEqual(evt.getTarget(), renderer, 'event target set');
+        assertEqual(evt.getEventType(), 'click', 'event type set');
       };
       renderer.addEventListener('click', cbk);
       elem = container.childNodes[0];
@@ -56,12 +56,12 @@
       //check that a new group has been created and added in the renderer
       var elem = container.childNodes[0];
       assertEqual(elem.style.position, 'absolute', 'renderer::drawLine position attribute');
-      assertEqual(elem.style.top, '20px', 'renderer::drawLine position Y attribute');
-      assertEqual(elem.style.left, '20px', 'renderer::drawLine position X attribute');
+      assertEqual(elem.style.top, '18px', 'renderer::drawLine position Y attribute');
+      assertEqual(elem.style.left, '18px', 'renderer::drawLine position X attribute');
       var bgcolor = new unilib.graphics.RGBVector(elem.style.backgroundColor);
       assertEqual(bgcolor.toHexString(), '#00AA22', 'renderer::drawLine BGColor attribute');
       assertEqual(elem.style.height, '4px', 'renderer::drawLine line width');
-      assertEqual(elem.style.width, '50px', 'renderer::drawLine line length');
+      assertEqual(elem.style.width, '54px', 'renderer::drawLine line length');
       //DASHED line
       style.lineWidth = 4;
       style.lineColor = '#22AA00';
@@ -87,8 +87,8 @@
       assertEqual(borderColor.toHexString(), '#000000', 'renderer::drawRect Border Color attribute');
       assertEqual(elem.style.borderWidth, '1px', 'renderer::drawRect border width');
       assertEqual(elem.style.borderStyle, 'solid', 'renderer::drawRect border style');
-      assertEqual(elem.style.height, '20px', 'renderer::drawRect rect height');
-      assertEqual(elem.style.width, '70px', 'renderer::drawRect rect width');
+      assertEqual(elem.style.height, '18px', 'renderer::drawRect rect height');
+      assertEqual(elem.style.width, '68px', 'renderer::drawRect rect width');
       
       //TEXT
       style.lineWidth = 1;
@@ -109,8 +109,8 @@
       assertEqual(borderColor.toHexString(), '#000000', 'renderer::drawText Border Color attribute');
       assertEqual(elem.style.borderWidth, '1px', 'renderer::drawText border width');
       assertEqual(elem.style.borderStyle, 'solid', 'renderer::drawText border style');
-      assertEqual(elem.style.height, '40px', 'renderer::drawText rect height');
-      assertEqual(elem.style.width, '70px', 'renderer::drawText rect width');
+      assertEqual(elem.style.height, '38px', 'renderer::drawText rect height');
+      assertEqual(elem.style.width, '68px', 'renderer::drawText rect width');
       assertEqual(elem.childNodes[0].textContent, 'Hello World', 'renderer::drawText text inserted in right place');
       
     });

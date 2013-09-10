@@ -4,12 +4,11 @@
  * @license GPL
  */
 
-
 /**
  * @todo
- * [FEAT] add transformation functions to renderer, i.e. renderer::translate(rect, pos) rotate scale ...
+ * [REFACTORING] add drag & drop event resolution with same names as
+ * 	DOM3/HTML5 DragDrop events
  */
-
 
 /**
  * @namespace unilib.graphics
@@ -88,14 +87,14 @@ unilib.provideNamespace('unilib.graphics', function() {
 		this.textSize = null;
 		
 		/**
-		 * color of the text
+		 * color of the text, same as DOM
 		 * @type {string} RGBString
 		 * @public
 		 */
 		this.textColor = null;
 		
 		/**
-		 * alignment of text
+		 * alignment of text, same values ad DOM
 		 * @type {string}
 		 * @public
 		 */
@@ -275,7 +274,7 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @type {unilib.graphics.EventButtonType}
 		 * @public
 		 */
-		this.buttom = button;
+		this.button = button;
 	};
 	
 	/**
@@ -314,19 +313,10 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 * @type {unilib.graphics.EventKeyMap}
 		 * @public
 		 */
-		this.keys = keymap;
+		this.keymap = keymap;
 	};
 	unilib.inherit(unilib.graphics.GraphicEvent,
 			unilib.interfaces.event.IEvent.prototype);
-	
-	/**
-	 * @see {unilib.interfaces.event.IEvent#stopPropagation}
-	 */
-	unilib.graphics.GraphicEvent.prototype.stopPropagation = function() {
-		if (this.targetRenderer_) {
-			this.targetRenderer_.stopEventPropagation();
-		}
-	};
 	
 	/**
 	 * @see {unilib.interfaces.event.IEvent#getEventType}
@@ -380,13 +370,6 @@ unilib.provideNamespace('unilib.graphics', function() {
 		 */
 		this.listeners_ = [];
 		
-		/**
-		 * handle event propagation stop requests
-		 * @type {boolean}
-		 * @private
-		 */
-		this.propagate_ = true;
-		
 		//set non-static positioning in order to use absolute positioning
 		//in the container
 		this.container_.style.position = 'relative';
@@ -415,18 +398,15 @@ unilib.provideNamespace('unilib.graphics', function() {
 		unilib.addEventListener(this.container_, 'keydown', this);
 		unilib.addEventListener(this.container_, 'keyup', this);
 		unilib.addEventListener(this.container_, 'keypress', this);
+		unilib.addEventListener(this.container_, 'contextmenu', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+		});
 	};
 	
 	/**
-	 * stop propagation of the event currently handled
-	 * @deprecated
-	 */
-	unilib.graphics.HTML4Renderer.prototype.stopPropagation = function() {
-		this.propagate_ = false;
-	};
-	
-	/**
-	 * get absolute position in the page for an element
+	 * get absolute position in the page for an element, offsetTop, offsetLeft, 
+	 * offsetParent are part of the CSSOM View specification
 	 * @private
 	 * @param {Element} element DOM element
 	 * @returns {unilib.geometry.Point3D}
@@ -439,6 +419,7 @@ unilib.provideNamespace('unilib.graphics', function() {
 			position.y += element.offsetTop;
 			element = element.offsetParent;
 		} while (element.offsetParent != null);
+		return position;
 	};
 	
 	/**
@@ -487,12 +468,16 @@ unilib.provideNamespace('unilib.graphics', function() {
 	
 	/**
 	 * create a graphic event from a DOM event
+	 * @private
 	 * @param {Event} event DOM event
 	 * @returns {unilib.graphics.GraphicEvent}
 	 */
-	unilib.graphics.HTML4Renderer.prototype.createEvent = function(event) {
+	unilib.graphics.HTML4Renderer.prototype.createEvent_ = function(event) {
 		var position = new unilib.geometry.Point();
 		var keymap = new unilib.graphics.EventKeyMap();
+		//handle IE event type notation
+		var match = event.type.match(/^on([a-z]*)/);
+		var type =  (match) ? match[1] : event,type
 		/*
 		 * calculate position:
 		 * i) position is relative to the renderer container.
@@ -520,19 +505,16 @@ unilib.provideNamespace('unilib.graphics', function() {
 		var parsed = this.parseEventKey_(event);
 		keymap.key = parsed.key;
 		keymap.isKeyPrintable = parsed.printable; 
-		return new unilib.graphic.GraphicEvent(event.type, this, position, keymap);
+		return new unilib.graphics.GraphicEvent(event.type, this, position, keymap);
 	};
 	
 	/**
 	 * DOM EventListener Interface
 	 * @param {Event} evt DOM event to be handled
-	 * @todo implement correctly
 	 */
 	unilib.graphics.HTML4Renderer.prototype.handleEvent = function(event) {
 		event = (event == undefined) ? window.event : event;
-		//reinit the propagation flag
-		this.propagate_ = true;
-		for (var i = 0; i < this.listeners_.length && this.propagate_; i++) {
+		for (var i = 0; i < this.listeners_.length; i++) {
 			if (this.listeners_[i][0] == event.type || 
 					this.listeners_[i][0] == 
 						unilib.graphics.GraphicEventType.EVENT_ALL) {
@@ -554,7 +536,7 @@ unilib.provideNamespace('unilib.graphics', function() {
 		function(topLeft, bottomRight) {
 		//check that corners are valid
 		if (topLeft.x > bottomRight.x || topLeft.y > bottomRight.y) {
-			throw new unlib.graphics.HTML4RendererError(
+			throw new unilib.graphics.HTML4RendererError(
 					'invalid corners for drawRect');
 		}
 		var rect = document.createElement('div');
@@ -562,8 +544,10 @@ unilib.provideNamespace('unilib.graphics', function() {
 		rect.style.zIndex = new String(this.origin_.z);
 		rect.style.left = (topLeft.x + this.origin_.x) + 'px';
 		rect.style.top = (topLeft.y + this.origin_.y) + 'px';
-		rect.style.width = Math.abs(topLeft.x - bottomRight.x) + 'px';
-		rect.style.height = Math.abs(topLeft.y - bottomRight.y) + 'px';
+		rect.style.width = (Math.abs(topLeft.x - bottomRight.x) - 
+				2 * this.style_.lineWidth) + 'px';
+		rect.style.height = (Math.abs(topLeft.y - bottomRight.y) -
+				2 * this.style_.lineWidth) + 'px';
 		rect.style.borderColor = this.style_.lineColor || '#000000';
 		rect.style.borderWidth = (this.style_.lineWidth) ? 
 				this.style_.lineWidth + 'px' : '1px';
@@ -647,6 +631,15 @@ unilib.provideNamespace('unilib.graphics', function() {
 					'are not supported');
 		}
 		var line = document.createElement('div');
+		/* 
+		 * 50% of lineWidth is used to have a reduced error margin 
+		 * respect to the theoretical line (that have no lineWidth).
+		 * This is used also to correct corners joints.
+		 * Math.floor is used instead of Math.round because it reduces
+		 * the error in the rendering of the line 
+		 * (this has been verified experimentally).
+		 */
+		var correctionFactor = Math.floor(this.style_.lineWidth / 2);
 		line.style.position = 'absolute';
 		line.style.zIndex = new String(this.origin_.z);
 		//remember that start and end have same X or Y (line not oblique)
@@ -656,22 +649,49 @@ unilib.provideNamespace('unilib.graphics', function() {
 			//line is horizontal
 			isVertical = false;
 			lineLength = Math.abs(start.x - end.x);
-			line.style.width = new String(lineLength) + 'px';
+			line.style.width = (lineLength + 2 * correctionFactor) + 'px';
 			//height will be seen according to style.lineWidth that sets the 
 			//border width
 			line.style.height = this.style_.lineWidth + 'px';
+			/*
+			 * left is taken relative to the leftmost point, otherwise the
+			 * width attribute (that is always positive) will make the line
+			 * appear on the wrong side (mirrored relative to start).
+			 * 
+			 */
+			line.style.left = (this.origin_.x + Math.min(start.x, end.x) -
+					correctionFactor) + 'px';
+			/*
+			 * same as above for the top property.
+			 * In addition top is subtracted of an extra 50% of lineWidth to have
+			 * a reduced error margin with the theoretical line.
+			 */
+			line.style.top = (this.origin_.y + Math.min(start.y, end.y) -
+					correctionFactor) + 'px';
 		}
 		else {
 			//line is vertical
 			isVertical = true;
 			lineLength = Math.abs(start.y - end.y);
-			line.style.height = new String(lineLength)+ 'px';
+			line.style.height = (lineLength + 2 * correctionFactor) + 'px';
 			//width will be seen according to style.lineWidth that sets the 
 			//border width
 			line.style.width = this.style_.lineWidth + 'px';
+			/*
+			 * left is taken relative to the leftmost point, otherwise the
+			 * width attribute (that is always positive) will make the line
+			 * appear on the wrong side (mirrored relative to start).
+			 * In addition left is subtracted of an extra 50% of lineWidth to have
+			 * a reduced error margin with the theoretical line.
+			 */
+			line.style.left = (this.origin_.x + Math.min(start.x, end.x) - 
+					correctionFactor) + 'px';
+			/*
+			 * same as above for the top property
+			 */
+			line.style.top = (this.origin_.y + Math.min(start.y, end.y) - 
+					correctionFactor) + 'px';
 		}
-		line.style.left = new String (this.origin_.x + start.x) + 'px';
-		line.style.top = new String(this.origin_.y + start.y) + 'px';
 		if (this.style_.lineStyle == unilib.graphics.LineStyle.LINE_DASHED) {
 			/*
 			 * if the line is dashed
@@ -769,9 +789,18 @@ unilib.provideNamespace('unilib.graphics', function() {
 			var boxTopLeft = new unilib.geometry.Point(
 					parseInt(itemStyle.left), 
 					parseInt(itemStyle.top));
+			var realWidth = parseInt(itemStyle.width)
+			var realHeight = parseInt(itemStyle.height);
+			if (! isNaN(parseInt(itemStyle.borderWidth))) {
+				realWidth += 2 * parseInt(itemStyle.borderWidth);
+				realHeight += 2 * parseInt(itemStyle.borderWidth);
+			}
 			var boxBottomRight = new unilib.geometry.Point(
-					parseInt(itemStyle.width) + boxTopLeft.x,
-					parseInt(itemStyle.height) + boxTopLeft.y);
+					realWidth + boxTopLeft.x,
+					realHeight + boxTopLeft.y);
+			console.log(i);
+			console.log(boxTopLeft);
+			console.log(boxBottomRight);
 			/*
 			 * check for overlapping:
 			 */
