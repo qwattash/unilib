@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>Drawable Manager tests</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/view/drawable_manager.js');
+  unilib.include('unilib/graphics/renderer.js');
+  unilib.include('unilib/graphics/drawable.js');
+  unilib.include('unilib/mvc/graph/model.js');
+  
+  test('Drawable manager drawable accessing interface', function() {
+    var container = document.getElementById('container');
+    var renderer = new unilib.graphics.HTML4Renderer(container);
+    var factory = new unilib.mvc.view.DrawableManagerStrategy();
+    var manager = new unilib.mvc.view.DrawableManager(renderer, factory);
+    //drawables in the manager
+    rect = [];
+    rect[0] = new unilib.graphics.Rectangle(new unilib.geometry.Point(10, 10), 
+                                            new unilib.geometry.Point(50, 50),
+                                            new unilib.geometry.Point3D(10, 10, 2));
+    rect[1] = new unilib.graphics.Rectangle(new unilib.geometry.Point(10, 10), 
+                                            new unilib.geometry.Point(50, 50),
+                                            new unilib.geometry.Point3D(100, 50, 2));
+    rect[2] = new unilib.graphics.Rectangle(new unilib.geometry.Point(10, 10), 
+                                            new unilib.geometry.Point(50, 50),
+                                            new unilib.geometry.Point3D(30, 30, 0));
+    var dummyStrategy = {};
+    dummyStrategy.build = function(elem) {
+      return rect[elem];
+    };
+    dummyStrategy.canHandle = function(elem) {
+      return true;
+    };
+    factory.addModule(dummyStrategy);
+    manager.update(new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 0));
+    manager.update(new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 1));
+    manager.update(new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 2));
+    
+    assertDeepEqual(manager.getDrawablesAt(new unilib.geometry.Point3D(20, 20, null)), [rect[0]], 'DrawableManager::getDrawablesAt 1 entry only');
+    assertDeepEqual(manager.getDrawablesAt(new unilib.geometry.Point3D(45, 45, null)), [rect[0], rect[2]], 'DrawableManager::getDrawablesAt 2 entries');
+    assertDeepEqual(manager.getOverlappingDrawables(rect[0]), [rect[2]], 'DrawableManager::getOverlappingDrawables');
+    assertDeepEqual(manager.getElementsAt(new unilib.geometry.Point3D(45, 45, null)), [0, 2], 'DrawableManager::getElementsAt 2 entries');
+    assertDeepEqual(manager.getElementsAt(new unilib.geometry.Point3D(110, 60, 2)), [1], 'DrawableManager::getElementsAt 1 entry');
+    assertEqual(manager.getElementFromDrawable(rect[0]), 0, 'DrawableManager::getElementFromDrawable');
+    assertEqual(manager.getDrawableFromElement(0), rect[0], 'DrawableManager::getDrawableFromElement');
+  });
+  
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+
+

@@ -3,12 +3,12 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
-<title>Graph Controller test</title>
-<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
-<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>Graph drawable manager factory test</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../../js/unilib/unittest.js"></script>
 <script type="text/JavaScript">
-  unilib.include('unilib/mvc/graph/drawable_strategy.js');
+  unilib.include('unilib/mvc/logical_network_graph/drawable_strategy.js');
   unilib.include('unilib/mvc/graph/model.js');
  /*
   test('mvc GraphDrawableManager', function() {
@@ -17,13 +17,13 @@
    s1.backgroundColor = '#888888';
    s1.lineWidth = 1;
    s1.lineColor = '#AA00AA';
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.BODY, s1);
    var s2 = new unilib.graphics.StyleInformations();
    s2.backgroundColor = '#4444CC';
    s2.lineWidth = 0;
    s2.textSize = 10;
    s2.textFonr = 'monospace';
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.TEXT, s2);
    var s3 = new unilib.graphics.StyleInformations();
    s1.backgroundColor = '#22DD22';
    s1.lineWidth = 1;
@@ -43,7 +43,7 @@
    //setup model
    var model = new unilib.mvc.graph.GraphModel();
    var node = model.makeNode();
-   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   node.setID(unilib.mvc.graph.GraphElementType.AND_NODE);
    var data = node.getData();
    data.position = new unilib.geometry.Point3D(150, 100, 3);
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(100, 100)];
@@ -85,11 +85,11 @@
    s1.backgroundColor = '#888888';
    s1.lineWidth = 1;
    s1.lineColor = '#AA00AA';
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.BODY, s1);
    var s2 = new unilib.graphics.StyleInformations();
    s2.backgroundColor = '#4444CC';
    s2.lineWidth = 0;
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.TEXT, s2);
    var s3 = new unilib.graphics.StyleInformations();
    s1.backgroundColor = '#22DD22';
    s1.lineWidth = 1;
@@ -107,7 +107,7 @@
    //setup model
    var model = new unilib.mvc.graph.GraphModel();
    var node = model.makeNode();
-   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   node.setID(unilib.mvc.graph.GraphElementType.AND_NODE);
    var data = node.getData();
    data.position = new unilib.geometry.Point3D(10, 10, 3);
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
@@ -183,13 +183,13 @@
    s1.backgroundColor = '#888888';
    s1.lineWidth = 1;
    s1.lineColor = '#AA00AA';
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.BODY, s1);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.BODY, s1);
    var s2 = new unilib.graphics.StyleInformations();
    s2.backgroundColor = '#4444CC';
    s2.lineWidth = 0;
    s2.textColor = '#FFFFFF';
    s2.textSize = 10;
-   provider.registerStyle(unilib.mvc.graph.GraphElementType.NODE, unilib.mvc.graph.StyleType.TEXT, s2);
+   provider.registerStyle(unilib.mvc.graph.GraphElementType.AND_NODE, unilib.mvc.graph.StyleType.TEXT, s2);
    var s3 = new unilib.graphics.StyleInformations();
    s1.backgroundColor = '#22DD22';
    s1.lineWidth = 1;
@@ -208,7 +208,7 @@
    //--------------------------------------------------setup model
    var model = new unilib.mvc.graph.GraphModel();
    var node = model.makeNode();
-   node.setID(unilib.mvc.graph.GraphElementType.NODE);
+   node.setID(unilib.mvc.graph.GraphElementType.AND_NODE);
    var data = node.getData();
    data.position = new unilib.geometry.Point3D(50, 50, 3);
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];

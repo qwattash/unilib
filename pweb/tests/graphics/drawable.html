@@ -198,13 +198,13 @@
       br = new unilib.geometry.Point(80, 50);
       var line = new unilib.graphics.Line(tl, br, pos);
       var style = new unilib.graphics.StyleInformations();
-      style.lineSize = 10;
+      style.lineWidth = 10;
       line.setStyleInformations(style);
-      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 20, 0)), 'Line::isAt topLeft corner');
-      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 20, 0)), 'Line::isAt topRight corner');
-      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 60, 0)), 'Line::isAt bottomRight corner');
-      assertTrue(rect.isAt(new unilib.geometry.Point3D(90, 60, 0)), 'Line::isAt bottomLeft corner');
-      assertTrue(rect.isAt(new unilib.geometry.Point3D(100, 50, 0)), 'Line::isAt edge');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(90, 20, 0)), 'Line::isAt topLeft corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 20, 0)), 'Line::isAt topRight corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 60, 0)), 'Line::isAt bottomRight corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(90, 60, 0)), 'Line::isAt bottomLeft corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 50, 0)), 'Line::isAt edge');
       
     });
   </script>

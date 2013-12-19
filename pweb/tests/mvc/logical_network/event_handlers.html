@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>Graph command factory test</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/logical_network_graph/event_handlers.js');
+  unilib.include('unilib/mvc/view/drawable_manager.js');
+  unilib.include('unilib/mvc/controller/controller.js');
+  unilib.include('unilib/mvc/graph/model.js');
+  
+  test('Mouse event observer', function() {
+    //setup of testing environment
+    var dummyCommandManager = {};
+    var commands = [];
+    var undo = 0;
+    dummyCommandManager.exec = function(cmd) {
+      commands.push(cmd);
+    };
+    dummyCommandManager.undo = function() {
+      undo++;
+    };
+    var handler = new unilib.mvc.ln.ClickEventObserver(dummyCommandManager);
+    //setup of events for testing
+    var keymap = new unilib.mvc.controller.EventKeyMap();
+    keymap.button = unilib.mvc.controller.EventButtonType.BUTTON_LEFT;
+    var target = 'eventTarget';
+    var pos = new unilib.geometry.Point3D(50, 50, 0);
+    var clickLeft = new unilib.mvc.controller.ViewEvent('click', target, pos, keymap);
+    handler.update(clickLeft);
+    //check for menu generation
+  });
+  
+  test('dragdrop event observer', function() {
+    //setup testing environment
+    var dummyCommandManager = {};
+    var cmd = [];
+    var undo = 0;
+    dummyCommandManager.exec = function(comm) {
+      cmd.push(comm);
+    };
+    dummyCommandManager.undo = function() {
+      undo++;
+    };
+    var handler = new unilib.mvc.ln.DragDropEventObserver(dummyCommandManager);
+    
+    //generate model
+    var model = new unilib.mvc.graph.GraphModel();
+    var node = model.makeNode();
+    var data = node.getData();
+    data.position = new unilib.geometry.Point3D(10, 10, 3);
+    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(60, 60)];
+    node.setData(data);
+    //generate events
+    var keymap = new unilib.mvc.controller.EventKeyMap();
+    keymap.button = unilib.mvc.controller.EventButtonType.BUTTON_LEFT;
+    var pos = new unilib.geometry.Point3D(50, 50, 0);
+    var dragstart = new unilib.mvc.controller.ViewEvent(unilib.mvc.controller.DragDropEvent.DRAGSTART,
+       node, pos, keymap);
+    pos = new unilib.geometry.Point3D(60, 60, 0);
+    var drag = new unilib.mvc.controller.ViewEvent(unilib.mvc.controller.DragDropEvent.DRAG,
+       node, pos, keymap);
+    pos = new unilib.geometry.Point3D(65, 65, 0);
+    var dragend = new unilib.mvc.controller.ViewEvent(unilib.mvc.controller.DragDropEvent.DRAGEND,
+       node, pos, keymap);
+    pos = new unilib.geometry.Point3D(65, 65, 0);
+    var drop = new unilib.mvc.controller.ViewEvent(unilib.mvc.controller.DragDropEvent.DROP,
+       {}, pos, keymap);
+
+    handler.update(dragstart);
+    assertDeepEqual(cmd, [], 'no operation on drag start');
+    assertEqual(undo, 0, 'no undo on drag start');
+    cmd = [];
+    handler.update(drag);
+    assertEqual(cmd.length, 1, 'single command issued');
+    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertEqual(undo, 0, 'no undo on drag');
+    cmd = [];
+    handler.update(drag);
+    assertEqual(cmd.length, 1, 'single command issued');
+    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertFalse(undo, 'no undo on drag');
+    cmd = [];
+    handler.update(dragend);
+    assertEqual(cmd.length, 1, 'single command issued');
+    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertFalse(undo, 'no undo on drag end');
+    cmd = [];
+    handler.update(drop);
+    assertEqual(cmd.length, 0, 'command not generated on drop');
+    assertEqual(undo, 1, 'undo dragEnd on drop');
+  });
+  
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>

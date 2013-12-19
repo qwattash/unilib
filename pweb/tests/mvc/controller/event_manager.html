@@ -1,0 +1,377 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>Event Manager test</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/controller/event_manager.js');
+  unilib.include('unilib/mvc/view/drawable_manager.js');
+  unilib.include('unilib/mvc/model.js');
+  unilib.include('unilib/graphics/drawable.js');
+  
+  function fireEvent(type, x, y, ctrl, alt, shift, meta, button, target, listener) {
+    if(document.createEvent) {
+      var evObj = document.createEvent('MouseEvents');
+      evObj.initMouseEvent(type, true, false, window, null, x, y, x, y, ctrl, alt, shift, meta, button, null);
+      if (listener== true) {
+        target.handleEvent(evObj);
+      }
+      else {
+        target.dispatchEvent(evObj);
+      }
+
+    } else if(document.createEventObject) {
+      var evObj = document.createEventObject();
+      evObj.clientX = x;
+      evObj.clientY = y;
+      evObj.button = button;
+      if (listener== true) {
+        target.handleEvent(evObj);
+      }
+      else {
+        target.fireEvent('on' + type, evObj);
+      }
+    }
+  };
+  
+  function createDummyContainer() {
+    var div = document.createElement('div');
+    div.style.display = 'none';
+    div.style.position = 'relative';
+    div.style.float = 'left';
+    div.style.left = '0px';
+    div.style.top = '0px';
+    document.body.appendChild(div);
+    return div;
+  };
+  
+  test('filtering of click events', function(){
+    var container = document.getElementById('container');
+    var renderer = new unilib.graphics.HTML4Renderer(container);
+    var drawableManager = new unilib.mvc.view.DrawableManager(renderer, null);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+    fireEvent('click', 10, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT,container);
+    assertEqual(evt.length, 0, '0 events fired');
+  });
+  
+  test('click event generated from mousedown and mouseup', function (){
+    var container = document.getElementById('container');
+    var renderer = new unilib.graphics.HTML4Renderer(container);
+    var drawableManager = new unilib.mvc.view.DrawableManager(renderer, null);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+    
+    fireEvent('mousedown', 10, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT,container);
+    fireEvent('mouseup', 10, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT,container);
+    
+    assertEqual(evt.length, 3, '3 events fired');
+    assertEqual(evt[0].getTarget(), null, 'event target set');
+    assertEqual(evt[0].getEventType(), 'mousedown', 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), null, 'event target set');
+    assertEqual(evt[1].getEventType(), 'mouseup', 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[2].getTarget(), null, 'event target set');
+    assertEqual(evt[2].getEventType(), 'click', 'event type set');
+    assertEqual(evt[2].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    evt = [];
+    fireEvent('mousedown', 10, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT,container);
+    fireEvent('mouseup', 10, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT,container);
+    assertEqual(evt.length, 3, '3 events fired');
+    assertEqual(evt[0].getTarget(), null, 'event terget set');
+    assertEqual(evt[0].getEventType(), 'mousedown', 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+    assertEqual(evt[1].getTarget(), null, 'event terget set');
+    assertEqual(evt[1].getEventType(), 'mouseup', 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+    assertEqual(evt[2].getTarget(), null, 'event terget set');
+    assertEqual(evt[2].getEventType(), 'click', 'event type set');
+    assertEqual(evt[2].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+    evt = [];
+  });
+  
+  test('drag and drop events from mousemove', function() {
+    var container = createDummyContainer();//document.getElementById('container');
+    var dummyRenderer = new unilib.graphics.HTML4Renderer(container);    
+    var dummyStrategy = {};
+    var position1 = new unilib.geometry.Point3D(10, 10, 0);
+    var position2 = new unilib.geometry.Point3D(20, 20, 1);
+    var rect1 = new unilib.graphics.Rectangle();
+    rect1.setPosition(position1);
+    rect1.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect1.setBottomRight(new unilib.geometry.Point(30, 30));
+    var rect2 = new unilib.graphics.Rectangle();
+    rect2.setPosition(position2);
+    rect2.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect2.setBottomRight(new unilib.geometry.Point(30, 30));
+    dummyStrategy.canHandle = function() {return true;};
+    dummyStrategy.build = function(target) {
+      if (target == 'rect1') {
+        return rect1;
+      }
+      if (target == 'rect2') {
+        return rect2;
+      }
+    };
+    dummyStrategy.update = function (drawable, target) {
+      return this.build(target);
+    };
+    var drawableManager = new unilib.mvc.view.DrawableManager(dummyRenderer, dummyStrategy);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+
+    //ModelEvents to add rectangles to the view
+    var add0 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect1');
+    var add1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect2');
+    
+    drawableManager.update(add0);
+    drawableManager.update(add1);
+    //drag event on mousemove
+    fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    fireEvent('mousemove', 35, 35, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    assertEqual(evt.length, 2, '2 events fired');
+    assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGSTART, 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAG, 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+  });
+  
+  test('drag drop target resolution', function() {
+    var container = createDummyContainer();//document.getElementById('container');
+    var dummyRenderer = new unilib.graphics.HTML4Renderer(container);    
+    var dummyStrategy = {};
+    var position1 = new unilib.geometry.Point3D(10, 10, 0);
+    var position2 = new unilib.geometry.Point3D(20, 20, 1);
+    var rect1 = new unilib.graphics.Rectangle();
+    rect1.setPosition(position1);
+    rect1.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect1.setBottomRight(new unilib.geometry.Point(30, 30));
+    var rect2 = new unilib.graphics.Rectangle();
+    rect2.setPosition(position2);
+    rect2.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect2.setBottomRight(new unilib.geometry.Point(30, 30));
+    dummyStrategy.canHandle = function() {return true;};
+    dummyStrategy.build = function(target) {
+      if (target == 'rect1') {
+        return rect1;
+      }
+      if (target == 'rect2') {
+        return rect2;
+      }
+    };
+    dummyStrategy.update = function (drawable, target) {
+      return this.build(target);
+    };
+    var drawableManager = new unilib.mvc.view.DrawableManager(dummyRenderer, dummyStrategy);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+
+    //ModelEvents to add rectangles to the view
+    var add0 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect1');
+    var add1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect2');
+    
+    drawableManager.update(add0);
+    drawableManager.update(add1);
+    //resolution of targets while dragging
+    //start dragging
+    fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    //move out of rect1
+    fireEvent('mousemove', 50, 35, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    
+    assertEqual(evt.length, 2, '2 events fired');
+    assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGSTART, 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAG, 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    evt = [];
+    //move back in to rect1
+    fireEvent('mousemove', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    assertEqual(evt.length, 2, '2 events fired');
+    assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAG, 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), 'rect1', 'event terget set');
+    assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGENTER, 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    evt = [];
+    //inside both rectangles, check that dragged one is not takes an target for overlapping
+    fireEvent('mousemove', 35, 35, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    assertEqual(evt.length, 2, '2 events fired');
+    assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAG, 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), 'rect1', 'event terget set');
+    assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGOVER, 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    evt = [];
+    //out of rect1, check for DRAGLEAVE event
+    rect2.setPosition(new unilib.geometry.Point(80, 0, 1));
+    var upd = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.UPDATE, 'rect2');
+    drawableManager.update(upd);
+    fireEvent('mousemove', 90, 10, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    assertEqual(evt.length, 2, '2 events fired');
+    assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+    assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAG, 'event type set');
+    assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    assertEqual(evt[1].getTarget(), 'rect1', 'event terget set');
+    assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGLEAVE, 'event type set');
+    assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+  });
+  
+  asyncTest('Drag drop events from left click timeout', 10, 1000, function() {
+    var container = createDummyContainer();//document.getElementById('container');
+    var dummyRenderer = new unilib.graphics.HTML4Renderer(container);    
+    var dummyStrategy = {};
+    var position1 = new unilib.geometry.Point3D(10, 10, 0);
+    var position2 = new unilib.geometry.Point3D(20, 20, 1);
+    var rect1 = new unilib.graphics.Rectangle();
+    rect1.setPosition(position1);
+    rect1.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect1.setBottomRight(new unilib.geometry.Point(30, 30));
+    var rect2 = new unilib.graphics.Rectangle();
+    rect2.setPosition(position2);
+    rect2.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect2.setBottomRight(new unilib.geometry.Point(30, 30));
+    dummyStrategy.canHandle = function() {return true;};
+    dummyStrategy.build = function(target) {
+      if (target == 'rect1') {
+        return rect1;
+      }
+      if (target == 'rect2') {
+        return rect2;
+      }
+    };
+    dummyStrategy.update = function (drawable, target) {
+      return this.build(target);
+    };
+    var drawableManager = new unilib.mvc.view.DrawableManager(dummyRenderer, dummyStrategy);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+
+    //ModelEvents to add rectangles to the view
+    var add0 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect1');
+    var add1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect2');
+    
+    drawableManager.update(add0);
+    drawableManager.update(add1);
+    //drag start event by click delay expiration
+    fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+    callLeftUp = function () {
+      fireEvent('mouseup', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
+      assertEqual(evt.length, 3, '3 events fired');
+      assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+      assertEqual(evt[0].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGSTART, 'event type set');
+      assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+      assertEqual(evt[1].getTarget(), 'rect2', 'event terget set');
+      assertEqual(evt[1].getEventType(), unilib.mvc.controller.DragDropEvent.DRAGEND, 'event type set');
+      assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+      assertEqual(evt[2].getTarget(), 'rect1', 'event terget set');
+      assertEqual(evt[2].getEventType(), unilib.mvc.controller.DragDropEvent.DROP, 'event type set');
+      assertEqual(evt[2].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, 'button set');
+    };
+    window.setTimeout(callLeftUp, 300);
+  });
+  
+  asyncTest('Drag drop events from right click timeout', 10, 1000, function() {
+    /* use a simulated renderer to avoid pollution of events from the testing user
+     * that involuntarily act on the container e.g. mousemove
+     */
+    var container = createDummyContainer();
+    var dummyRenderer = new unilib.graphics.HTML4Renderer(container);    
+    var dummyStrategy = {};
+    var position1 = new unilib.geometry.Point3D(10, 10, 0);
+    var position2 = new unilib.geometry.Point3D(20, 20, 1);
+    var rect1 = new unilib.graphics.Rectangle();
+    rect1.setPosition(position1);
+    rect1.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect1.setBottomRight(new unilib.geometry.Point(30, 30));
+    var rect2 = new unilib.graphics.Rectangle();
+    rect2.setPosition(position2);
+    rect2.setTopLeft(new unilib.geometry.Point(0, 0));
+    rect2.setBottomRight(new unilib.geometry.Point(30, 30));
+    dummyStrategy.canHandle = function() {return true;};
+    dummyStrategy.build = function(target) {
+      if (target == 'rect1') {
+        return rect1;
+      }
+      if (target == 'rect2') {
+        return rect2;
+      }
+    };
+    dummyStrategy.update = function (drawable, target) {
+      return this.build(target);
+    };
+    var drawableManager = new unilib.mvc.view.DrawableManager(dummyRenderer, dummyStrategy);
+    var eventManager = new unilib.mvc.controller.HTML4EventManager(container, drawableManager);
+    var dummyCtrl = {};
+    var evt = [];
+    dummyCtrl.update = function(e) {
+      evt.push(e);
+    };
+    eventManager.attachObserver(dummyCtrl);
+
+    //ModelEvents to add rectangles to the view
+    var add0 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect1');
+    var add1 = new unilib.mvc.model.ModelEvent(unilib.mvc.model.ModelEventType.ADD, 'rect2');
+    
+    drawableManager.update(add0);
+    drawableManager.update(add1);
+    //drag start event by click delay expiration
+    fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, eventManager, true);
+    callLeftUp = function () {
+      fireEvent('mouseup', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, eventManager, true);
+      assertEqual(evt.length, 3, '3 events fired');
+      assertEqual(evt[0].getTarget(), 'rect2', 'event terget set');
+      assertEqual(evt[0].getEventType(), 'mousedown', 'event type set');
+      assertEqual(evt[0].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+      assertEqual(evt[1].getTarget(), 'rect2', 'event terget set');
+      assertEqual(evt[1].getEventType(), 'mouseup', 'event type set');
+      assertEqual(evt[1].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+      assertEqual(evt[2].getTarget(), 'rect2', 'event terget set');
+      assertEqual(evt[2].getEventType(), 'click', 'event type set');
+      assertEqual(evt[2].keymap.button, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, 'button set');
+    };
+    window.setTimeout(callLeftUp, 300);
+  });
+</script>
+<body>
+  <div id='container' class='test-output-container-big absolute-position'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+

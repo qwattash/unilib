@@ -10,36 +10,6 @@
   <script type="text/JavaScript">
     unilib.include('unilib/graphics/renderer.js');
     
-    test('HTML4Renderer events', function() {
-      expect(3);
-      var container = document.getElementById('container');
-      var renderer = new unilib.graphics.HTML4Renderer(container);
-      //style assignment
-      var style = new unilib.graphics.StyleInformations();
-      renderer.setStyleInformations(style);
-      renderer.drawRect(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 40));
-      var cbk = function(evt) {
-        assertTrue(evt, 'evt received');
-        assertEqual(evt.getTarget(), renderer, 'event target set');
-        assertEqual(evt.getEventType(), 'click', 'event type set');
-      };
-      renderer.addEventListener('click', cbk);
-      elem = container.childNodes[0];
-      var evt;
-      if (document.createEvent) {
-        evt = document.createEvent('MouseEvents');
-        evt.initMouseEvent('click', true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-        elem.dispatchEvent(evt);
-      }
-      else {
-        //IE 8
-        evt = document.createEventObject();
-        //evt.eventType = 'click';
-        elem.fireEvent('onclick', evt);
-      }
-      renderer.clearRect(new unilib.geometry.Point(20, 20), new unilib.geometry.Point(70, 40));
-    });
-    
     test('HTML4Renderer drawing', function() {
       var container = document.getElementById('container');
       var renderer = new unilib.graphics.HTML4Renderer(container);
@@ -112,10 +82,12 @@
       assertEqual(elem.style.height, '38px', 'renderer::drawText rect height');
       assertEqual(elem.style.width, '68px', 'renderer::drawText rect width');
       assertEqual(elem.childNodes[0].textContent, 'Hello World', 'renderer::drawText text inserted in right place');
-      
+      //clear everything to leave a clean working container
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(0,0,null));
+      renderer.clearRect(new unilib.geometry.Point(0,0), new unilib.geometry.Point(400, 400));
     });
     
-    test('HTML4Renderer deleting', function() {
+    test('HTML4Renderer deletion', function() {
       var container = document.getElementById('container');
       var renderer = new unilib.graphics.HTML4Renderer(container);
       var style = new unilib.graphics.StyleInformations();
@@ -142,7 +114,7 @@
       renderer.clearRect(new unilib.geometry.Point(30, 0), new unilib.geometry.Point(55, 30));
       //check that right elements are deleted by reading the number in them
       var remaining = [];
-      for (var i = 4; i < container.childNodes.length; i++) {
+      for (var i = 0; i < container.childNodes.length; i++) {
         remaining.push(container.childNodes[i].childNodes[0].textContent);
       }
       assertTrue(remaining.indexOf('1') != -1, 'renderer::clearRect left element 1');
@@ -158,7 +130,7 @@
       //delete element 7 and 9
       renderer.clearElementsAt(new unilib.geometry.Point(80, 0));
       remaining = [];
-      for (var i = 4; i < container.childNodes.length; i++) {
+      for (var i = 0; i < container.childNodes.length; i++) {
           remaining.push(container.childNodes[i].childNodes[0].textContent);
       }
       assertTrue(remaining.indexOf('1') != -1, 'renderer::clearElementsAt left element 1');
@@ -166,6 +138,55 @@
       assertTrue(remaining.indexOf('8') != -1, 'renderer::clearElementsAt left element 8');
       assertTrue(remaining.indexOf('7') == -1, 'renderer::clearElementsAt deleted element 7');
       assertTrue(remaining.indexOf('9') == -1, 'renderer::clearElementsAt deleted element 9');
+      //CLEAR ELEMENT AT CORNER
+      //delete element 1
+      renderer.clearElementsAt(new unilib.geometry.Point(10, 0));
+      remaining = [];
+      for (var i = 0; i < container.childNodes.length; i++) {
+          remaining.push(container.childNodes[i].childNodes[0].textContent);
+      }
+      assertTrue(remaining.indexOf('1') == -1, 'renderer::clearElementsAt left element 1');
+      assertTrue(remaining.indexOf('2') != -1, 'renderer::clearElementsAt left element 2');
+      assertTrue(remaining.indexOf('8') != -1, 'renderer::clearElementsAt left element 8');
+      assertTrue(remaining.indexOf('7') == -1, 'renderer::clearElementsAt deleted element 7');
+      assertTrue(remaining.indexOf('9') == -1, 'renderer::clearElementsAt deleted element 9');
+      //clear everything to leave a clean working container
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(0,0,null));
+      renderer.clearRect(new unilib.geometry.Point(0,0), new unilib.geometry.Point(400, 400));
+    });
+    
+    test('HTML4Renderer strict mode deletion', function() {
+      var container = document.getElementById('container');
+      var renderer = new unilib.graphics.HTML4Renderer(container);
+      var style = new unilib.graphics.StyleInformations();
+      style.lineWidth = 1;
+      style.lineColor = '#000000';
+      style.lineStyle = unilib.graphics.LINE_SOLID;
+      style.backgroundColor = '#236723';
+      style.textColor = '#FFFFFF';
+      style.textFont = 'sans-serif';
+      style.textSize = 10;
+      renderer.setStyleInformations(style);
+      //translation is done to simplify the test reading
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(200, 100, 0));
+      renderer.drawText(new unilib.geometry.Point(10, 0), new unilib.geometry.Point(20, 10), '1');
+      renderer.drawText(new unilib.geometry.Point(10, 20), new unilib.geometry.Point(20, 30), '2');
+      renderer.drawText(new unilib.geometry.Point(30, 0), new unilib.geometry.Point(40, 10), '3');
+      renderer.drawText(new unilib.geometry.Point(30, 20), new unilib.geometry.Point(40, 30), '4');
+      //CLEAR ELEMENTS AT
+      //delete element 4
+      renderer.clearElementsAt(new unilib.geometry.Point(30, 20), true);
+      remaining = [];
+      for (var i = 0; i < container.childNodes.length; i++) {
+          remaining.push(container.childNodes[i].childNodes[0].textContent);
+      }
+      assertTrue(remaining.indexOf('1') != -1, 'renderer::clearElementsAt left element 1');
+      assertTrue(remaining.indexOf('2') != -1, 'renderer::clearElementsAt left element 2');
+      assertTrue(remaining.indexOf('3') != -1, 'renderer::clearElementsAt left element 3');
+      assertTrue(remaining.indexOf('4') == -1, 'renderer::clearElementsAt deleted element 4');
+      //clear everything to leave a clean working container
+      renderer.setRelativeOrigin(new unilib.geometry.Point3D(0,0,null));
+      renderer.clearRect(new unilib.geometry.Point(0,0), new unilib.geometry.Point(400, 400));
     });
   </script>
 </head>
