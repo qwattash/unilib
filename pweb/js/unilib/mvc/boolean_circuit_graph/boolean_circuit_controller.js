@@ -4,7 +4,10 @@
  * @license GPL
  */
 
-unilib.provideNamespace('unilib.mvc.graph', function() {
+/**
+ * @namespace unilib.mvc.bc
+ */
+unilib.provideNamespace('unilib.mvc.bc', function() {
   
   /**
    * Graph controller, holds global informations for the graph
@@ -12,8 +15,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
    * @class
    * @extends {unilib.mvc.controller.CommadController}
    */
-  unilib.mvc.graph.LogicalNetworkGraph = 
-    function(styleProvider, model, view) {
+  unilib.mvc.bc.BooleanCircuitGraph = function(styleProvider, model, view) {
     unilib.mvc.controller.CommadController.call(this);
     
     this.commandHandler = new unilib.mvc.controller.CommandController();

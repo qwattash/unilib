@@ -4,7 +4,10 @@
  * @license GPL
  */
 
-unilib.provideNamespace('unilib.mvc.ln.command', function() {
+/**
+ * @namespace unilib.mvc.bc.command
+ */
+unilib.provideNamespace('unilib.mvc.bc.command', function() {
 	
 	/**
 	 * element select
@@ -12,7 +15,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
 	 * @extends {unilib.mvc.controller.IrreversibleCommand}
 	 * @param {unilib.mvc.graph.GraphElement} element
 	 */
-	unilib.mvc.ln.command.SelectElementCommand = function(element, view) {
+	unilib.mvc.bc.command.SelectElementCommand = function(element, controller) {
 	  
 	  /**
 	   * target element
@@ -22,15 +25,15 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
 	  this.target_ = element;
 	  
 	  /**
-	   * graph model
-	   * @type {unilib.mvc.view.StrategyView}
+	   * facade controller, used to access the menu manager
+	   * @type {unilib.mvc.ln.BooleanCircuitGraph}
 	   */
 	  this.view_ = view;
 	};
-	unilib.inherit(unilib.mvc.ln.command.SelectElementCommand, 
+	unilib.inherit(unilib.mvc.bc.command.SelectElementCommand, 
 	  unilib.mvc.controller.IrreversibleCommand.prototype);
 	  
-	unilib.mvc.ln.command.SelectElementCommand.prototype.exec = function() {
+	unilib.mvc.bc.command.SelectElementCommand.prototype.exec = function() {
 	  
 	};
 	
@@ -51,7 +54,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
    */
-  unilib.mvc.ln.command.MoveElementCommand = 
+  unilib.mvc.bc.command.MoveElementCommand = 
     function(element, position, undo, startingData) {
     
     /**
@@ -88,13 +91,13 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
      */
     this.position_ = position;
   };
-  unilib.inherit(unilib.mvc.ln.command.MoveElementCommand, 
+  unilib.inherit(unilib.mvc.bc.command.MoveElementCommand, 
     unilib.mvc.controller.BaseCommand.prototype);
   
   /**
    * @see {unilib.mvc.controller.BaseCommand#exec}
    */  
-  unilib.mvc.ln.command.MoveElementCommand.prototype.exec = function() {
+  unilib.mvc.bc.command.MoveElementCommand.prototype.exec = function() {
     var targetData = this.target_.getData();
     targetData.position.x = this.position_.x;
     targetData.position.y = this.position_.y;
@@ -106,7 +109,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
   /**
    * @see {unilib.mvc.controller.BaseCommand#undo}
    */
-  unilib.mvc.ln.command.MoveElementCommand.prototype.undo = function() {
+  unilib.mvc.bc.command.MoveElementCommand.prototype.undo = function() {
     if (this.undo_) {
       this.target_.setData(this.startingData_);
       this.target_.getModel().notify();
@@ -116,7 +119,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
   /**
    * @see {unilib.mvc.controller.BaseCommand#isReversible}
    */
-  unilib.mvc.ln.command.MoveElementCommand.prototype.isReversible = 
+  unilib.mvc.bc.command.MoveElementCommand.prototype.isReversible = 
     function() {
     return this.undo_;
   };
@@ -132,18 +135,18 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
    */
-  unilib.mvc.ln.command.MoveNodeElementCommand = 
+  unilib.mvc.bc.command.MoveNodeElementCommand = 
     function(element, position, undo, startingData) {
-    unilib.mvc.ln.command.MoveElementCommand.call(this, element, position, 
+    unilib.mvc.bc.command.MoveElementCommand.call(this, element, position, 
       undo, startingData);
   };
-  unilib.inherit(unilib.mvc.ln.command.MoveNodeElementCommand, 
-    unilib.mvc.ln.command.MoveElementCommand.prototype);
+  unilib.inherit(unilib.mvc.bc.command.MoveNodeElementCommand, 
+    unilib.mvc.bc.command.MoveElementCommand.prototype);
     
   /**
    * @see {unilib.mvc.controller.BaseCommand#exec}
    */  
-  unilib.mvc.ln.command.MoveNodeElementCommand.prototype.exec = function() {
+  unilib.mvc.bc.command.MoveNodeElementCommand.prototype.exec = function() {
     //translate node
     var targetData = this.target_.getData();
     var translation = new unilib.geometry.Point3D();
@@ -169,7 +172,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
   /**
    * @see {unilib.mvc.controller.BaseCommand#undo}
    */
-  unilib.mvc.ln.command.MoveNodeElementCommand.prototype.undo = function() {
+  unilib.mvc.bc.command.MoveNodeElementCommand.prototype.undo = function() {
     if (this.undo_) {
       var targetData = this.target_.getData();
       var translation = new unilib.geometry.Point3D();
@@ -194,7 +197,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
    * move pin element; same logic as the node but with added logic to
    * check that the pin never leaves the node boundaries
    * @class
-   * @extends {unilib.mvc.ln.command.MoveElementCommand}
+   * @extends {unilib.mvc.bc.command.MoveElementCommand}
    * @param {unilib.mvc.graph.GraphElement} element
    * @param {unilib.geometry,Point3D} position target position
    * @param {boolean} [reversible=false] if the command can be undone
@@ -202,9 +205,9 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
    */
-  unilib.mvc.ln.command.MovePinElementCommand = 
+  unilib.mvc.bc.command.MovePinElementCommand = 
     function(element, position, undo, startingData) {
-      unilib.mvc.ln.command.MoveElementCommand.call(this, element, 
+      unilib.mvc.bc.command.MoveElementCommand.call(this, element, 
         position, undo, startingData);
       
       //if movement is illegal, the exec becomes a NOP, the undo 
@@ -215,8 +218,8 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
             startingData.position);
       }
   };
-  unilib.inherit(unilib.mvc.ln.command.MovePinElementCommand, 
-    unilib.mvc.ln.command.MoveElementCommand.prototype);
+  unilib.inherit(unilib.mvc.bc.command.MovePinElementCommand, 
+    unilib.mvc.bc.command.MoveElementCommand.prototype);
   
   /**
    * check whether a given position is valid for the target pin
@@ -224,7 +227,7 @@ unilib.provideNamespace('unilib.mvc.ln.command', function() {
    * @returns {unilib.geometry.Point}
    * @protected
    */
-  unilib.mvc.ln.command.MovePinElementCommand.prototype.checkPosition_ = 
+  unilib.mvc.bc.command.MovePinElementCommand.prototype.checkPosition_ = 
     function(position) {
     var node = this.target_.getOwner();
     var targetData = this.target_.getData();

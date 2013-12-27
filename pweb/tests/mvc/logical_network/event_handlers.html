@@ -8,7 +8,7 @@
 <script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
 <script type="text/JavaScript" src="../../../js/unilib/unittest.js"></script>
 <script type="text/JavaScript">
-  unilib.include('unilib/mvc/logical_network_graph/event_handlers.js');
+  unilib.include('unilib/mvc/boolean_circuit_graph/event_handlers.js');
   unilib.include('unilib/mvc/view/drawable_manager.js');
   unilib.include('unilib/mvc/controller/controller.js');
   unilib.include('unilib/mvc/graph/model.js');
@@ -24,7 +24,7 @@
     dummyCommandManager.undo = function() {
       undo++;
     };
-    var handler = new unilib.mvc.ln.ClickEventObserver(dummyCommandManager);
+    var handler = new unilib.mvc.bc.ClickEventObserver(dummyCommandManager);
     //setup of events for testing
     var keymap = new unilib.mvc.controller.EventKeyMap();
     keymap.button = unilib.mvc.controller.EventButtonType.BUTTON_LEFT;
@@ -46,7 +46,7 @@
     dummyCommandManager.undo = function() {
       undo++;
     };
-    var handler = new unilib.mvc.ln.DragDropEventObserver(dummyCommandManager);
+    var handler = new unilib.mvc.bc.DragDropEventObserver(dummyCommandManager);
     
     //generate model
     var model = new unilib.mvc.graph.GraphModel();
@@ -77,17 +77,17 @@
     cmd = [];
     handler.update(drag);
     assertEqual(cmd.length, 1, 'single command issued');
-    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertTrue((cmd[0] instanceof unilib.mvc.bc.command.MoveElementCommand), 'command correctly generated');
     assertEqual(undo, 0, 'no undo on drag');
     cmd = [];
     handler.update(drag);
     assertEqual(cmd.length, 1, 'single command issued');
-    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertTrue((cmd[0] instanceof unilib.mvc.bc.command.MoveElementCommand), 'command correctly generated');
     assertFalse(undo, 'no undo on drag');
     cmd = [];
     handler.update(dragend);
     assertEqual(cmd.length, 1, 'single command issued');
-    assertTrue((cmd[0] instanceof unilib.mvc.ln.command.MoveElementCommand), 'command correctly generated');
+    assertTrue((cmd[0] instanceof unilib.mvc.bc.command.MoveElementCommand), 'command correctly generated');
     assertFalse(undo, 'no undo on drag end');
     cmd = [];
     handler.update(drop);

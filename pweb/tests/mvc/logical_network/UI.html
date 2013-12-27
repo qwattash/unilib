@@ -7,12 +7,12 @@
 <title>UI test</title>
 <script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
 <script type="text/JavaScript">
-  unilib.include('unilib/mvc/logical_network_graph/event_handlers.js');
+  unilib.include('unilib/mvc/boolean_circuit_graph/event_handlers.js');
   unilib.include('unilib/mvc/view/drawable_manager.js');
   unilib.include('unilib/mvc/controller/controller.js');
   unilib.include('unilib/mvc/controller/event_manager.js');
   unilib.include('unilib/mvc/graph/model.js');
-  unilib.include('unilib/mvc/logical_network_graph/drawable_strategy.js');
+  unilib.include('unilib/mvc/boolean_circuit_graph/drawable_strategy.js');
   
   var __init__ = function() {
     console.log('[+] initialising logical network graph');
@@ -25,28 +25,28 @@
     inputStyle.backgroundColor = '#44AAAA';
     var outputStyle = new unilib.graphics.StyleInformations();
     outputStyle.backgroundColor = '#AAAA44';
-    styleProvider.registerStyle(unilib.mvc.ln.GraphElementType.INPUT_NODE, unilib.mvc.ln.StyleType.TEXT, textStyle);
-    styleProvider.registerStyle(unilib.mvc.ln.GraphElementType.INPUT_NODE, unilib.mvc.ln.StyleType.BODY, inputStyle);
-    styleProvider.registerStyle(unilib.mvc.ln.GraphElementType.OUTPUT_NODE, unilib.mvc.ln.StyleType.BODY, outputStyle);
-    styleProvider.registerStyle(unilib.mvc.ln.GraphElementType.OUTPUT_NODE, unilib.mvc.ln.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.BODY, inputStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.OUTPUT_NODE, unilib.mvc.bc.StyleType.BODY, outputStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.OUTPUT_NODE, unilib.mvc.bc.StyleType.TEXT, textStyle);
     var drawableStrategy = new unilib.mvc.view.DrawableManagerStrategy();
-    var nodeDrawableFactory = new unilib.mvc.ln.NodeDrawableManagerStrategy(styleProvider);
-    var pinDrawableFactory = new unilib.mvc.ln.PinDrawableManagerStrategy(styleProvider);
-    var edgeDrawableFactory = new unilib.mvc.ln.EdgeDrawableManagerStrategy(styleProvider);
+    var nodeDrawableFactory = new unilib.mvc.bc.NodeDrawableManagerStrategy(styleProvider);
+    var pinDrawableFactory = new unilib.mvc.bc.PinDrawableManagerStrategy(styleProvider);
+    var edgeDrawableFactory = new unilib.mvc.bc.EdgeDrawableManagerStrategy(styleProvider);
     drawableStrategy.addModule(nodeDrawableFactory);
     drawableStrategy.addModule(pinDrawableFactory);
     drawableStrategy.addModule(edgeDrawableFactory);
     var view = new unilib.mvc.view.DrawableManager(renderer, drawableStrategy);
     var model = new unilib.mvc.graph.GraphModel();
     var commandHandler = new unilib.mvc.controller.CommandHandler();
-    var dragdropController = new unilib.mvc.ln.DragDropEventObserver(commandHandler);
+    var dragdropController = new unilib.mvc.bc.DragDropEventObserver(commandHandler);
     var eventManager = new unilib.mvc.controller.HTML4EventManager(container, view);
     model.attachObserver(view);
     eventManager.attachObserver(dragdropController);
     
     console.log('[+] populating the graph');
     var node1 = model.makeNode();
-    node1.setID(unilib.mvc.ln.GraphElementType.INPUT_NODE);
+    node1.setID(unilib.mvc.bc.GraphElementType.INPUT_NODE);
     var data = node1.getData();
     data.position.x = 10;
     data.position.y = 10;
@@ -54,7 +54,7 @@
     data.text = "Node 1";
     node1.setData(data);
     var node2 = model.makeNode();
-    node2.setID(unilib.mvc.ln.GraphElementType.OUTPUT_NODE);
+    node2.setID(unilib.mvc.bc.GraphElementType.OUTPUT_NODE);
     data = node2.getData();
     data.position.x = 100;
     data.position.y = 100;

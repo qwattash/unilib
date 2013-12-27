@@ -5,9 +5,9 @@
  */
 
 /**
- * @namespace unilib.mvc.ln
+ * @namespace unilib.mvc.bc
  */
-unilib.provideNamespace('unilib.mvc.ln', function() {
+unilib.provideNamespace('unilib.mvc.bc', function() {
     
   
   /**
@@ -18,16 +18,16 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {unilib.mvc.view.StrategyView} view
    * @param {unilib.mvc.graph.GraphController} controller
    */
-  unilib.mvc.ln.ClickEventObserver = function() {
+  unilib.mvc.bc.ClickEventObserver = function() {
     
   };
-  unilib.inherit(unilib.mvc.ln.ClickEventObserver,
+  unilib.inherit(unilib.mvc.bc.ClickEventObserver,
     unilib.interfaces.observer.Observer.prototype);
     
   /**
    * @see {unilib.interfaces.observer.Observer#update}
    */
-  unilib.mvc.ln.ClickEventObserver.prototype.update = function(evt) {
+  unilib.mvc.bc.ClickEventObserver.prototype.update = function(evt) {
     if (! this.canHandle_(evt)) return;
     //@todo
   };
@@ -38,7 +38,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {unilib.mvc.controller.ViewEvent} evt
    * @returns {boolean}
    */
-  unilib.mvc.ln.ClickEventObserver.prototype.canHandle_ = function(evt) {
+  unilib.mvc.bc.ClickEventObserver.prototype.canHandle_ = function(evt) {
     if (evt.getEventType() == 'click') {
       return true;
     }
@@ -51,7 +51,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @extends {unilib.interfaces.observer.Observer}
    * @param {unilib.mvc.command.CommandHandler} commandHandler
    */
-  unilib.mvc.ln.DragDropEventObserver = function(commandHandler) {
+  unilib.mvc.bc.DragDropEventObserver = function(commandHandler) {
     
     /**
      * command handler object to handle undo redo and execution of commands
@@ -85,7 +85,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
     this.mouseOffsetY_ = 0;
     
   };
-  unilib.inherit(unilib.mvc.ln.DragDropEventObserver,
+  unilib.inherit(unilib.mvc.bc.DragDropEventObserver,
     unilib.interfaces.observer.Observer.prototype);
   
   /**
@@ -93,7 +93,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @private
    * @param {unilib.mvc.graph.GraphElement} target
    */
-  unilib.mvc.ln.DragDropEventObserver.prototype.storeStartingData_ = 
+  unilib.mvc.bc.DragDropEventObserver.prototype.storeStartingData_ = 
     function(target) {
       //save starting state of the target (drag events always have one)
       this.startingTargetData_ = target.getData();
@@ -105,20 +105,20 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param 
    * @returns {unilib.mvc.controller.BaseCommand}
    */
-  unilib.mvc.ln.DragDropEventObserver.prototype.getCommand_ = function(target, 
+  unilib.mvc.bc.DragDropEventObserver.prototype.getCommand_ = function(target, 
     targetPosition, undo, startingData) {
     var cmd;
-    if (target.getID() == unilib.mvc.ln.GraphElementType.PIN) {
-      cmd = new unilib.mvc.ln.command.MovePinElementCommand(target, 
+    if (target.getID() == unilib.mvc.bc.GraphElementType.PIN) {
+      cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
         targetPosition, undo, startingData);
     }
-    else if (target.getID() == unilib.mvc.ln.GraphElementType.EDGE) {
-      cmd = new unilib.mvc.ln.command.MoveEdgeElementCommand(target, 
+    else if (target.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
+      cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
         targetPosition, undo, startingData);
     }
     else {
       //some node type
-      cmd = new unilib.mvc.ln.command.MoveNodeElementCommand(target, 
+      cmd = new unilib.mvc.bc.command.MoveNodeElementCommand(target, 
         targetPosition, undo, startingData);
     }
     return cmd;
@@ -127,7 +127,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.interfaces.observer.Observer#update}
    */
-  unilib.mvc.ln.DragDropEventObserver.prototype.update = function(evt) {
+  unilib.mvc.bc.DragDropEventObserver.prototype.update = function(evt) {
     if (this.canHandle_(evt) == false) return;
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART) {
       this.storeStartingData_(evt.getTarget());
@@ -168,7 +168,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {unilib.mvc.controller.ViewEvent} evt
    * @returns {boolean}
    */
-  unilib.mvc.ln.DragDropEventObserver.prototype.canHandle_ = function(evt) {
+  unilib.mvc.bc.DragDropEventObserver.prototype.canHandle_ = function(evt) {
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART ||
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGEND ||
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAG ||
@@ -180,7 +180,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   
 }, ['unilib/error.js', 'unilib/mvc/graph/model.js', 
     'unilib/mvc/controller/event_manager.js', 
-    'unilib/mvc/logical_network_graph/command.js',
-    'unilib/mvc/logical_network_graph/drawable_strategy.js',
+    'unilib/mvc/boolean_circuit_graph/command.js',
+    'unilib/mvc/boolean_circuit_graph/drawable_strategy.js',
     'unilib/geometry/geometry.js']);
 unilib.notifyLoaded();
