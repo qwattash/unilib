@@ -73,7 +73,7 @@ unilib.provideNamespace('unilib.interfaces.factory', function() {
         }
       }
       //if no module can handle the build throw an error
-      throw new unilib.error.UnilibError('ModularFactory: Build failed for' +
+      throw new unilib.error.UnilibError('ModularFactory: Build failed for ' +
        'element ' + elem.toString());
   };
   

@@ -297,6 +297,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
           //redraw objects that were eventually removed
           for (var i = 0; i < colliding.length; i++) {
             //note this can lead to chain effects <<--maybe the renderer should do something
+            //to support renderers other than the HTML renderer
             colliding[i].clear(this.renderer_);
             colliding[i].draw(this.renderer_);
           }

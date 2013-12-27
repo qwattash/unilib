@@ -42,8 +42,10 @@ unilib.provideNamespace('unilib.collision', function() {
    * @extends {unilib.collision.ICollisionShape}
    * @param {unilib.geometry.Point} tl top left corner
    * @param {unilib.geometry.Point} br bottom right corner
+   * @param {unilib.collision.CollisionMode} [mode = 
+   *  unilib.collision.CollisionMode.SOLID]
    */
-  unilib.collision.BoundingBox = function(tl, br) {
+  unilib.collision.BoundingBox = function(tl, br, mode) {
     unilib.collision.ICollisionShape.call(this);
     
     /**
@@ -52,6 +54,14 @@ unilib.provideNamespace('unilib.collision', function() {
      * @public
      */
     this.corners = [tl, br];
+    
+    /**
+     * collision mode
+     * @type {unilib.collison.CollisionMode}
+     * @public
+     */
+    this.mode = (mode === undefined) ? unilib.collision.CollisionMode.SOLID : 
+      mode;
   };
   unilib.inherit(unilib.collision.BoundingBox,
     unilib.collision.ICollisionShape.prototype);
@@ -77,6 +87,10 @@ unilib.provideNamespace('unilib.collision', function() {
    */
   unilib.collision.BoundingBox.prototype.collide = 
   function(shape) {
+    if (this.mode == unilib.collision.CollisionMode.GHOST ||
+      shape.mode == unilib.collision.CollisionMode.GHOST) {
+      return null;
+    }
     /*
      * the given shape is considered the target,
      * this shape is considered the box

@@ -275,8 +275,11 @@ unilib.provideNamespace('unilib.graphics', function() {
       //if z axis does not match and point.z != null
       return false;
     }
-    var mtv = this.getBoundingBox().collide(
-      new unilib.collision.BoundingBox(point, point));
+    var bbox = this.getBoundingBox();
+    //mode must be solid, otherwise no overlapping will ever be
+    //detected
+    bbox.mode = unilib.collision.CollisionMode.SOLID;
+    var mtv = bbox.collide(new unilib.collision.BoundingBox(point, point));
     if (mtv) return true;
     return false;
   };
@@ -299,7 +302,7 @@ unilib.provideNamespace('unilib.graphics', function() {
       //horizontal
       br.y += this.style_.lineWidth;
     }
-    return new unilib.collision.BoundingBox(tl, br);
+    return new unilib.collision.BoundingBox(tl, br, this.collisionMode_);
   };
   
   /**
@@ -415,7 +418,9 @@ unilib.provideNamespace('unilib.graphics', function() {
       //if z axis does not match and point.z != null
       return false;
     }
-    var mtv = this.getBoundingBox().collide(
+    var bbox = this.getBoundingBox();
+    bbox.mode = unilib.collision.CollisionMode.SOLID;
+    var mtv = bbox.collide(
       new unilib.collision.BoundingBox(point, point));
     if (mtv) return true;
     return false;
@@ -431,7 +436,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     var br = new unilib.geometry.Point(
       this.bottomRight_.x + this.position_.x,
       this.bottomRight_.y + this.position_.y);
-    return new unilib.collision.BoundingBox(tl, br);
+    return new unilib.collision.BoundingBox(tl, br, this.collisionMode_);
   };
   
   /**
@@ -707,9 +712,33 @@ unilib.provideNamespace('unilib.graphics', function() {
   /**
    * @see {unilib.interfaces.graphics.IDrawable#setID}
    */
-  unilib.graphics.DrawableShape.prototype.setID = 
+  unilib.graphics.CompositeDrawableShape.prototype.setID = 
     function(id) {
       this.id_ = id;
+  };
+  
+  /**
+   * @see {unilib.interfaces.graphics.IDrawable#setCollisionMode}
+   */
+  unilib.graphics.CompositeDrawableShape.prototype.setCollisionMode = 
+    function(mode) {
+      for (var i = 0; i < this.drawables_.length; i++) {
+        this.drawables_[i].setCollisionMode(mode);
+      }
+  };
+  
+  /**
+   * @see {unilib.interfaces.graphics.IDrawable#getCollisionMode}
+   */
+  unilib.graphics.CompositeDrawableShape.prototype.getCollisionMode = 
+    function() {
+      for (var i = 0; i < this.drawables_.length; i++) {
+        var mode = this.drawables_[i].getCollisionMode();
+        if (mode == unilib.collision.CollisionMode.SOLID) {
+          return unilib.collision.CollisionMode.SOLID;
+        }
+      }
+      return unilib.collision.CollisionMode.GHOST;
   };
   
   /**

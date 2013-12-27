@@ -27,6 +27,9 @@
  *      is sufficient for the view to call draw() on it with the right renderer context
  *    iii) The element drawable composition logic is delgated to a single factory class rather then being
  *      replicated among the model factory and the drawable strategies
+ *    This is bad because
+ *    i) the view and the model are tightly coupled, a different view (e.g. something that shows a list of
+ *      coordinates does not need the drawables implemented in the model)
  */
 
 
@@ -718,7 +721,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
    */
   unilib.mvc.graph.Node.prototype.createIterator = function() {
     return new unilib.interfaces.iterator.ArrayIterator(unilib.copyObject(this.pins_));
-  }
+  };
   
   // ---------------------------- Pin -----------------------------------------
   
@@ -1107,7 +1110,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
    */
   unilib.mvc.graph.Pin.prototype.createIterator = function() {
     return new unilib.interfaces.iterator.ArrayIterator(unilib.copyObject(this.edges_));
-  }
+  };
   
   /**
    * @see {unilib.mvc.graph.GraphElement#getModel}

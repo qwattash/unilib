@@ -7,6 +7,7 @@
 
 /**
  * @namespace unilib.mvc.ln
+ * @deprecated
  */
 unilib.provideNamespace('unilib.mvc.ln', function() {
   
@@ -15,7 +16,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @extends {uniliv.mvc.graph.Node}
    */
   unilib.mvc.ln.LNNode = function(model) {
-    
+    unilib.mvc.graph.Node.call(model);
     
   };
   unilib.inherit(unilib.mvc.ln.LNNode,

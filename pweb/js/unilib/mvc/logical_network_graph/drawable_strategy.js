@@ -114,7 +114,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * set position, width and height to a rectangle stored in GraphElement as
    * point array [topLeft, bottomRight]
-   * @private
+   * @protected
    * @param {unilib.mvc.graph.BaseGraphElementData} data
    * @param {unilib.graphics.Rectangle} rect
    */
@@ -136,7 +136,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * set position width and height of a label container to be used as label
    * for a GraphElement
-   * @private
+   * @protected
    * @param {unilib.mvc.graph.BaseGraphElementData} data
    * @param {unilib.graphics.TextRect} label
    */
@@ -267,6 +267,28 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   };
   unilib.inherit(unilib.mvc.ln.PinDrawableManagerStrategy,
       unilib.mvc.ln.NodeDrawableManagerStrategy.prototype);
+  
+  /**
+   * @see {unilib.mvc.view.DrawableManagerStrategyModule#build}
+   */
+  unilib.mvc.ln.PinDrawableManagerStrategy.prototype.build = 
+    function(elem) {
+    drawable = unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.build.call(
+       this, elem);
+    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
+    return drawable;
+  };
+  
+  /**
+   * @see {unilib.mvc.view.DrawableManagerStrategyModule#update}
+   */
+  unilib.mvc.ln.PinDrawableManagerStrategy.prototype.update =
+    function(drawable, elem) {
+    drawable = unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.update.call(
+       this, drawable, elem);
+    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
+    return drawable;
+  };
   
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#canHandle}
@@ -546,5 +568,6 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   };
   
 }, ['unilib/error.js', 'unilib/mvc/view/drawable_manager.js',
-    'unilib/graphics/drawable.js', 'unilib/mvc/controller/controller.js']);
+    'unilib/graphics/drawable.js', 'unilib/mvc/controller/controller.js',
+    'unilib/graphics/collision.js']);
 unilib.notifyLoaded();
