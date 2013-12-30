@@ -270,6 +270,50 @@ unilib.provideNamespace('unilib.mvc.view', function() {
     return overlapping;
   };
   
+  /**
+   * redraw a particular target
+   * @param {Object} element
+   */
+  unilib.mvc.view.DrawableManager.prototype.refresh = function(element) {
+    var drawable = this.getDrawableFromElement(element);
+    //exit if no drawable was found
+    if (! drawable) return;
+    
+    /*
+     * clear only drawable and not others that are at the same
+     * coordinates, search for colliding drawables and store them
+     * this is needed for non-HTML renderers such as canvas but further
+     * investigation is needed to avoid/implement chain redraw effects.
+     * Consider the following:
+     * the drawable to be deleted (T) overlaps another rectangle (A)that
+     *  is itself intersecting another rectangle (B):
+     * +-------+      +-------+
+     * | T     |------|    C  |
+     * +-------+      +-------+
+     *        | A       |
+     *        +---------+
+     * Now if T is deleted A must be redrawn, to redraw A, A is deleted 
+     * and redrawn but this requires to redraw C (and so on).
+     */
+     //--------------------------------------------------------------------------------------
+     //var colliding = this.getOverlappingDrawables(drawable);
+     drawable.clear(this.renderer_);
+     //redraw objects that were eventually removed
+     /*for (var i = 0; i < colliding.length; i++) {
+     //note this can lead to chain effects <<--maybe the renderer should
+     // do something
+     //to support renderers other than the HTML renderer
+     colliding[i].clear(this.renderer_);
+     colliding[i].draw(this.renderer_);
+     }*/
+     //---------------------------------------------------------------------------------------
+     
+     //update the drawable that is targeted by the event
+     this.drawableManagerStrategy_.update(drawable, element);
+     //redraw updated drawable
+     drawable.draw(this.renderer_);
+  };
+   
   // interfaces implementation
   
   /**
@@ -287,25 +331,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
       case unilib.mvc.model.ModelEventType.UPDATE:
         //update the drawable using the strategy object
         if (drawable) {
-          /*
-           * clear only drawable and not others that are at the same
-           * coordinates, search for colliding drawables and store them 
-           */
-          //--------------------------------------------------------------------------------------
-          var colliding = this.getOverlappingDrawables(drawable);
-          drawable.clear(this.renderer_);
-          //redraw objects that were eventually removed
-          for (var i = 0; i < colliding.length; i++) {
-            //note this can lead to chain effects <<--maybe the renderer should do something
-            //to support renderers other than the HTML renderer
-            colliding[i].clear(this.renderer_);
-            colliding[i].draw(this.renderer_);
-          }
-          //---------------------------------------------------------------------------------------
-          //update the drawable that is targeted by the event
-          this.drawableManagerStrategy_.update(drawable, event.getTarget());
-          //redraw updated drawable
-          drawable.draw(this.renderer_);
+          this.refresh(event.getTarget());
         }
         else {
           throw new unilib.mvc.view.ViewError('no drawable found for ' +
@@ -316,7 +342,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
         //remove the drawable from the view
         if (drawable) {
           drawable.clear(this.renderer_);
-          var index = this.getIndex(drawable);
+          var index = this.getIndex_(drawable);
           if (index >= 0) this.drawables_.splice(index, 1);
         }
         else {

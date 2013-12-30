@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>UI test</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/boolean_circuit_graph/boolean_circuit_controller.js');
+  
+  var __init__ = function() {
+    console.log('[+] initialising logical network graph');
+    var container = document.getElementById('container');
+    var ctrl = new unilib.mvc.bc.controller.BooleanCircuitController(container);
+
+   var styleProvider = ctrl.styleProvider;
+    var textStyle = new unilib.graphics.StyleInformations();
+    textStyle.textSize = 10;
+    var nodeStyle = new unilib.graphics.StyleInformations();
+    nodeStyle.backgroundColor = '#44AAAA';
+    var nodeFocusStyle = new unilib.graphics.StyleInformations();
+    nodeFocusStyle.backgroundColor = '#228888';
+    var pinStyle = new unilib.graphics.StyleInformations();
+    pinStyle.backgroundColor = '#AAAA44';
+    var pinFocusStyle = new unilib.graphics.StyleInformations();
+    pinFocusStyle.backgroundColor = '#888822';
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.BODY, nodeStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.BODY_FOCUS, nodeFocusStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.BODY, pinStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.BODY_FOCUS, pinFocusStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+
+   var model = ctrl.graphModel;
+   console.log('[+] populating the graph');
+   var node1 = model.makeNode();
+   node1.setID(unilib.mvc.bc.GraphElementType.INPUT_NODE);
+   var data = node1.getData();
+   data.position.x = 10;
+   data.position.y = 10;
+   data.position.z = 1;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(50, 50)];
+   data.text = "Node 1";
+   node1.setData(data);
+   var pin = node1.makePin();
+   pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+   data = pin.getData();
+   data.position.x = 5;
+   data.position.y = 5;
+   data.position.z = 2;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
+   data.text = "";
+   pin.setData(data);
+   model.notify();
+   
+   console.log('[+] leaving control to the user');
+  };
+  unilib.dependencyManager.addEventListener('load', __init__);
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+
+
+

@@ -72,6 +72,14 @@ unilib.provideNamespace('unilib.graphics', function() {
     this.collisionMode_ = unilib.collision.CollisionMode.SOLID;
     
     /**
+     * used to determine which drawables are selected (i.e. have the focus),
+     * this might influence for example the style applied to the drawable
+     * @type {boolean}
+     * @protected
+     */
+    this.focused_ = false;
+    
+    /**
      * avoid duplication of drawables by remembering if a drawable is currently
      * rendered or not
      * @type {boolean}
@@ -130,17 +138,29 @@ unilib.provideNamespace('unilib.graphics', function() {
   /**
    * @see {unilib.interfaces.graphics.IDrawable#setCollisionMode}
    */
-  unilib.graphics.DrawableShape.prototype.setCollisionMode = 
-    function(mode) {
+  unilib.graphics.DrawableShape.prototype.setCollisionMode = function(mode) {
       this.collisionMode_ = mode;
   };
   
   /**
    * @see {unilib.interfaces.graphics.IDrawable#getCollisionMode}
    */
-  unilib.graphics.DrawableShape.prototype.getCollisionMode = 
-    function() {
+  unilib.graphics.DrawableShape.prototype.getCollisionMode = function() {
       return this.collisionMode_;
+  };
+  
+  /**
+   * @see {unilib.interfaces.graphics.IDrawable#hasFocus}
+   */
+  unilib.graphics.DrawableShape.prototype.hasFocus = function() {
+    return this.focused_;
+  };
+  
+  /**
+   * @see {unilib.interfaces.graphics.IDrawable#setFocus}
+   */
+  unilib.graphics.DrawableShape.prototype.setFocus = function(focused) {
+    this.focused_ = focused;
   };
   
   // ------------- Void Shape

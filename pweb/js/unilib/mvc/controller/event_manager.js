@@ -160,7 +160,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     unilib.interfaces.observer.Observable.prototype);
   
   /**
-   * handle a DOM evnet
+   * handle a DOM event
    * @abstract
    * @param {Event} evt DOM event
    */
@@ -268,6 +268,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
    */
   unilib.mvc.controller.HTML4EventManager.prototype.handleEvent = 
   function(evt) {
+    /*
     if (this.handlingState_ instanceof unilib.mvc.controller.HTML4WaitState) {
       __state = 'waitstate';
     }
@@ -278,8 +279,9 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       __state = 'dragstate';
     }
     else __state = 'error';
-    //console.log('[d] got ' + evt.type);
-    //console.log('[d] curent state: ' + __state);
+    console.log('[d] got ' + evt.type);
+    console.log('[d] curent state: ' + __state);
+    */
     this.handlingState_.handle(evt, this, this.drawableManager_);
   };
   
@@ -313,7 +315,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     /**
      * event.button has been introduced by IE while others used event.which,
      * then after a mess more recent browser IE9+, Gecko 1+, opera 8+, 
-     * Webkit 523+ have stick to event.button standard.
+     * Webkit 523+ have adhered to event.button standard.
      * See http://unixpapa.com/js/mouse.html and
      *   https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
      */
@@ -348,7 +350,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     keymap.ctrlKey = event.ctrlKey;
     keymap.shiftKey = event.shiftKey;
     keymap.metaKey = event.metaKey;
-    keymap.button = event.button;
+    keymap.button = this.parseMouseButton(event);
     var parsed = this.parseEventKey_(event);
     keymap.key = parsed.key;
     keymap.isKeyPrintable = parsed.printable;

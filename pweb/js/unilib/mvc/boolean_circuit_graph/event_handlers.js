@@ -14,22 +14,135 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    * command factory module for click events.
    * @class
    * @extends {unilib.interfaces.factory.IFactoryModule}
-   * @param {unilib.mvc.graph.GraphModel} model
-   * @param {unilib.mvc.view.StrategyView} view
-   * @param {unilib.mvc.graph.GraphController} controller
+   * @param {unilib.mvc.bc.BooleanCircuitController} controller
    */
-  unilib.mvc.bc.ClickEventObserver = function() {
+  unilib.mvc.bc.ClickEventObserver = function(controller) {
     
+    /**
+     * command handler object to handle undo redo and execution of commands
+     * @type {unilib.mvc.bc.BooleanCircuitController}
+     * @private
+     */
+    this.controller_ = controller;
+    
+    /**
+     * list of selected drawables, used as shorthand to
+     * avoid traversing the drawableManager to look for them
+     * @type {Array.<Object>}
+     * @private
+     */
+    this.selected_ = [];
   };
   unilib.inherit(unilib.mvc.bc.ClickEventObserver,
     unilib.interfaces.observer.Observer.prototype);
-    
+  
+  /**
+   * build select command for given element
+   * @param {Object} element
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.getSelectCommand_ = 
+    function(element) {
+    return new unilib.mvc.bc.command.SelectElementCommand(element, 
+      this.controller_.drawableManager);    
+  };
+  
+  /**
+   * build deselect command for given element
+   * @param {Object} element
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.getDeselectCommand_ = 
+    function(element) {
+    return new unilib.mvc.bc.command.DeselectElementCommand(element, 
+      this.controller_.drawableManager);    
+  };
+  
+  /**
+   * helper, select given element
+   * @param {?Object} element
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.select_ = function(element) {
+    if (element == null) return;
+    for (var i = 0; i < this.selected_.length; i++) {
+      if (this.selected_[i] == element) {
+        //if already selected do nothing
+        return;
+      }
+    }
+    this.selected_.push(element);
+    var cmd = this.getSelectCommand_(element);
+    this.controller_.exec(cmd);
+  };
+  
+  /**
+   * helper, deselect all elements except given one,
+   * if element is null all elements are deselected
+   * @param {?Object} element
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.deselect_ = function(element) {
+    var i = 0;
+    while (i < this.selected_.length) {
+      if (element == null || this.selected_[i] != element) {
+        var cmd = this.getDeselectCommand_(this.selected_[i]);
+        this.controller_.exec(cmd);
+        this.selected_.splice(i, 1);
+      }
+      else {
+        //skip the element that is not removed
+        i++;
+      }
+    }
+  };
+  
+  /**
+   * close all menu
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.closeMenu_ = function() {
+    if (this.controller_.mainMenuModel.getPosition() != null) {
+      var cmd = new unilib.mvc.bc.command.HideCtxMenuCommand(
+        this.controller_.mainMenuModel);
+      this.controller_.exec(cmd);
+    }
+  };
+  
   /**
    * @see {unilib.interfaces.observer.Observer#update}
    */
   unilib.mvc.bc.ClickEventObserver.prototype.update = function(evt) {
     if (! this.canHandle_(evt)) return;
-    //@todo
+    switch (evt.keymap.button) {
+      case unilib.mvc.controller.EventButtonType.BUTTON_LEFT:
+        this.closeMenu_();
+        if (evt.keymap.shiftKey) {
+          //if the shift key is pressed just select the target
+          this.select_(evt.getTarget());
+        }
+        else {
+          //if the shift key is not pressed
+          //deselect all selected elements (except the one to be selected
+          // if it is already selected)
+          this.deselect_(evt.getTarget());
+          //now select the target
+          this.select_(evt.getTarget());
+        }
+        break;
+      case unilib.mvc.controller.EventButtonType.BUTTON_RIGHT:
+        if (evt.getTarget() == null) {
+          //deselect all
+          this.deselect_(null);
+          //show main menu in target position
+          var menuPosition = new unilib.geometry.Point3D(evt.position.x, 
+            evt.position.y, 1);
+          var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+            this.controller_.mainMenuModel, menuPosition);
+          this.controller_.exec(cmd);
+        }
+        break;
+    }
   };
   
   /**
@@ -182,5 +295,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     'unilib/mvc/controller/event_manager.js', 
     'unilib/mvc/boolean_circuit_graph/command.js',
     'unilib/mvc/boolean_circuit_graph/drawable_strategy.js',
+    'unilib/mvc/menu/model.js',
     'unilib/geometry/geometry.js']);
 unilib.notifyLoaded();

@@ -66,7 +66,7 @@ unilib.provideNamespace('unilib.graphics', function() {
      * @type {number}
      * @public
      */
-    this.lineWidth = null;
+    this.lineWidth = 0;
     
     /**
      * color of  the lines
@@ -87,7 +87,7 @@ unilib.provideNamespace('unilib.graphics', function() {
      * @type {number}
      * @public
      */
-    this.textSize = null;
+    this.textSize = 0;
     
     /**
      * color of the text, same as DOM
@@ -261,7 +261,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     rect.style.height = (Math.abs(topLeft.y - bottomRight.y) -
         2 * this.style_.lineWidth) + 'px';
     rect.style.borderColor = this.style_.lineColor || '#000000';
-    rect.style.borderWidth = (this.style_.lineWidth) ? 
+    rect.style.borderWidth = (this.style_.lineWidth !== null) ? 
         this.style_.lineWidth + 'px' : '1px';
     rect.style.borderStyle = 
       (this.style_.lineStyle == unilib.graphics.LineStyle.LINE_DASHED) ? 

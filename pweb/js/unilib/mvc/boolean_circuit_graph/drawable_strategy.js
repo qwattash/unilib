@@ -6,16 +6,16 @@
  */
 
 /**
- * @namespace unilib.mvc.ln
+ * @namespace unilib.mvc.bc
  */
-unilib.provideNamespace('unilib.mvc.ln', function() {
+unilib.provideNamespace('unilib.mvc.bc', function() {
   
   /**
    * type of graph elements, these are used as IDs of graph
    * elements
    * @enum {number}
    */
-  unilib.mvc.ln.GraphElementType = {
+  unilib.mvc.bc.GraphElementType = {
       INPUT_NODE: 0,
       OUTPUT_NODE: 1,
       PIN: 2,
@@ -33,16 +33,18 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * style types to be used in unilib.mvc.controller.StyleProvider
    * @enum {string}
    */
-  unilib.mvc.ln.StyleType = {
-      TEXT: 'graph_text',
-      BODY: 'graph_body'
+  unilib.mvc.bc.StyleType = {
+      TEXT: 'graph_text', //normal label text style
+      BODY: 'graph_body', //normal body style
+      TEXT_FOCUS: 'graph_text_focus', //text of a selected element
+      BODY_FOCUS: 'graph_body_focus' //body of a selected element
   };
   
   /**
    * type of drawables used for the graph
    * @enum {string}
    */
-  unilib.mvc.ln.DrawableShapeType = {
+  unilib.mvc.bc.DrawableShapeType = {
       LABEL_START: 'graph_labelStart',
       LABEL_END: 'graph_labelEnd',
       POLYLINE: 'graph_polyline',
@@ -63,13 +65,13 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    *   same as node.
    * Structure of an EDGE:
    * <CompositeDrawableShape id=unilib.graphics.DrawableShapeType.COMPOSITE>
-   *   <CompositeDrawableShape id=unilib.mvc.ln.DrawableShapeType.POLYLINE>
+   *   <CompositeDrawableShape id=unilib.mvc.bc.DrawableShapeType.POLYLINE>
    *     <!-- number of lines vary -->
    *    <Line id=unilib.graphics.DrawableShapeType.LINE/>
    *   </CompositeDrawableShape>
    *   <!-- from 0 to 2 labels -->
-   *  <TextRect id=unilib.mvc.ln.DrawableShapeType.LABEL_LEFT/>
-   *  <TextRect id=unilib.mvc.ln.DrawableShapeType.LABEL_RIGHT/>
+   *  <TextRect id=unilib.mvc.bc.DrawableShapeType.LABEL_LEFT/>
+   *  <TextRect id=unilib.mvc.bc.DrawableShapeType.LABEL_RIGHT/>
    * </CompositeDrawableShape>
    */
   
@@ -82,7 +84,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {number} [labelDistance=5] label distance from the body of the element
    * @param {number} [maxLabelLength=200] max length of a label
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy = 
+  unilib.mvc.bc.NodeDrawableManagerStrategy = 
     function(styleProvider, labelDistance, maxLabelLength) {
     
     /**
@@ -106,7 +108,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
      */
     this.maxLabelLength_ = maxLabelLength || 200;
   };
-  unilib.inherit(unilib.mvc.ln.NodeDrawableManagerStrategy,
+  unilib.inherit(unilib.mvc.bc.NodeDrawableManagerStrategy,
       unilib.mvc.view.DrawableManagerStrategyModule.prototype);
   
   // private helpers
@@ -115,14 +117,13 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * set position, width and height to a rectangle stored in GraphElement as
    * point array [topLeft, bottomRight]
    * @protected
-   * @param {unilib.mvc.graph.BaseGraphElementData} data
+   * @param {unilib.mvc.graph.GraphElement} elem
    * @param {unilib.graphics.Rectangle} rect
+   * @param {unilib.graphics.StyleInformations} style
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.setupRect_ = 
-    function(elem, rect) {
+  unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.setupRect_ = 
+    function(elem, rect, style) {
     var data = elem.getData();
-    var style = this.styleProvider_.getStyle(elem.getID(), 
-        unilib.mvc.ln.StyleType.BODY);
     rect.setStyleInformations(style);
     var topLeft = new unilib.geometry.Point(data.points[0].x, 
         data.points[0].y);
@@ -139,12 +140,11 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @protected
    * @param {unilib.mvc.graph.BaseGraphElementData} data
    * @param {unilib.graphics.TextRect} label
+   * @param {unilib.graphics.StyleInformations} style
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.setupLabel_ =
-    function(elem, label) {
+  unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.setupLabel_ =
+    function(elem, label, style) {
     var data = elem.getData();
-    var style = this.styleProvider_.getStyle(elem.getID(), 
-        unilib.mvc.ln.StyleType.TEXT);
     label.setStyleInformations(style);
     var textLength = style.textSize * data.text.length;
     var position = new unilib.geometry.Point3D(
@@ -180,7 +180,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#build}
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.build = 
+  unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.build = 
     function(elem) {
     if (! this.canHandle(elem)) {
       throw new unilib.mvc.view.ViewError('Node drawable manager ' + 
@@ -189,11 +189,15 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
     var data = elem.getData();
     var drawable = new unilib.graphics.CompositeDrawableShape();
     var nodeBody = new unilib.graphics.Rectangle();
-    this.setupRect_(elem, nodeBody);
+    var nodeStyle = this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY);
+    this.setupRect_(elem, nodeBody, nodeStyle);
     drawable.addDrawable(nodeBody);
     if (data.text != '') {
       label = new unilib.graphics.TextRect();
-      this.setupLabel_(elem, label);
+      var labelStyle = this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT);
+      this.setupLabel_(elem, label, labelStyle);
       drawable.addDrawable(label);
     }
     return drawable;
@@ -202,7 +206,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#update}
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.update =
+  unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.update =
     function(drawable, elem) {
     if (! this.canHandle(elem)) {
       throw new unilib.mvc.view.ViewError('Node drawable manager ' + 
@@ -217,15 +221,25 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
     var label = (! i.end()) ? i.item() : null;
     //update node body based on model informations
     var data = elem.getData();
-    this.setupRect_(elem, node);
+    var nodeStyle = (drawable.hasFocus()) ? 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY_FOCUS) :
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY);
+    this.setupRect_(elem, node, nodeStyle);
     //update label informations if any
     if (data.text) {
+      var labelStyle = (drawable.hasFocus()) ? 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT_FOCUS) :
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT);
       if (! label) {
         label = new unilib.graphics.TextRect();
         drawable.addDrawable(label);
       }
       //setup or update label
-      this.setupLabel_(elem, label);
+      this.setupLabel_(elem, label, labelStyle);
     }
     else if (label){
       //there is no text but label exists
@@ -237,18 +251,18 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#canHandle}
    */
-  unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.canHandle =
+  unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.canHandle =
     function(elem) {
       var id = elem.getID();
-      if (id == unilib.mvc.ln.GraphElementType.INPUT_NODE ||
-        id == unilib.mvc.ln.GraphElementType.OUTPUT_NODE ||
-        id == unilib.mvc.ln.GraphElementType.AND_NODE ||
-        id == unilib.mvc.ln.GraphElementType.OR_NODE ||
-        id == unilib.mvc.ln.GraphElementType.NOT_NODE ||
-        id == unilib.mvc.ln.GraphElementType.NOR_NODE ||
-        id == unilib.mvc.ln.GraphElementType.NAND_NODE ||
-        id == unilib.mvc.ln.GraphElementType.XOR_NODE ||
-        id == unilib.mvc.ln.GraphElementType.XNOR_NODE) {
+      if (id == unilib.mvc.bc.GraphElementType.INPUT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.OUTPUT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.AND_NODE ||
+        id == unilib.mvc.bc.GraphElementType.OR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NOT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NOR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NAND_NODE ||
+        id == unilib.mvc.bc.GraphElementType.XOR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.XNOR_NODE) {
         return true;
       }
       return false;
@@ -258,22 +272,22 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * module responsible for PINs, since pins are considered as rectangles,
    * reuse node implementation
    * @class
-   * @extends {unilib.mvc.ln.NodeDrawableManagerStrategyModule}
+   * @extends {unilib.mvc.bc.NodeDrawableManagerStrategyModule}
    * @param {unilib.mvc.controller.StyleProvider} styleProvider provider of
    *   the styles
    */
-  unilib.mvc.ln.PinDrawableManagerStrategy = function(styleProvider) {
-    unilib.mvc.ln.NodeDrawableManagerStrategy.call(this, styleProvider);
+  unilib.mvc.bc.PinDrawableManagerStrategy = function(styleProvider) {
+    unilib.mvc.bc.NodeDrawableManagerStrategy.call(this, styleProvider);
   };
-  unilib.inherit(unilib.mvc.ln.PinDrawableManagerStrategy,
-      unilib.mvc.ln.NodeDrawableManagerStrategy.prototype);
+  unilib.inherit(unilib.mvc.bc.PinDrawableManagerStrategy,
+      unilib.mvc.bc.NodeDrawableManagerStrategy.prototype);
   
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#build}
    */
-  unilib.mvc.ln.PinDrawableManagerStrategy.prototype.build = 
+  unilib.mvc.bc.PinDrawableManagerStrategy.prototype.build = 
     function(elem) {
-    drawable = unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.build.call(
+    drawable = unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.build.call(
        this, elem);
     drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     return drawable;
@@ -282,9 +296,9 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#update}
    */
-  unilib.mvc.ln.PinDrawableManagerStrategy.prototype.update =
+  unilib.mvc.bc.PinDrawableManagerStrategy.prototype.update =
     function(drawable, elem) {
-    drawable = unilib.mvc.ln.NodeDrawableManagerStrategy.prototype.update.call(
+    drawable = unilib.mvc.bc.NodeDrawableManagerStrategy.prototype.update.call(
        this, drawable, elem);
     drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     return drawable;
@@ -293,9 +307,9 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#canHandle}
    */
-  unilib.mvc.ln.PinDrawableManagerStrategy.prototype.canHandle =
+  unilib.mvc.bc.PinDrawableManagerStrategy.prototype.canHandle =
     function(elem) {
-      if (elem.getID() == unilib.mvc.ln.GraphElementType.PIN) {
+      if (elem.getID() == unilib.mvc.bc.GraphElementType.PIN) {
         return true;
       }
       return false;
@@ -310,7 +324,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {number} [labelDistance=5] label distance from the body of the element
    * @param {number} [maxLabelLength=200] max length of a label
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy = 
+  unilib.mvc.bc.EdgeDrawableManagerStrategy = 
     function(styleProvider, labelDistance, maxLabelLength) {
     
     /**
@@ -334,7 +348,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
      */
     this.maxLabelLength_ = maxLabelLength || 200;
   };
-  unilib.inherit(unilib.mvc.ln.EdgeDrawableManagerStrategy,
+  unilib.inherit(unilib.mvc.bc.EdgeDrawableManagerStrategy,
       unilib.mvc.view.DrawableManagerStrategyModule.prototype);
   
   // private helpers
@@ -344,12 +358,10 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @private
    * @param {unilib.mvc.graph.BaseGraphElementData} data
    * @param {unilib.graphics.Rectangle} label
-   * @param {unilib.graphics.StyleInformations} labelStyle
+   * @param {unilib.graphics.StyleInformations} style
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.setupPolyline_ = 
-    function(elem, polyline) {
-    var style = this.styleProvider_.getStyle(elem.getID(), 
-        unilib.mvc.ln.StyleType.BODY);
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.setupPolyline_ = 
+    function(elem, polyline, style) {
     var data = elem.getData();
     /**
      * the cycle is built so that it can handle both creation and update of
@@ -391,13 +403,12 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {unilib.graphics.Line} relatedLine line used as reference
    * @param {unilib.graphics.TextRect} label label to be updated
    *   for positioning
+   * @param {unilib.graphics.StyleInformations} style
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.setupLabel_ =
-    function(elem, text, relatedLine, label) {
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.setupLabel_ =
+    function(elem, text, relatedLine, label, style) {
     //create labels
     //setup label text and position
-    var style = this.styleProvider_.getStyle(elem.getID(), 
-        unilib.mvc.ln.StyleType.TEXT);
     var lineStyle = relatedLine.getStyleInformations();
     var labelTopLeft, labelBottomRight;
     /*
@@ -450,7 +461,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {(number | string)} labelID label ID to search for
    * @returns {?unilib.interfaces.graphics.IDrawable}
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.extractElement_ = 
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.extractElement_ = 
     function(composite, id) {
     var iter = composite.createDrawableIterator();
     for (iter.begin(); ! iter.end(); iter.next()) {
@@ -471,7 +482,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
    * @param {(number | string)} labelID label ID to search for/add
    * @returns {?unilib.graphics.TextRect}
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.getLabelContainer_ = 
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.getLabelContainer_ = 
     function(drawable, text, labelID) {
     var label = this.extractElement_(drawable, labelID);
     if (text != '' && ! label) {
@@ -491,16 +502,19 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#build}
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.build = 
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.build = 
     function(elem) {
     if (! this.canHandle(elem)) {
       throw new unilib.mvc.view.ViewError('Edge drawable manager ' + 
           'can not handle given element');
     }
+    //create polyline container and main drawable container
     var data = elem.getData();
     var drawable = new unilib.graphics.CompositeDrawableShape();
     var polyline = new unilib.graphics.CompositeDrawableShape();
-    polyline.setID(unilib.mvc.ln.DrawableShapeType.POLYLINE);
+    polyline.setID(unilib.mvc.bc.DrawableShapeType.POLYLINE);
+    var polylineStyle = this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY);
     var lineStart = new unilib.graphics.Line();
     var lineEnd = new unilib.graphics.Line();
     polyline.addDrawable(lineStart);
@@ -508,21 +522,24 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
       polyline.addDrawable(new unilib.graphics.Line());
     }
     polyline.addDrawable(lineEnd);
-    this.setupPolyline_(elem, polyline);
+    this.setupPolyline_(elem, polyline, polylineStyle);
     drawable.addDrawable(polyline);
+    //setup labels and label containers
     var text = data.text.match(/<start:(.*)><end:(.*)>/);
     textStart = (text && text[1] != undefined) ? text[1] : null;
     textEnd = (text && text[2] != undefined) ? text[2] : null;
     var labelStart = this.getLabelContainer_(drawable, textStart,
-        unilib.mvc.ln.DrawableShapeType.LABEL_START);
+        unilib.mvc.bc.DrawableShapeType.LABEL_START);
     var labelEnd = this.getLabelContainer_(drawable, textEnd,
-        unilib.mvc.ln.DrawableShapeType.LABEL_END);
+        unilib.mvc.bc.DrawableShapeType.LABEL_END);
+    var labelStyle = this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT);
     if (labelStart) {
-      this.setupLabel_(elem, textStart, lineStart, labelStart);
+      this.setupLabel_(elem, textStart, lineStart, labelStart, labelStyle);
       labelStart.setPosition(polyline.getPosition());
     }
     if (labelEnd) {
-      this.setupLabel_(elem, textEnd, lineEnd, labelEnd);
+      this.setupLabel_(elem, textEnd, lineEnd, labelEnd, labelStyle);
       labelEnd.setPosition(polyline.getPosition());
     }
     return drawable;
@@ -531,7 +548,7 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#update}
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.update =
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.update =
     function(drawable, elem) {
     if (! this.canHandle(elem)) {
       throw new unilib.mvc.view.ViewError('Edge drawable manager ' + 
@@ -539,29 +556,236 @@ unilib.provideNamespace('unilib.mvc.ln', function() {
     }
     var data = elem.getData();
     var polyline = this.extractElement_(drawable, 
-        unilib.mvc.ln.DrawableShapeType.POLYLINE);
-    this.setupPolyline_(elem, polyline);
+        unilib.mvc.bc.DrawableShapeType.POLYLINE);
+    var polylineStyle = (drawable.hasFocus()) ? 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY_FOCUS) : 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.BODY);
+    this.setupPolyline_(elem, polyline, polylineStyle);
+    //update label informations
+    //get label style
+    var labelStyle = (drawable.hasFocus()) ? 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT_FOCUS) : 
+      this.styleProvider_.getStyle(elem.getID(), 
+        unilib.mvc.bc.StyleType.TEXT);
+    //parse label text 
     var text = data.text.match(/<start:(.*)><end:(.*)>/);
     textStart = (text && text[1] != undefined) ? text[1] : null;
     textEnd = (text && text[2] != undefined) ? text[2] : null;
+    //get related lines for label positioning
     var iter = polyline.createDrawableIterator();
+    //get existing label container if any
     var labelStart = this.getLabelContainer_(drawable, textStart,
-        unilib.mvc.ln.DrawableShapeType.LABEL_START);
+        unilib.mvc.bc.DrawableShapeType.LABEL_START);
+    //set iterator to beginning line
     iter.begin();
-    if (labelStart) this.setupLabel_(elem, textStart, iter.item(), labelStart);
+    if (labelStart) 
+      this.setupLabel_(elem, textStart, iter.item(), labelStart, labelStyle);
+    //get existing label container if any
     var labelEnd = this.getLabelContainer_(drawable, textEnd,
-        unilib.mvc.ln.DrawableShapeType.LABEL_END);
+        unilib.mvc.bc.DrawableShapeType.LABEL_END);
+    //set iterator to last line
     iter.finish();
-    if (labelEnd) this.setupLabel_(elem, textEnd, iter.item(), labelEnd);
+    if (labelEnd) 
+      this.setupLabel_(elem, textEnd, iter.item(), labelEnd, labelStyle);
     return drawable;
   };
   
   /**
    * @see {unilib.mvc.view.DrawableManagerStrategyModule#canHandle}
    */
-  unilib.mvc.ln.EdgeDrawableManagerStrategy.prototype.canHandle =
+  unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.canHandle =
     function(elem) {
-      if (elem.getID() == unilib.mvc.ln.GraphElementType.EDGE) {
+      if (elem.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
+        return true;
+      }
+      return false;
+  };
+  
+  /**
+   * ContextMenu DrawableManagerStrategyModule
+   * @class
+   * @extends {unilib.mvc.view.DrawableManagerStrategyModule}
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy = 
+    function(styleProvider, textDistance, maxTextLength) {
+    unilib.mvc.view.DrawableManagerStrategyModule.call(this);
+    
+    /**
+     * provide the StyleInformations for each part of the node
+     * @type {unilib.mvc.controller.StyleProvider}
+     * @private
+     */
+    this.styleProvider_ = styleProvider;
+    
+    /**
+     * label distance from the body of the element
+     * @type {number}
+     * @private
+     */
+    this.textDistance_ = textDistance || 2;
+    
+    /**
+     * maximum label length
+     * @type {number}
+     * @private
+     */
+    this.maxTextLength_ = maxTextLength || 25;
+    
+  };
+  unilib.inherit(unilib.mvc.bc.MenuDrawableManagerStrategy, 
+      unilib.mvc.view.DrawableManagerStrategyModule.prototype);
+  
+  /**
+   * setup menu container
+   * @param {unilib.mvc.menu.Menu} element
+   * @param {unilib.graphics.Rectangle} drawable background rectangle
+   * @param {unilib.graphics.CompositeDrawableShape} container drawable
+   * @param {unilib.graphics.StyleInformations} style
+   * @param {unilib.graphics.StyleInformations} itemStyle style of an item
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy.prototype.setupMenu_ = 
+    function(element, drawable, container, style, itemStyle) {
+      container.setPosition(element.getPosition());
+      drawable.setStyleInformations(style);
+      var position = new unilib.geometry.Point3D(0, 0, 0);
+      drawable.setPosition(position);
+      //if there is a border do not make the items be above it
+      drawable.setTopLeft(new unilib.geometry.Point(-style.lineWidth, -style.lineWidth));
+      //count number of items
+      var numElements = 0;
+      var menuWidth = 0;
+      for (var i = container.createDrawableIterator(); ! i.end(); i.next()) {
+        if (i.item() == drawable) continue;
+        numElements++;
+        var width = i.item().getBottomRight().x - i.item().getTopLeft().x;
+        if (width > menuWidth) {
+          //update max with
+          menuWidth = width;
+        }
+      }
+      var menuHeight = numElements * 
+        (itemStyle.textSize + 2 * itemStyle.lineWidth + this.textDistance_);
+      drawable.setBottomRight(
+        new unilib.geometry.Point(menuWidth + style.lineWidth, 
+          menuHeight + style.lineWidth));
+      return drawable;
+  };
+  
+  /**
+   * setup menu container
+   * @param {unilib.mvc.menu.MenuElement} element
+   * @param {unilib.graphics.TextRect} drawable
+   * @param {number} index index of the item in the menu
+   * @param {unilib.graphics.StyleInformations} style
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy.prototype.setupItem_ = 
+    function(element, drawable, index, style) {
+      var data = element.getData();
+      drawable.setStyleInformations(style);
+      drawable.setText(data.text);
+      //position relative to container
+      var itemHeight = style.textSize + 2 * style.lineWidth;
+      var itemWidth = style.textSize * 0.75 * data.text.length;
+      var position = new unilib.geometry.Point3D(0, 
+        index * (itemHeight + this.textDistance_), 1);
+      drawable.setTopLeft(new unilib.geometry.Point(0, 0));
+      drawable.setBottomRight(
+        new unilib.geometry.Point(itemWidth, itemHeight));
+      drawable.setPosition(position);
+      return drawable;
+  };
+  
+  /**
+   * @see {unilib.mvc.view.DrawableManagerStrategyModule#build}
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy.prototype.build = 
+    function(elem) {
+    if (! this.canHandle(elem)) {
+      throw new unilib.mvc.view.ViewError('Menu drawable manager ' + 
+          'can not handle given element');
+    }
+    var container = new unilib.graphics.CompositeDrawableShape();
+    var bgRect = new unilib.graphics.Rectangle();
+    container.addDrawable(bgRect);
+    var menuStyle = this.styleProvider_.getStyle(elem.getID(), 
+      unilib.mvc.bc.StyleType.BODY);
+    //setup items
+    var itemStyle = this.styleProvider_.getStyle(elem.getID(), 
+      unilib.mvc.bc.StyleType.TEXT);
+    var index = 0;
+    for (var i = elem.createItemIterator(); !i.end(); i.next()) {
+      var item = new unilib.graphics.TextRect();
+      this.setupItem_(i.item(), item, index, itemStyle);
+      container.addDrawable(item);
+      index++;
+    }
+    //setupmenu is called here because the height is set using
+    //the number of drawables added
+    this.setupMenu_(elem, bgRect, container, menuStyle, itemStyle);
+    return container;
+  };
+  
+  /**
+   * @see {unilib.mvc.view.DrawableManagerStrategyModule#update}
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy.prototype.update =
+    function(drawable, elem) {
+    if (! this.canHandle(elem)) {
+      throw new unilib.mvc.view.ViewError('Menu drawable manager ' + 
+          'can not handle given element');
+    }
+    var menuStyle = this.styleProvider_.getStyle(elem.getID(), 
+      unilib.mvc.bc.StyleType.BODY);
+    //extract bg rect and update items
+    var itemStyle = this.styleProvider_.getStyle(elem.getID(), 
+      unilib.mvc.bc.StyleType.TEXT);
+    var index = 0;
+    var bgRect = null;
+    var i = drawable.createDrawableIterator();
+    var j = elem.createItemIterator();
+    while (! j.end()) {
+      if (! i.end()) {
+        if(i.item().getID() == unilib.graphics.DrawableShapeType.SHAPE_RECT) {
+          //this is the background rect
+          bgRect = i.item();
+          i.next();
+          continue;
+        }
+        else {
+          //i.item() is the drawable relative to j.item(), update accordingly
+          this.setupItem_(j.item(), i.item(), index, itemStyle);
+        }
+      }
+      else {
+        //there are more items than drawable representations,
+        //new drawables must be added
+        var newItem = new unilib.graphics.TextRect();
+        drawable.addDrawable(newItem);
+        this.setupItem_(j.item(), newItem, index, itemStyle);
+      }
+      //increment for next step
+      j.next();
+      i.next();
+      index++;
+    }
+    //if there are additional drawables, remove them
+    while (! i.end()) {
+      drawable.removeDrawable(i.item());
+      i.next();
+    }
+    this.setupMenu_(elem, bgRect, drawable, menuStyle, itemStyle);
+    return drawable;
+  };
+  
+  /**
+   * @see {unilib.mvc.view.DrawableManagerStrategyModule#canHandle}
+   */
+  unilib.mvc.bc.MenuDrawableManagerStrategy.prototype.canHandle =
+    function(elem) {
+      if (elem.getID() == unilib.mvc.menu.MenuType.MENU) {
         return true;
       }
       return false;

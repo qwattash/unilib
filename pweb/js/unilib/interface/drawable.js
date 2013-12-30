@@ -139,6 +139,24 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
       throw new unilib.error.AbstractMethodError();
   };
   
+  /**
+   * check whether the element is selected
+   * @abstract
+   * @return {boolean}
+   */
+  unilib.interfaces.graphics.IDrawable.prototype.hasFocus = function() {
+    throw new unilib.error.AbstractMethodError();
+  };
+  
+  /**
+   * set the focus status for the drawable (selected or unselected)
+   * @abstract
+   * @param {boolean} focused
+   */
+  unilib.interfaces.graphics.IDrawable.prototype.setFocus = function(focused) {
+    throw new unilib.error.AbstractMethodError();
+  };
+  
   //------------------------ Renderer interface -------------------------------
   /**
    * renderer interface
