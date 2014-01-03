@@ -45,11 +45,17 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
    * accordingly. A menu is observable, so that permanent menu like a palette
    * are possible.
    * @class
-   * @abstract
    * @param {?function(new:unilib.mvc.controller.BaseCommand, *)} [command]
    * @param {unilib.mvc.menu.BaseMenuData} [data]
    */
   unilib.mvc.menu.MenuElement = function(command, data) {
+    
+    /**
+     * menu of which the item is part
+     * @type {unilib.mvc.menu.Menu}
+     * @protected
+     */
+    this.menu_ = null;
     
     /**
      * type of the menu
@@ -108,11 +114,10 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
   
   /**
    * get Command related to the menu
-   * @param {Array.<Object>}
-   * @returns {unilib.mvc.controller.BaseCommand}
+   * @returns {?function(new:unilib.mvc.controller.BaseCommand)}
    */
-  unilib.mvc.menu.MenuElement.prototype.getRelatedCommand = function(target) {
-    return new this.commandClass_(target);
+  unilib.mvc.menu.MenuElement.prototype.getRelatedCommand = function() {
+    return this.commandClass_;
   };
   
   /**
@@ -123,10 +128,26 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
     this.commandClass_ = cmd;
   };
   
+  /**
+   * get menu of which the item is part
+   * @returns {unilib.mvc.menu.Menu}
+   */
+  unilib.mvc.menu.MenuElement.prototype.getMenu = function() {
+    return this.menu_;
+  };
+  
+  /**
+   * set the menu of which the item is part
+   * @param {unilib.mvc.menu.Menu}
+   */
+  unilib.mvc.menu.MenuElement.prototype.setMenu = function(menu) {
+    this.menu_ = menu;
+  };
+  
   //------------------------- Menu ----------------------------------
   
   /**
-   * menu model class, composite
+   * menu model class, aggregate menu items
    * @class
    * @extends {unilib.interfaces.observer.Observable}
    */
@@ -168,6 +189,7 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
       else {
         this.menuItems_.push(item);
       }
+      item.setMenu(this);
     }
   };
   
@@ -180,6 +202,7 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
     if (index != -1) {
       this.menuItems_.splice(index, 1);
     }
+    item.setMenu(null);
   };
   
   /**
@@ -220,24 +243,21 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
    * @param {?unilib.geomety.Point3D} positon
    */
   unilib.mvc.menu.Menu.prototype.setPosition = function(position) {
-    var evt;
+    var evtType;
     
     if (this.position_ == null && position) {
       this.position_ = position;
-      evt = new unilib.mvc.model.ModelEvent(
-        unilib.mvc.model.ModelEventType.ADD, this);
+      evtType = unilib.mvc.model.ModelEventType.ADD;
     }
     else if (this.position_ != null && position) {
       this.position_ = position;
-      evt = new unilib.mvc.model.ModelEvent(
-        unilib.mvc.model.ModelEventType.UPDATE, this);
+      evtType = unilib.mvc.model.ModelEventType.UPDATE;
     }
     else if (this.position_ != null && position == null) {
       this.position_ = position;
-      evt = new unilib.mvc.model.ModelEvent(
-        unilib.mvc.model.ModelEventType.REMOVE, this);
+      evtType = unilib.mvc.model.ModelEventType.REMOVE;
     }
-    this.notify(evt);
+    this.notify(new unilib.mvc.model.ModelEvent(evtType, this));
   };
   
 }, ['unilib/error.js', 'unilib/interface/iterator.js', 

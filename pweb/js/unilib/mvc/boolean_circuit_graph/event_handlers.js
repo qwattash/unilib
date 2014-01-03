@@ -24,39 +24,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
      * @private
      */
     this.controller_ = controller;
-    
-    /**
-     * list of selected drawables, used as shorthand to
-     * avoid traversing the drawableManager to look for them
-     * @type {Array.<Object>}
-     * @private
-     */
-    this.selected_ = [];
   };
   unilib.inherit(unilib.mvc.bc.ClickEventObserver,
     unilib.interfaces.observer.Observer.prototype);
-  
-  /**
-   * build select command for given element
-   * @param {Object} element
-   * @private
-   */
-  unilib.mvc.bc.ClickEventObserver.prototype.getSelectCommand_ = 
-    function(element) {
-    return new unilib.mvc.bc.command.SelectElementCommand(element, 
-      this.controller_.drawableManager);    
-  };
-  
-  /**
-   * build deselect command for given element
-   * @param {Object} element
-   * @private
-   */
-  unilib.mvc.bc.ClickEventObserver.prototype.getDeselectCommand_ = 
-    function(element) {
-    return new unilib.mvc.bc.command.DeselectElementCommand(element, 
-      this.controller_.drawableManager);    
-  };
   
   /**
    * helper, select given element
@@ -64,16 +34,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    * @private
    */
   unilib.mvc.bc.ClickEventObserver.prototype.select_ = function(element) {
-    if (element == null) return;
-    for (var i = 0; i < this.selected_.length; i++) {
-      if (this.selected_[i] == element) {
-        //if already selected do nothing
-        return;
-      }
-    }
-    this.selected_.push(element);
-    var cmd = this.getSelectCommand_(element);
-    this.controller_.exec(cmd);
+    this.controller_.selectionManager.select(element);
   };
   
   /**
@@ -83,18 +44,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    * @private
    */
   unilib.mvc.bc.ClickEventObserver.prototype.deselect_ = function(element) {
-    var i = 0;
-    while (i < this.selected_.length) {
-      if (element == null || this.selected_[i] != element) {
-        var cmd = this.getDeselectCommand_(this.selected_[i]);
-        this.controller_.exec(cmd);
-        this.selected_.splice(i, 1);
-      }
-      else {
-        //skip the element that is not removed
-        i++;
-      }
-    }
+    this.controller_.selectionManager.deselectAll(element);
   };
   
   /**
@@ -110,12 +60,65 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   };
   
   /**
+   * perform menu action if the click is on the menu
+   * @param {unilib.mvc.controller.ViewEvent} evt
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.performMenuAction_ = 
+    function(evt) {
+    if (!evt.getTarget() || 
+      evt.getTarget().getID() != unilib.mvc.menu.MenuType.MENU) {
+      return;
+    }
+    //associate position to item clicked
+    var drawableManager = this.controller_.drawableManager;
+    var menuDrawable = drawableManager.getDrawableFromElement(evt.getTarget());
+    //traslate relative to container drawable;
+    position = new unilib.geometry.Point3D();
+    position.z = null;
+    position.x = evt.position.x - menuDrawable.getPosition().x;
+    position.y = evt.position.y - menuDrawable.getPosition().y;
+    //get index of the item clicked in the menu
+    var i = menuDrawable.createDrawableIterator();
+    var targetIndex = 0; // index of the selected item in the menu
+    while (! i.end()) {
+      if (i.item().getID() == unilib.graphics.DrawableShapeType.SHAPE_TEXT) {
+        if (i.item().isAt(position)) {
+          break;
+        }
+        else {
+          targetIndex++;
+        }
+      }
+      i.next();
+    }
+    //get item at targetIndex in the menu model
+    var j = evt.getTarget().createItemIterator();
+    try {
+      for (var k = 0; k < targetIndex; k++) {
+        j.next();
+      }
+      var targetItem = j.item();
+    }
+    catch (e) {
+      //Iterator overflow
+      throw new unilib.error.UnilibError('Menu model does not' + 
+        ' match representation');
+    }
+    //perform item action
+    var cmdClass = targetItem.getRelatedCommand();
+    var cmd = new cmdClass(this.controller_);
+    this.controller_.exec(cmd);
+  };
+  
+  /**
    * @see {unilib.interfaces.observer.Observer#update}
    */
   unilib.mvc.bc.ClickEventObserver.prototype.update = function(evt) {
     if (! this.canHandle_(evt)) return;
     switch (evt.keymap.button) {
       case unilib.mvc.controller.EventButtonType.BUTTON_LEFT:
+        this.performMenuAction_(evt);
         this.closeMenu_();
         if (evt.keymap.shiftKey) {
           //if the shift key is pressed just select the target
@@ -286,7 +289,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGEND ||
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAG ||
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DROP) {
-      return true;
+      if (evt.getTarget().getID() != unilib.mvc.menu.MenuType.MENU) {
+        return true;
+      }
     }
     return false;
   };

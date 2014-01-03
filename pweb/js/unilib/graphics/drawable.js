@@ -434,16 +434,19 @@ unilib.provideNamespace('unilib.graphics', function() {
    * @see {unilib.interfaces.graphics.IDrawable#isAt}
    */
   unilib.graphics.Rectangle.prototype.isAt = function(point) {
+    var isAt = false;
     if (point.z && this.position_.z != point.z) {
       //if z axis does not match and point.z != null
-      return false;
+      isAt = false;
     }
-    var bbox = this.getBoundingBox();
-    bbox.mode = unilib.collision.CollisionMode.SOLID;
-    var mtv = bbox.collide(
-      new unilib.collision.BoundingBox(point, point));
-    if (mtv) return true;
-    return false;
+    else {
+      var bbox = this.getBoundingBox();
+      bbox.mode = unilib.collision.CollisionMode.SOLID;
+      var mtv = bbox.collide(
+        new unilib.collision.BoundingBox(point, point));
+      isAt = (mtv) ? true : false;
+    }
+    return isAt;
   };
   
   /**
@@ -681,8 +684,12 @@ unilib.provideNamespace('unilib.graphics', function() {
    */
   unilib.graphics.CompositeDrawableShape.prototype.isAt = function(point) {
     var isAt = false;
+    var newTarget = new unilib.geometry.Point3D();
+    newTarget.x = point.x - this.position_.x;
+    newTarget.y = point.y - this.position_.y;
+    newTarget.z = (point.z != null) ? point.z - this.position_.z : null;
     for (var i = 0; i < this.drawables_.length; i++) {
-      if (this.drawables_[i].isAt(point)) {
+      if (this.drawables_[i].isAt(newTarget)) {
         isAt = true;
         break;
       }

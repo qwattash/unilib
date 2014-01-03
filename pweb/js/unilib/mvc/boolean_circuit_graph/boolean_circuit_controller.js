@@ -124,6 +124,14 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
     this.eventManager.attachObserver(this.dragdropObserver);
     this.eventManager.attachObserver(this.clickObserver);
     
+    /**
+     * selection manager, handles user selections of elements in
+     * the graph
+     * @type {unilib.mvc.bc.SelectionManager}
+     * @public
+     */
+    this.selectionManager = new unilib.mvc.bc.SelectionManager(this.drawableManager);
+    
   };
   unilib.inherit(unilib.mvc.bc.controller.BooleanCircuitController, 
     unilib.mvc.controller.CommandHandler.prototype);
@@ -135,5 +143,6 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
   'unilib/mvc/view/drawable_manager.js',
   'unilib/mvc/controller/event_manager.js',
   'unilib/mvc/boolean_circuit_graph/drawable_strategy.js',
-  'unilib/mvc/boolean_circuit_graph/context_menu.js']);
+  'unilib/mvc/boolean_circuit_graph/context_menu.js',
+  'unilib/mvc/boolean_circuit_graph/selection_manager.js']);
 unilib.notifyLoaded();

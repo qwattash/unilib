@@ -8,78 +8,6 @@
  * @namespace unilib.mvc.bc.command
  */
 unilib.provideNamespace('unilib.mvc.bc.command', function() {
-	
-	/**
-	 * element select
-	 * @class
-	 * @extends {unilib.mvc.controller.IrreversibleCommand}
-	 * @param {unilib.mvc.graph.GraphElement} element 
-   * @param {unilib.mvc.view.drawableManager} drawableManager
-	 */
-	unilib.mvc.bc.command.SelectElementCommand = 
-	 function(element, drawableManager) {
-	  
-	  /**
-     * target element
-     * @type {unilib.mvc.graph.GraphElement}
-     * @private
-     */
-    this.target_ = element;
-    
-    /**
-     * drawable managet that is used to display the target element
-     * @type {unilib.mvc.view.drawableManager}
-     * @private
-     */
-    this.drawableManager_ = drawableManager;
-	};
-	unilib.inherit(unilib.mvc.bc.command.SelectElementCommand, 
-	  unilib.mvc.controller.IrreversibleCommand.prototype);
-	  
-	unilib.mvc.bc.command.SelectElementCommand.prototype.exec = function() {
-	  var targetDrawable = this.drawableManager_.getDrawableFromElement(
-      this.target_);
-    if (targetDrawable) {
-      targetDrawable.setFocus(true);
-      this.drawableManager_.refresh(this.target_);
-    }
-	};
-
-	/**
-   * element deselcetion
-   * @class
-   * @extends {unilib.mvc.controller.IrreversibleCommand}
-   * @param {unilib.mvc.graph.GraphElement} element 
-   * @param {unilib.mvc.view.drawableManager} drawableManager
-   */
-  unilib.mvc.bc.command.DeselectElementCommand = 
-    function(element, drawableManager) {
-    
-    /**
-     * target element
-     * @type {unilib.mvc.graph.GraphElement}
-     * @private
-     */
-    this.target_ = element;
-    
-    /**
-     * drawable managet that is used to display the target element
-     * @type {unilib.mvc.view.drawableManager}
-     * @private
-     */
-    this.drawableManager_ = drawableManager;
-  };
-  unilib.inherit(unilib.mvc.bc.command.DeselectElementCommand, 
-    unilib.mvc.controller.IrreversibleCommand.prototype);
-    
-  unilib.mvc.bc.command.DeselectElementCommand.prototype.exec = function() {
-    var targetDrawable = this.drawableManager_.getDrawableFromElement(
-      this.target_);
-    if (targetDrawable) {
-      targetDrawable.setFocus(false);
-      this.drawableManager_.refresh(this.target_);
-    }
-  };
   
 	/**
    * move generic element both reversible and irreversible variants 
@@ -371,8 +299,31 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
 	};
 	
 	/**
-	 * create element
-	 */
+	 * create generic element
+   * @class
+   * @extends {unilib.mvc.controller.ReversibleCommand}
+   * @param {unilib.mvc.graph.GraphModel} model
+   * @param {unilib.geometry.Point3D} position
+   */
+  unilib.mvc.bc.command.CreateElementCommand = function(model, position) {
+    unilib.mvc.controller.IrreversibleCommand.call(this);
+    /**
+     * menu model
+     * @type {unilib.mvc.graph.GraphModel}
+     * @private
+     */
+    this.model_ = model;
+    
+    /**
+     * target position
+     * @type {unilib.geometry.Point3D}
+     * @private
+     */
+    this.position_ = position;
+  };
+  unilib.inherit(unilib.mvc.bc.command.CreateElementCommand, 
+    unilib.mvc.controller.ReversibleCommand.prototype);
+	
 	
 	/**
 	 * remove element

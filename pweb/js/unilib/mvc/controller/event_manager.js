@@ -280,7 +280,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     }
     else __state = 'error';
     console.log('[d] got ' + evt.type);
-    console.log('[d] curent state: ' + __state);
+    //console.log('[d] curent state: ' + __state);
     */
     this.handlingState_.handle(evt, this, this.drawableManager_);
   };
@@ -395,12 +395,50 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       position.x = event.clientX - containerPos.x + containerScroll.x;
       position.y = event.clientY - containerPos.y + containerScroll.y;
       //z-axis stays null
+      position.z = null;
     }
     catch (e) {
       throw new unilib.mvc.view.ViewError('sorry your browser does not' + 
         ' support the CSSOM View specification, try a newer browser.');
     }
     return position;
+  };
+  
+  /**
+   * get foreground drawable in a list
+   * @param {Array.<unilib.interfaces.drawable.IDrawable>} targets
+   * @returns {unilib.interfaces.drawable.IDrawable}
+   */
+  unilib.mvc.controller.HTML4EventManager.prototype.getForegroundTarget = 
+    function(targets) {
+    var foregroundTarget = null;
+    var foregroundZ = null;
+    for (var i = 0; i < targets.length; i++) {
+      
+      //if the target is a composite, z position is determined as the max z 
+      //of the elements in the composite
+      var maxZ = null;
+      if (targets[i].getID() == 
+        unilib.graphics.DrawableShapeType.SHAPE_COMPOSITE) {
+        for (var j = targets[i].createDrawableIterator(); !j.end(); j.next()) {
+          if (maxZ == null) {
+            maxZ = j.item().getPosition().z;
+          }
+          else if (j.item().getPosition().z > maxZ) {
+            maxZ = j.item().getPosition().z;
+          }
+        }
+      }
+      else {
+        maxZ = foregroundTarget.getPosition().z;
+      }
+      //now check if the maxZ found is better than the foregroundZ
+      if (foregroundZ < maxZ || foregroundZ == null) {
+        foregroundTarget = targets[i];
+        foregroundZ = maxZ;
+      }
+    }
+    return foregroundTarget;
   };
   
   /**
@@ -417,12 +455,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     var targetElement;
     if (customTarget === undefined) {
       var drawables = this.drawableManager_.getDrawablesAt(position);
-      var targetDrawable = (drawables.length > 0) ? drawables[0] : null;
-      for (var i = 1; i < drawables.length; i++) {
-        if (drawables[i].getPosition().z > targetDrawable.getPosition().z) {
-          targetDrawable = drawables[i];
-        }
-      }
+      var targetDrawable = this.getForegroundTarget(drawables);
       targetElement = 
         this.drawableManager_.getElementFromDrawable(targetDrawable);
     }
@@ -472,44 +505,6 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     unilib.mvc.controller.BaseHTML4EventHandlingState.prototype);
   
   /**
-   * get foreground drawable in a list
-   * @param {Array.<unilib.interfaces.drawable.IDrawable>} targets
-   * @returns {unilib.interfaces.drawable.IDrawable}
-   * @protected
-   */
-  unilib.mvc.controller.HTML4WaitState.prototype.getForegroundTarget_ = 
-    function(targets) {
-    var foregroundTarget = null;
-    var foregroundZ = null;
-    for (var i = 0; i < targets.length; i++) {
-      
-      //if the target is a composite, z position is determined as the max z 
-      //of the elements in the composite
-      var maxZ = null;
-      if (targets[i].getID() == 
-        unilib.graphics.DrawableShapeType.SHAPE_COMPOSITE) {
-        for (var j = targets[i].createDrawableIterator(); !j.end(); j.next()) {
-          if (maxZ == null) {
-            maxZ = j.item().getPosition().z;
-          }
-          else if (j.item().getPosition().z > maxZ) {
-            maxZ = j.item().getPosition().z;
-          }
-        }
-      }
-      else {
-        maxZ = foregroundTarget.getPosition().z;
-      }
-      //now check if the maxZ found is better than the foregroundZ
-      if (foregroundZ < maxZ || foregroundZ == null) {
-        foregroundTarget = targets[i];
-        foregroundZ = maxZ;
-      }
-    }
-    return foregroundTarget;
-  };
-  
-  /**
    * @see {unilib.mvc.controller.HTML4EventResolutionState#handle}
    */
   unilib.mvc.controller.HTML4WaitState.prototype.handle = 
@@ -519,7 +514,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       var position = eventManager.parsePosition(evt);
       var targets = drawableManager.getDrawablesAt(position);
       var keymap = eventManager.parseKeymap(evt);
-      var foregroundTarget = this.getForegroundTarget_(targets);
+      var foregroundTarget = eventManager.getForegroundTarget(targets);
       
       if (keymap.button == unilib.mvc.controller.EventButtonType.BUTTON_LEFT &&
         foregroundTarget != null) {
