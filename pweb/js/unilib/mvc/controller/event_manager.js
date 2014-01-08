@@ -428,6 +428,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
             maxZ = j.item().getPosition().z;
           }
         }
+        maxZ += targets[i].getPosition().z;
       }
       else {
         maxZ = foregroundTarget.getPosition().z;
