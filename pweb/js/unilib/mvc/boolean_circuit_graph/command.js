@@ -227,15 +227,17 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
       //lock y axis
       position.y = targetData.position.y;
     }
+    var oldCentre = new unilib.geometry.Point(targetData.position.x + halfX, 
+      targetData.position.y + halfY);
     //forbid motion inside the node
-    if (nextCentre.x >= nodeTL.x && nextCentre.x <= nodeBR.x) {
+    if (oldCentre.x == nodeTL.x || oldCentre.x == nodeBR.x) {
       if (nextCentre.y > nodeTL.y && nextCentre.y < nodeBR.y) {
-        position.y = targetData.position.y;
+        position.x = targetData.position.x;
       }
     }
-    if (nextCentre.y >= nodeTL.y && nextCentre.y <= nodeBR.y) {
+    if (oldCentre.y == nodeTL.y || oldCentre.y == nodeBR.y) {
       if (nextCentre.x > nodeTL.x && nextCentre.x < nodeBR.x) {
-        position.x = targetData.position.x;
+        position.y = targetData.position.y;
       }
     }
     return position;
@@ -245,93 +247,279 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    * move edge element
    * @todo
    */
-    
+   
+	
 	/**
-	 * open context menu
+	 * base class for menu commands, enables further parameters to be set
+	 * after instantiation
 	 * @class
-	 * @extends {unilib.mvc.controller.IrreversibleCommand}
-	 * @param {unilib.mvc.menu.Menu} ctxModel
-	 * @param {unilib.geometry.Point3D} position
+	 * @abstract
+	 * @extends {unilib.mvc.controller.ReversibleCommand}
 	 */
-	unilib.mvc.bc.command.ShowCtxMenuCommand = function(ctxModel, position) {
-	  unilib.mvc.controller.IrreversibleCommand.call(this);
-	  /**
-	   * menu model
-	   * @type {unilib.mvc.menu.Menu}
-	   * @private
-	   */
-	  this.menu_ = ctxModel;
-	  
-	  /**
-	   * target position
-	   * @type {unilib.geometry.Point3D}
-	   * @private
-	   */
-	  this.position_ = position;
-	};
-	unilib.inherit(unilib.mvc.bc.command.ShowCtxMenuCommand, 
-    unilib.mvc.controller.IrreversibleCommand.prototype);
-	
-	unilib.mvc.bc.command.ShowCtxMenuCommand.prototype.exec = function() {
-	  this.menu_.setPosition(this.position_);
-	};
-	
-	/**
-	 * close context menu
-	 * @class
-	 * @extends {unilib.mvc.controller.IrreversibleCommand}
-	 * @param {unilib.mvc.menu.Menu} ctxModel
-	 */
-	unilib.mvc.bc.command.HideCtxMenuCommand = function(ctxModel) {
-	  unilib.mvc.controller.IrreversibleCommand.call(this);
-	  /**
-     * menu model
-     * @type {unilib.mvc.menu.Menu}
-     * @private
-     */
-    this.menu_ = ctxModel;
-	};
-  unilib.inherit(unilib.mvc.bc.command.HideCtxMenuCommand, 
-    unilib.mvc.controller.IrreversibleCommand.prototype);
-	
-	unilib.mvc.bc.command.HideCtxMenuCommand.prototype.exec = function() {
-	  this.menu_.setPosition(null);
-	};
-	
-	/**
-	 * create generic element
-   * @class
-   * @extends {unilib.mvc.controller.ReversibleCommand}
-   * @param {unilib.mvc.graph.GraphModel} model
-   * @param {unilib.geometry.Point3D} position
-   */
-  unilib.mvc.bc.command.CreateElementCommand = function(model, position) {
-    unilib.mvc.controller.IrreversibleCommand.call(this);
-    /**
-     * menu model
-     * @type {unilib.mvc.graph.GraphModel}
-     * @private
-     */
-    this.model_ = model;
+	unilib.mvc.bc.command.MenuCommand = function() {
+    unilib.mvc.controller.ReversibleCommand.call(this);
     
     /**
      * target position
      * @type {unilib.geometry.Point3D}
      * @private
      */
-    this.position_ = position;
+    this.position_ = null;
   };
-  unilib.inherit(unilib.mvc.bc.command.CreateElementCommand, 
+  unilib.inherit(unilib.mvc.bc.command.MenuCommand, 
     unilib.mvc.controller.ReversibleCommand.prototype);
 	
+	/**
+	 * setup further parameters
+	 * @param {unilib.geometry.Point3D} position
+	 * @param {...object} args
+	 */
+	unilib.mvc.bc.command.MenuCommand.prototype.setup = 
+	 function(position) {
+	   this.position_ = position;
+	};
 	
 	/**
+   * get a new instance of the command that can be executed
+   * @abstract
+   * @returns {unilib.mvc.controller.BaseCommand}
+   */
+  unilib.mvc.bc.command.MenuCommand.prototype.getInstance = 
+   function() {
+     throw new unilib.error.AbstractMethodError();
+  }; 
+  
+	//----------------- Menu commands -------------------------------------------
+	
+	/**
+	 * create generic element
+   * @class
+   * @extends {unilib.mvc.bc.command.MenuCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   */
+  unilib.mvc.bc.command.ElementCommand = function(controller) {
+    unilib.mvc.bc.command.MenuCommand.call(this);
+    
+    /**
+     * menu model
+     * @type {unilib.mvc.bc.BooleanCircuitController}
+     * @private
+     */
+    this.controller_ = controller;
+    
+    /**
+     * element instance created, used for undo
+     * @type {unilib.mvc.graph.GraphElement}
+     * @protected
+     */
+    this.instance_ = null;
+    
+    
+  };
+  unilib.inherit(unilib.mvc.bc.command.ElementCommand, 
+    unilib.mvc.bc.command.MenuCommand.prototype);
+	
+	/**
+   * create node element
+   * @class
+   * @extends {unilib.mvc.bc.command.ElementCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   * @param {unilib.mvc.bc.GraphElementType} nodeType
+   */
+  unilib.mvc.bc.command.CreateNodeElementCommand = 
+    function(controller, nodeType) {
+    unilib.mvc.bc.command.ElementCommand.call(this, controller);
+    
+    /**
+     * node type
+     * @type {unilib.mvc.bc.GraphElementType}
+     * @protected
+     */
+    this.type_ = nodeType;
+  };
+  unilib.inherit(unilib.mvc.bc.command.CreateNodeElementCommand, 
+    unilib.mvc.bc.command.ElementCommand.prototype);
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#exec}
+   */
+  unilib.mvc.bc.command.CreateNodeElementCommand.prototype.exec = function() {
+    var model = this.controller_.graphModel;
+    this.instance_ = model.makeNode();
+    var data = this.instance_.getData();
+    data.position = this.position_;
+    data.points.push(new unilib.geometry.Point(0,0));
+    data.points.push(new unilib.geometry.Point(50, 50));
+    data.text = "Node";
+    this.instance_.setData(data);
+    this.instance_.setID(this.type_);
+    model.notify();
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.CreateNodeElementCommand.prototype.undo = function() {
+    if (this.instance_) {
+      var model = this.controller_.graphModel;
+      model.removeNode(this.instance_);
+      model.notify();
+    }
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MenuCommand#getInstance
+   */
+  unilib.mvc.bc.command.CreateNodeElementCommand.prototype.getInstance = 
+   function() {
+     var cmd = new unilib.mvc.bc.command.CreateNodeElementCommand(
+      this.controller_, this.type_);
+     cmd.setup(this.position_);
+     return cmd;
+  }; 
+	
+	/*
 	 * remove element
 	 */
+	/**
+   * remove node element
+   * @class
+   * @extends {unilib.mvc.bc.command.ElementCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   */
+  unilib.mvc.bc.command.RemoveNodeElementCommand = 
+    function(controller) {
+    unilib.mvc.bc.command.ElementCommand.call(this, controller);
+    
+  };
+  unilib.inherit(unilib.mvc.bc.command.RemoveNodeElementCommand, 
+    unilib.mvc.bc.command.ElementCommand.prototype);
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#exec}
+   */
+  unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.exec = function() {
+    this.instance_ = this.controller_.selectionManager.getSelection();
+    console.log(this.instance_);
+    if (this.instance_) {
+      var model = this.controller_.graphModel;
+      for (var i = 0; i < this.instance_.length; i++) {
+        model.removeNode(this.instance_[i]);  
+      }
+      model.notify();
+    }
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.undo = function() {
+    var model = this.controller_.graphModel;
+    for (node in this.instance_) {
+      model.addNode(node); 
+    }
+    model.notify();
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MenuCommand#getInstance
+   */
+  unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.getInstance = 
+   function() {
+     var cmd = new unilib.mvc.bc.command.RemoveNodeElementCommand(
+      this.controller_);
+     cmd.setup(this.position_, this.instance_);
+     return cmd;
+  };
+  
+  /**
+   * setup further parameters
+   * @param {unilib.geometry.Point3D} position
+   */
+  unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.setup = 
+   function(position) {
+     this.position_ = position;
+  };
 	
 	/**
 	 * link elements
 	 */
+	
+	/**
+   * open context menu
+   * @class
+   * @extends {unilib.mvc.bc.command.MenuCommand}
+   * @param {unilib.mvc.menu.Menu} ctxModel
+   * @param {unilib.geometry.Point3D} position
+   */
+  unilib.mvc.bc.command.ShowCtxMenuCommand = function(ctxModel) {
+    unilib.mvc.controller.IrreversibleCommand.call(this);
+    /**
+     * menu model
+     * @type {unilib.mvc.menu.Menu}
+     * @private
+     */
+    this.menu_ = ctxModel;
+    
+    /**
+     * target position
+     * @type {unilib.geometry.Point3D}
+     * @private
+     */
+    this.position_ = null;
+  };
+  unilib.inherit(unilib.mvc.bc.command.ShowCtxMenuCommand, 
+    unilib.mvc.bc.command.MenuCommand.prototype);
+  
+  unilib.mvc.bc.command.ShowCtxMenuCommand.prototype.exec = function() {
+    this.menu_.setPosition(this.position_);
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MenuCommand#getInstance
+   */
+  unilib.mvc.bc.command.ShowCtxMenuCommand.prototype.getInstance = 
+   function() {
+     var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(this.menu_);
+     cmd.setup(this.position_);
+     return cmd;
+  }; 
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.ShowCtxMenuCommand.prototype.undo = function() {
+    return;
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.BaseCommand#isReversible}
+   */
+  unilib.mvc.bc.command.ShowCtxMenuCommand.prototype.isReversible = function() {
+    return false;
+  };
+  
+  /**
+   * close context menu
+   * @class
+   * @extends {unilib.mvc.controller.IrreversibleCommand}
+   * @param {unilib.mvc.menu.Menu} ctxModel
+   */
+  unilib.mvc.bc.command.HideCtxMenuCommand = function(ctxModel) {
+    unilib.mvc.controller.IrreversibleCommand.call(this);
+    /**
+     * menu model
+     * @type {unilib.mvc.menu.Menu}
+     * @private
+     */
+    this.menu_ = ctxModel;
+  };
+  unilib.inherit(unilib.mvc.bc.command.HideCtxMenuCommand, 
+    unilib.mvc.controller.IrreversibleCommand.prototype);
+  
+  unilib.mvc.bc.command.HideCtxMenuCommand.prototype.exec = function() {
+    this.menu_.setPosition(null);
+  };
 	
 }, ['unilib/error.js', 'unilib/mvc/graph/model.js', 
     'unilib/mvc/controller/controller.js']);

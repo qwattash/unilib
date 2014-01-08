@@ -74,10 +74,10 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
     
     /**
      * data for menu visualisation
-     * @type {?function(new:unilib.mvc.controller.BaseCommand, *)}
+     * @type {unilib.mvc.controller.BaseCommand}
      * @protected
      */
-    this.commandClass_ = (command === undefined) ? null : command;
+    this.command_ = (command === undefined) ? null : command;
   };
   
   /**
@@ -114,18 +114,18 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
   
   /**
    * get Command related to the menu
-   * @returns {?function(new:unilib.mvc.controller.BaseCommand)}
+   * @returns {unilib.mvc.controller.BaseCommand}
    */
   unilib.mvc.menu.MenuElement.prototype.getRelatedCommand = function() {
-    return this.commandClass_;
+    return this.command_;
   };
   
   /**
    * set Command related to the menu
-   * @param {?function(new:unilib.mvc.controller.BaseCommand, *)}
+   * @param {unilib.mvc.controller.BaseCommand} cmd
    */
   unilib.mvc.menu.MenuElement.prototype.setRelatedCommand = function(cmd) {
-    this.commandClass_ = cmd;
+    this.command_ = cmd;
   };
   
   /**
@@ -169,7 +169,7 @@ unilib.provideNamespace('unilib.mvc.menu', function() {
     /**
      * position of the context menu
      * @type {unilib.geometry.Point3D}
-     * @@private
+     * @private
      */
     this.position_ = null;
   };

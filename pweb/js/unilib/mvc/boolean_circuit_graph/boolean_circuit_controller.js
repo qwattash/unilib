@@ -77,16 +77,33 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
     
     //attach graphModel observers
     this.graphModel.attachObserver(this.drawableManager);
+
+    /**
+     * submenu of the main context menu for adding nodes
+     * @type {unilib.mvc.bc.menu.AddNodeContextMenu}
+     * @public
+     */
+    this.addNodeMenuModel = new unilib.mvc.bc.menu.AddNodeContextMenu(this);
+    
+    /**
+     * node context menu
+     * @type {unilib.mvc.bc.menu.NodeContextMenu}
+     * @public
+     */
+    this.nodeMenuModel = new unilib.mvc.bc.menu.NodeContextMenu(this);
     
     /**
      * context menu models
      * @type {unilib.mvc.bc.MainContextMenu}
      * @public
      */
-    this.mainMenuModel = new unilib.mvc.bc.menu.MainContextMenu();
+    this.mainMenuModel = new unilib.mvc.bc.menu.MainContextMenu(this, 
+      this.addNodeMenuModel);
     
     //attach menuModel observers
     this.mainMenuModel.attachObserver(this.drawableManager);
+    this.addNodeMenuModel.attachObserver(this.drawableManager);
+    this.nodeMenuModel.attachObserver(this.drawableManager);
     
     /**
      * the event manager is used to parse envents and convert them in an 

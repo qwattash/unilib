@@ -688,7 +688,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       drawable.setText(data.text);
       //position relative to container
       var itemHeight = style.textSize + 2 * style.lineWidth;
-      var itemWidth = style.textSize * 0.75 * data.text.length;
+      var itemWidth = style.textSize * 0.85 * data.text.length;
       var position = new unilib.geometry.Point3D(0, 
         index * (itemHeight + this.textDistance_), 1);
       drawable.setTopLeft(new unilib.geometry.Point(0, 0));

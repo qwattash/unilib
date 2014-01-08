@@ -34,7 +34,10 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    * @private
    */
   unilib.mvc.bc.ClickEventObserver.prototype.select_ = function(element) {
-    this.controller_.selectionManager.select(element);
+    //do not select menu elements
+    if (element && element.getID() != unilib.mvc.menu.MenuType.MENU) {
+      this.controller_.selectionManager.select(element);
+    }
   };
   
   /**
@@ -57,14 +60,60 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         this.controller_.mainMenuModel);
       this.controller_.exec(cmd);
     }
+    if (this.controller_.addNodeMenuModel.getPosition() != null) {
+      var cmd = new unilib.mvc.bc.command.HideCtxMenuCommand(
+        this.controller_.addNodeMenuModel);
+      this.controller_.exec(cmd);
+    }
+    if (this.controller_.nodeMenuModel.getPosition() != null) {
+      var cmd = new unilib.mvc.bc.command.HideCtxMenuCommand(
+        this.controller_.nodeMenuModel);
+      this.controller_.exec(cmd);
+    }
   };
+  
+  /**
+   * open main menu
+   * @param {unilib.geometry.Point3D} position
+   * @param {unilib.mvc.graph.GraphElement} target
+   * @private
+   */
+  unilib.mvc.bc.ClickEventObserver.prototype.openMenu_ = function(position, 
+    target) {
+    var id = (target != null) ? target.getID() : null;
+    position.z = 10; //menu always in foreground
+    if (id == unilib.mvc.bc.GraphElementType.INPUT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.OUTPUT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.AND_NODE ||
+        id == unilib.mvc.bc.GraphElementType.OR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NOT_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NOR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.NAND_NODE ||
+        id == unilib.mvc.bc.GraphElementType.XOR_NODE ||
+        id == unilib.mvc.bc.GraphElementType.XNOR_NODE) {
+      var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+          this.controller_.nodeMenuModel);
+        cmd.setup(position);
+        this.controller_.exec(cmd);
+    }
+    else {
+      if (this.controller_.mainMenuModel.getPosition() == null) {
+        var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+          this.controller_.mainMenuModel);
+        cmd.setup(position);
+        this.controller_.exec(cmd);
+      }
+    }
+  };
+  
   
   /**
    * perform menu action if the click is on the menu
    * @param {unilib.mvc.controller.ViewEvent} evt
+   * @returns {unilib.mvc.bc.command.MenuCommand}
    * @private
    */
-  unilib.mvc.bc.ClickEventObserver.prototype.performMenuAction_ = 
+  unilib.mvc.bc.ClickEventObserver.prototype.getMenuAction_ = 
     function(evt) {
     if (!evt.getTarget() || 
       evt.getTarget().getID() != unilib.mvc.menu.MenuType.MENU) {
@@ -106,9 +155,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         ' match representation');
     }
     //perform item action
-    var cmdClass = targetItem.getRelatedCommand();
-    var cmd = new cmdClass(this.controller_);
-    this.controller_.exec(cmd);
+    var cmd = targetItem.getRelatedCommand().getInstance();
+    cmd.setup(new unilib.geometry.Point3D(evt.position.x, evt.position.y, 0));
+    return cmd;
   };
   
   /**
@@ -118,8 +167,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     if (! this.canHandle_(evt)) return;
     switch (evt.keymap.button) {
       case unilib.mvc.controller.EventButtonType.BUTTON_LEFT:
-        this.performMenuAction_(evt);
+        cmd = this.getMenuAction_(evt);
         this.closeMenu_();
+        if (cmd) this.controller_.exec(cmd);
         if (evt.keymap.shiftKey) {
           //if the shift key is pressed just select the target
           this.select_(evt.getTarget());
@@ -134,15 +184,19 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         }
         break;
       case unilib.mvc.controller.EventButtonType.BUTTON_RIGHT:
+        var menuPosition = new unilib.geometry.Point3D(evt.position.x, 
+            evt.position.y, 1);
         if (evt.getTarget() == null) {
           //deselect all
           this.deselect_(null);
           //show main menu in target position
-          var menuPosition = new unilib.geometry.Point3D(evt.position.x, 
-            evt.position.y, 1);
-          var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
-            this.controller_.mainMenuModel, menuPosition);
-          this.controller_.exec(cmd);
+          this.openMenu_(menuPosition);
+        }
+        else {
+          //select element
+          this.select_(evt.getTarget());
+          //show menu for the target in target position
+          this.openMenu_(menuPosition, evt.getTarget());
         }
         break;
     }
