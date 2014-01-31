@@ -82,7 +82,7 @@
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(50, 50)];
    data.text = "Node 2";
    node2.setData(data);
-   var pin = node2.makePin();
+   pin = node2.makePin();
    pin.setID(unilib.mvc.bc.GraphElementType.PIN);
    data = pin.getData();
    data.position.x = 95;
@@ -91,6 +91,26 @@
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
    data.text = "";
    pin.setData(data);
+   
+   var node3 = model.makeNode();
+   node3.setID(unilib.mvc.bc.GraphElementType.INPUT_NODE);
+   var data = node3.getData();
+   data.position.x = 180;
+   data.position.y = 100;
+   data.position.z = 0;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(50, 50)];
+   data.text = "Node 3";
+   node3.setData(data);
+   pin = node3.makePin();
+   pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+   data = pin.getData();
+   data.position.x = 175;
+   data.position.y = 95;
+   data.position.z = 2;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
+   data.text = "";
+   pin.setData(data);
+   
    model.notify();
    
    console.log('[+] leaving control to the user');

@@ -280,8 +280,18 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
       //exception, single segment, only 2 points, one segment
       //create a third point and proceed as normal
       if (edgeData.points.length == 2) {
-        //@todo
-        console.log("NYI");//@TODO------------------------------------------------------------------------------------------
+        //auxiliary point
+        var auxPoint = new unilib.geometry.Point();
+        if (isStart) {
+          auxPoint.x = segEnd.x;
+          auxPoint.y = segEnd.y;
+          edgeData.points.push(auxPoint);
+        }
+        else {
+          auxPoint.x = segStart.x;
+          auxPoint.y = segStart.y;
+          edgeData.points.splice(0, 0, auxPoint);
+        }
       }
       
       //note that next segment is always perpendicular to the current
