@@ -277,11 +277,12 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     this.target_ = null;
     
     /**
-     * edge state informations
+     * state informations for the commands
      * @type {Object}
      * @private
      */
-    this.edgeCommandState_ = {};
+    this.commandState_ = {};
+    
   };
   unilib.inherit(unilib.mvc.bc.DragDropEventObserver,
     unilib.interfaces.observer.Observer.prototype);
@@ -295,7 +296,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     function(target) {
       //save starting state of the target (drag events always have one)
       this.startingTargetData_ = target.getData();
-      
   };
   
   /**
@@ -308,7 +308,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     var cmd;
     if (target.getID() == unilib.mvc.bc.GraphElementType.PIN) {
       cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
-        targetPosition, undo, startingData);
+        targetPosition, undo, startingData, this.commandState_);
     }
     else if (target.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
       /*
@@ -322,12 +322,13 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
        * using a state object, this is something like a memento pattern 
        */
       cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
-        targetPosition, undo, startingData, this.commandHandler_, this.edgeCommandState_);
+        targetPosition, undo, startingData, this.commandHandler_, 
+        this.commandState_);
     }
     else {
       //some node type
       cmd = new unilib.mvc.bc.command.MoveNodeElementCommand(target, 
-        targetPosition, undo, startingData);
+        targetPosition, undo, startingData, this.commandState_);
     }
     return cmd;
   };
@@ -340,7 +341,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART) {
       this.storeStartingData_(evt.getTarget());
       //clear edge dragging state upon new drag
-      this.edgeCommandState_ = {};
+      this.commandState_ = {};
       //save mouse offset relative to target origin
       this.mouseOffsetX_ = evt.position.x - 
         (this.startingTargetData_.position.x + 
@@ -370,6 +371,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       this.commandHandler_.exec(cmd);
     }
     else if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DROP) {
+      //@TODO-----------------------------------------------------------------------------------------------------------------------
+      console.log(evt.getTarget());
+      console.log(this.commandHandler_.drawableManager.getDrawableFromElement(evt.getTarget()));
       //note that drop event, if generated, is fired immediately 
       //AFTER! the DRAGEND
       //forbid any collision by undoing reversible translation executed before

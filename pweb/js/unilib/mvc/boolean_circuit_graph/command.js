@@ -21,9 +21,11 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    * @param {unilib.mvc.graph.BaseGraphElementData} [startingData=null] 
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
+   * @param {Object} state state of the previous moveEdge command, this is
+   * needed to propagate the segment index informations
    */
   unilib.mvc.bc.command.MoveElementCommand = 
-    function(element, position, undo, startingData) {
+    function(element, position, undo, startingData, state) {
     
     /**
      * target element
@@ -58,6 +60,18 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      * @protected
      */
     this.position_ = position;
+    
+    /**
+     * state that is persisted among different Move
+     * commands that are considered related, the common usage
+     * is to track starting data for the edges.
+     * @todo
+     * Further refinement can be done to support startingData
+     * undo only with this state and remove the startingData property
+     * @type {Object}
+     * @private
+     */
+    this.state_ = state;
   };
   unilib.inherit(unilib.mvc.bc.command.MoveElementCommand, 
     unilib.mvc.controller.BaseCommand.prototype);
@@ -102,11 +116,20 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    * @param {unilib.mvc.graph.BaseGraphElementData} [startingData=null] 
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
+   * @param {Object} state state of the previous moveEdge command, this is
+   * needed to propagate the segment index informations
    */
   unilib.mvc.bc.command.MoveNodeElementCommand = 
-    function(element, position, undo, startingData) {
+    function(element, position, undo, startingData, state) {
     unilib.mvc.bc.command.MoveElementCommand.call(this, element, position, 
-      undo, startingData);
+      undo, startingData, state);
+      
+    /**
+     * list of auxiliary pin commands used to move pins
+     * @type {Array.<unilib.mvc.bc.command.MovePinElementCommand>}
+     * @private
+     */
+    this.pinCommands_ = [];
   };
   unilib.inherit(unilib.mvc.bc.command.MoveNodeElementCommand, 
     unilib.mvc.bc.command.MoveElementCommand.prototype);
@@ -127,11 +150,27 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     this.target_.setData(targetData);
     //translate pins attached to the node
     for (var i = this.target_.createIterator(); !i.end(); i.next()) {
-      targetData = i.item().getData();
-      targetData.position.x += translation.x;
-      targetData.position.y += translation.y;
-      targetData.position.z += translation.z;
-      i.item().setData(targetData);
+      //create auxiliary pin command
+      var targetPos = i.item().getData().position;
+      targetPos.x += translation.x;
+      targetPos.y += translation.y;
+      targetPos.z += translation.z;
+      var pinStartingData = null;
+      if (this.undo_) {
+        //build initial condition for the pin
+        pinStartingData = i.item().getData();
+        //the initial condition must be recovered from the translation happened
+        //between the node starting data and the actual node data
+        pinStartingData.position.x += - (targetData.position.x - this.startingData_.position.x);
+        pinStartingData.position.y += - (targetData.position.y - this.startingData_.position.y);
+        pinStartingData.position.z += - (targetData.position.z - this.startingData_.position.z);
+      }
+      var pinCmd = new unilib.mvc.bc.command.MovePinElementCommand(
+        i.item(), targetPos, this.undo_, pinStartingData, this.state_);
+      if (this.undo_) {
+        this.pinCommands_.push(pinCmd);
+      }
+      pinCmd.exec();
     }
     //update model
     this.target_.getModel().notify();
@@ -149,12 +188,8 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
       translation.z = this.startingData_.position.z - targetData.position.z;
       this.target_.setData(this.startingData_);
       //translate pins attached to the node
-      for (var i = this.target_.createIterator(); !i.end(); i.next()) {
-        targetData = i.item().getData();
-        targetData.position.x += translation.x;
-        targetData.position.y += translation.y;
-        targetData.position.z += translation.z;
-        i.item().setData(targetData);
+      for (var i = 0; i < this.pinCommands_.length; i++) {
+        this.pinCommands_[i].undo();
       }
       //update model
       this.target_.getModel().notify();
@@ -172,22 +207,159 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    * @param {unilib.mvc.graph.BaseGraphElementData} [startingData=null] 
    *  if command is reversible then starting data for undo operation can 
    *  be specified. Default to data of the element at the time of exec()
+   * @param {Object} state state of the previous moveEdge command, this is
+   * needed to propagate the segment index informations
    */
   unilib.mvc.bc.command.MovePinElementCommand = 
-    function(element, position, undo, startingData) {
+    function(element, position, undo, startingData, state) {
       unilib.mvc.bc.command.MoveElementCommand.call(this, element, 
-        position, undo, startingData);
+        position, undo, startingData, state);
       
       //if movement is illegal, the exec becomes a NOP, the undo 
       //stays the same if it is a legal position
       this.position_ = this.checkPosition_(position);
-      if (undo) {
-        this.startingData_.position = this.checkPosition_(
-            startingData.position);
+      
+      /*
+       * @todo
+       * store edges before the move operation in the state
+       * a clone is needed to prevent reordering that may be caused
+       * by a removal and an undo??
+       * for now store just the data and rely on fixed order
+       * @type {Array.<Array.<unilib.mvc.graph.BaseGraphElementData>>}
+       */
+      if (! this.state_['start_edges']) {
+        var startingEdgesData = [];
+        var edgeIter = this.target_.createIterator();
+        for (edgeIter.begin(); ! edgeIter.end(); edgeIter.next()) {
+          //build initial condition for the edge
+          startingEdgesData.push(edgeIter.item().getData());
+        }
+        this.state_['start_edges'] = startingEdgesData;
       }
   };
   unilib.inherit(unilib.mvc.bc.command.MovePinElementCommand, 
     unilib.mvc.bc.command.MoveElementCommand.prototype);
+    
+  /**
+   * @see {unilib.mvc.controller.MoveElementCommand#exec}
+   */  
+  unilib.mvc.bc.command.MovePinElementCommand.prototype.exec = function() {
+    var edgeIter = this.target_.createIterator();
+    var targetData = this.target_.getData();
+    for (edgeIter.begin(); ! edgeIter.end(); edgeIter.next()) {
+      //translate edge attached to this pin
+      var edge = edgeIter.item();
+      var edgeData = edge.getData();
+      //translation offset to be added to the segment
+      var translationStart = new unilib.geometry.Point(
+        this.position_.x - targetData.position.x,
+        this.position_.y - targetData.position.y);
+      var translationEnd = new unilib.geometry.Point(
+        this.position_.x - targetData.position.x,
+        this.position_.y - targetData.position.y);
+      var segment = -1;
+      var nextSegment = -1;
+      var isStart = null; //remember which part is attached
+      if (edge.getStartPin() == this.target_) {
+        //the pin is the start, take first segment
+        segment = 0;
+        isStart = true;
+      }
+      else if (edge.getEndPin() == this.target_) {
+        //the pin is the end, take last segment
+        segment = edgeData.points.length - 2;
+        isStart = false;
+      }
+      //get segment start and end points
+      var segStart = edgeData.points[segment];
+      var segEnd = edgeData.points[segment + 1];
+      //check orientation
+      var horizontal = (segStart.y - segEnd.y == 0);
+      var vertical = (segStart.x - segEnd.x == 0);
+      
+      //exception, single segment, only 2 points, one segment
+      //create a third point and proceed as normal
+      if (edgeData.points.length == 2) {
+        //@todo
+        console.log("NYI");//@TODO------------------------------------------------------------------------------------------
+      }
+      
+      //note that next segment is always perpendicular to the current
+      if (horizontal && vertical) {
+        //the points have aligned dammit!
+        //check if end and the following segment are horizontal or vertical
+        //this also relies on the fact that if a segment was aligned or
+        //perpendicular but zero-length it has been merged
+        
+        /* if we (the pin) are at seg#0 start (point[0]), seg#0 end is at point[1] so
+         * the next segment point that must be compared to seg#0 end is seg#1 end = point[2]
+         * if we are at seg#last end (point[len-1]), seg#last start is at point[len-2] so
+         * the next segment point that must be compared to seg#last start is seg#last-1 start = point[len-3]
+         * if we are at seg#last start (point[len-1]), seg#last end is at point[len-2] so
+         * the next segment point that must be compared to seg#last end is seg#last-1 start = point[len-3]
+         * if we are at seg#0 end (point[0]), seg#0 start is at point[1] so
+         * the next segment point that must be compared to seg#0 start is seg#1 start = point[2]
+         */
+        var nextSegmentInterestPoint = (isStart) ? 
+          edgeData.points[2] : edgeData.points[edgeData.points.length - 3];
+        if (nextSegmentInterestPoint.x - segEnd.x == 0) {
+          //following segment is vertical, this is horizontal
+          vertical = false;
+        }
+        else {
+          //following segment is horizontal, this is vertical
+          horizontal = false;
+        }
+      }
+      
+      //apply alignment constraint to translation end or start
+      //from this point on the polyline is always at least 2 segments
+      if (isStart) {
+        //apply constraint to the end
+        if (horizontal) {
+          //lock x
+          translationEnd.x = 0;
+        }
+        else if (vertical) {
+          //lock y
+          translationEnd.y = 0;
+        }
+      }
+      else {
+        //apply constraint to the start
+        //note that next segment is always perpendicular to the current
+        if (horizontal) {
+          //lock x
+          translationStart.x = 0;
+        }
+        else if (vertical) {
+          //lock y
+          translationStart.y = 0;
+        }
+      }
+      //apply translation
+      segStart.x += translationStart.x;
+      segStart.y += translationStart.y;
+      segEnd.x += translationEnd.x;
+      segEnd.y += translationEnd.y;
+      edge.setData(edgeData);
+    }
+    //call supeclass exec to update the pin
+    unilib.mvc.bc.command.MoveElementCommand.prototype.exec.call(this);
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MoveElementCommand#undo}
+   */
+  unilib.mvc.bc.command.MovePinElementCommand.prototype.undo = function() {
+    if (this.undo_) {
+      var edgeIter = this.target_.createIterator();
+      for (edgeIter.begin(); ! edgeIter.end(); edgeIter.next()) {
+        edgeIter.item().setData(this.state_['start_edges'].pop());
+      }
+      unilib.mvc.bc.command.MoveElementCommand.prototype.undo.call(this);
+    }
+  };
   
   /**
    * check whether a given position is valid for the target pin
@@ -262,7 +434,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
   unilib.mvc.bc.command.MoveEdgeElementCommand = 
     function(element, position, undo, startingData, controller, state) {
       unilib.mvc.bc.command.MoveElementCommand.call(this, element, 
-        position, undo, startingData);
+        position, undo, startingData, state);
       
       this.position_ = position;
       
@@ -305,12 +477,6 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
         state['segment'] = this.segment_;
       }
       
-      /**
-       * remember the state to update it during exec and undo
-       * @type {Object}
-       * @private
-       */
-      this.state_ = state;
   };
   unilib.inherit(unilib.mvc.bc.command.MoveEdgeElementCommand, 
     unilib.mvc.bc.command.MoveElementCommand.prototype);
