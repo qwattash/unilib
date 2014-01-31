@@ -255,15 +255,26 @@ unilib.provideNamespace('unilib.mvc.view', function() {
    * (in drawables_ array) and return their indexes
    * @private
    * @param {unilib.interfaces.graphics.IDrawable} target drawable
+   * @param {boolean} [ignoreGhost=false] ignore ghost property 
    * @returns {Array.<unilib.interfaces.graphics.IDrawable>}
    */
   unilib.mvc.view.DrawableManager.prototype.getOverlappingDrawables = 
-  function(target) {
+  function(target, ignoreGhost) {
+    if (ignoreGhost === undefined) {
+      ignoreGhost = false;
+    }
     var overlapping = [];
     var targetBox = target.getBoundingBox();
+    if (ignoreGhost) {
+      targetBox.setMode(unilib.collision.CollisionMode.SOLID);
+    }
     for (var i = 0; i < this.drawables_.length; i++) {
       if (this.drawables_[i].drawable == target) continue;
-      if (this.drawables_[i].drawable.getBoundingBox().collide(targetBox)) {
+      var drawableBox = this.drawables_[i].drawable.getBoundingBox();
+      if (ignoreGhost) {
+        drawableBox.setMode(unilib.collision.CollisionMode.SOLID);
+      }
+      if (drawableBox.collide(targetBox)) {
         overlapping.push(this.drawables_[i].drawable);
       }
     }
@@ -296,16 +307,20 @@ unilib.provideNamespace('unilib.mvc.view', function() {
      * and redrawn but this requires to redraw C (and so on).
      */
      //--------------------------------------------------------------------------------------
-     //var colliding = this.getOverlappingDrawables(drawable);
+     
+     //var colliding = this.getOverlappingDrawables(drawable, true);
+     //console.log(colliding);
      drawable.clear(this.renderer_);
+     /*
      //redraw objects that were eventually removed
-     /*for (var i = 0; i < colliding.length; i++) {
-     //note this can lead to chain effects <<--maybe the renderer should
-     // do something
-     //to support renderers other than the HTML renderer
-     colliding[i].clear(this.renderer_);
-     colliding[i].draw(this.renderer_);
-     }*/
+     for (var i = 0; i < colliding.length; i++) {
+       //note this can lead to chain effects <<--maybe the renderer should
+       // do something
+       //to support renderers other than the HTML renderer
+       colliding[i].clear(this.renderer_);
+       colliding[i].draw(this.renderer_);
+     }
+     */
      //---------------------------------------------------------------------------------------
      
      //update the drawable that is targeted by the event

@@ -191,6 +191,7 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    * @abstract
    * @param {unilib.geometry.Point} topLeft
    * @param {unilib.geometry.Point} bottomRight
+   * @returns {number} handle that uniquely refers to the object drawn
    * @throws {unilib.error.UnilibError}
    */
   unilib.interfaces.graphics.IRenderer.prototype.drawRect = 
@@ -204,6 +205,7 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    * @abstract
    * @param {unilib.geometry.Point} start
    * @param {unilib.geometry.Point} end
+   * @returns {number} handle that uniquely refers to the object drawn
    * @throws {unilib.error.UnilibError}
    */
   unilib.interfaces.graphics.IRenderer.prototype.drawLine = 
@@ -218,6 +220,7 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    * @param {unilib.geometry.Point} v1 vertex1
    * @param {unilib.geometry.Point} v2 vertex2
    * @param {unilib.geometry.Point} v3 vertex3
+   * @returns {number} handle that uniquely refers to the object drawn
    * @throws {unilib.error.UnilibError}
    */
   unilib.interfaces.graphics.IRenderer.prototype.drawTriangle = 
@@ -231,6 +234,7 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    * @abstract
    * @param {unlib.geometry.Point} center
    * @param {number} radius
+   * @returns {number} handle that uniquely refers to the object drawn
    * @throws {unilib.error.UnilibError}
    */
   unilib.interfaces.graphics.IRenderer.prototype.drawCircle = 
@@ -247,6 +251,7 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    * @param {unilib.geometry.Point} bottomRight bounding rect bottom right 
    *   corner of the text
    * @param {string} text
+   * @returns {number} handle that uniquely refers to the object drawn
    * @throws {unilib.error.UnilibError}
    */
   unilib.interfaces.graphics.IRenderer.prototype.drawText = 
@@ -276,6 +281,16 @@ unilib.provideNamespace('unilib.interfaces.graphics', function() {
    */
   unilib.interfaces.graphics.IRenderer.prototype.clearElementsAt = 
     function(target, strict) {
+      throw new unilib.error.AbstractMethodError();
+  };
+  
+  /**
+   * remove elements associated to the given handle
+   * @abstract
+   * @param {number} handle
+   */
+  unilib.interfaces.graphics.IRenderer.prototype.clearHandle = 
+    function(handle) {
       throw new unilib.error.AbstractMethodError();
   };
   

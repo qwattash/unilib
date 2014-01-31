@@ -507,6 +507,10 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       //if there is a label and the text is empty, remove the label
       drawable.removeDrawable(label);
     }
+    
+    if (label) {
+      label.setCollisionMode(unilib.collision.CollisionMode.GHOST);
+    }
     return label;
   };
   

@@ -86,6 +86,13 @@ unilib.provideNamespace('unilib.graphics', function() {
      * @protected
      */
     this.rendered_ = false;
+    
+    /**
+     * handle assigned to the rendered element
+     * @type {number}
+     * @protected
+     */
+    this.handle_ = null;
   };
   unilib.inherit(unilib.graphics.DrawableShape, 
       unilib.interfaces.graphics.IDrawable.prototype);
@@ -270,7 +277,7 @@ unilib.provideNamespace('unilib.graphics', function() {
      */
     renderer.setStyleInformations(unilib.copyObject(this.style_));
     renderer.setRelativeOrigin(this.position_);
-    renderer.drawLine(this.start_, this.end_);
+    this.handle_ = renderer.drawLine(this.start_, this.end_);
     renderer.clearRelativeOrigin();
   };
   
@@ -284,7 +291,8 @@ unilib.provideNamespace('unilib.graphics', function() {
     renderer.setRelativeOrigin(this.position_);
     //delete in strict mode so that it is more likely to have accidental
     //deletion of other elements
-    renderer.clearElementsAt(this.start_);
+    //renderer.clearElementsAt(this.start_);
+    renderer.clearHandle(this.handle_);
     renderer.clearRelativeOrigin();
   };
   

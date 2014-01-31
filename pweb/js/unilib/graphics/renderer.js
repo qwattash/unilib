@@ -230,11 +230,37 @@ unilib.provideNamespace('unilib.graphics', function() {
     //set non-static positioning in order to use absolute positioning
     //in the container
     this.container_.style.position = 'relative';
+    
+    /**
+     * handle counter, used to generate element handles
+     * @type {number}
+     * @private
+     */
+    this.handleCounter_ = 0;
   };
   unilib.inherit(unilib.graphics.HTML4Renderer, 
       unilib.interfaces.graphics.IRenderer.prototype);
   
   //helpers and internal logic
+  
+  /**
+   * get ID from handle
+   * @param {number} handle
+   * @returns {string}
+   * @private
+   */
+  unilib.graphics.HTML4Renderer.prototype.getIDFromHandle_ = function(handle) {
+    return "HTML4_renderer_" + handle;
+  };
+  
+  /**
+   * create new handle
+   * @returns {number} new handle
+   * @private
+   */
+  unilib.graphics.HTML4Renderer.prototype.createHandle_ = function() {
+    return this.handleCounter_++;
+  };
   
   /**
    * setup a standard rectangle
@@ -326,7 +352,10 @@ unilib.provideNamespace('unilib.graphics', function() {
   unilib.graphics.HTML4Renderer.prototype.drawRect = 
     function(topLeft, bottomRight) {
     var rect = this.createRect_(topLeft, bottomRight);
+    var h = this.createHandle_();
+    rect.setAttribute('id', this.getIDFromHandle_(h));
     this.container_.appendChild(rect);
+    return h;
   };
   
   /**
@@ -446,7 +475,10 @@ unilib.provideNamespace('unilib.graphics', function() {
        */
       line.style.backgroundColor = this.style_.lineColor || '#000000';
     }
+    var h = this.createHandle_();
+    line.setAttribute('id', this.getIDFromHandle_(h));
     this.container_.appendChild(line);
+    return h;
   };
   
   /**
@@ -475,7 +507,10 @@ unilib.provideNamespace('unilib.graphics', function() {
     var rect = this.createRect_(topLeft, bottomRight);
     var txt = document.createTextNode(text);
     rect.appendChild(txt);
+    var h = this.createHandle_();
+    rect.setAttribute('id', this.getIDFromHandle_(h));
     this.container_.appendChild(rect);
+    return h;
   };
   
   
@@ -561,6 +596,18 @@ unilib.provideNamespace('unilib.graphics', function() {
     }
     else {
       this.clearRect(target, target);  
+    }
+  };
+  
+  /**
+   * remove elements associated to the given handle
+   * @param {number} handle
+   */
+  unilib.graphics.HTML4Renderer.prototype.clearHandle = function(handle) {
+    var id = this.getIDFromHandle_(handle);
+    var elem = document.getElementById(id);
+    if (elem) {
+      this.container_.removeChild(elem);
     }
   };
   

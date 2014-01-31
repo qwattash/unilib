@@ -155,6 +155,15 @@ unilib.provideNamespace('unilib.collision', function() {
   };
   
   /**
+   * set collision mode
+   * @param {unilib.collision.CollisionMode} mode
+   * @public
+   */
+  unilib.collision.BoundingBox.prototype.setMode = function(mode) {
+    this.mode = mode;
+  };
+  
+  /**
    * more complex collision shape based on bounding boxes
    * @class
    */
@@ -187,6 +196,17 @@ unilib.provideNamespace('unilib.collision', function() {
       }
     }
     return (collided) ? mtv : null;
+  };
+  
+  /**
+   * set collision mode
+   * @param {unilib.collision.CollisionMode} mode
+   * @public
+   */
+  unilib.collision.AggregateBoundingBox.prototype.setMode = function(mode) {
+    for (var i = 0; i < this.boxes.length; i++) {
+      this.boxes[i].setMode(mode);
+    }
   };
   
 }, ['unilib/geometry/geometry.js']);
