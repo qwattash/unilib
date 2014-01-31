@@ -288,12 +288,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     //if not rendered do nothing
     if (! this.rendered_) return;
     this.rendered_ = false;
-    renderer.setRelativeOrigin(this.position_);
-    //delete in strict mode so that it is more likely to have accidental
-    //deletion of other elements
-    //renderer.clearElementsAt(this.start_);
     renderer.clearHandle(this.handle_);
-    renderer.clearRelativeOrigin();
   };
   
   /**
@@ -433,7 +428,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     this.rendered_ = true;
     renderer.setRelativeOrigin(this.position_);
     renderer.setStyleInformations(unilib.cloneObject(this.style_));
-    renderer.drawRect(this.topLeft_, this.bottomRight_);
+    this.handle_ = renderer.drawRect(this.topLeft_, this.bottomRight_);
     renderer.clearRelativeOrigin();
   };
   
@@ -444,11 +439,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     //if not rendered do nothing
     if (! this.rendered_) return;
     this.rendered_ = false;
-    renderer.setRelativeOrigin(this.position_);
-    //clear in strict mode to be more precise, note that two elements with the
-    //same coordinates will be deleted in any case
-    renderer.clearElementsAt(this.topLeft_, true);
-    renderer.clearRelativeOrigin();
+    renderer.clearHandle(this.handle_);
   };
   
   /**
@@ -559,7 +550,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     this.rendered_ = true;
     renderer.setRelativeOrigin(this.position_);
     renderer.setStyleInformations(unilib.cloneObject(this.style_));
-    renderer.drawText(this.topLeft_, this.bottomRight_, this.text_);
+    this.handle_ = renderer.drawText(this.topLeft_, this.bottomRight_, this.text_);
     renderer.clearRelativeOrigin();
   };
   
