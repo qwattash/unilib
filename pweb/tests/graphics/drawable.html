@@ -40,8 +40,10 @@
       //IClonable
       var clone = line.clone();
       assertDeepEqual(clone, line, 'IClonable interface impementation');
+      //bounding box
+      var bb = line.getBoundingBox();
       //IDrawable::clear
-      line.clear(renderer);
+      //line.clear(renderer);
       assertEqual(container.childNodes.length, 0, 'line cleared in renderer');
     });
     test('Rectangle shape', function(){

@@ -151,6 +151,28 @@ unilib.provideNamespace('unilib.mvc.bc.menu', function() {
   };
   unilib.inherit(unilib.mvc.bc.menu.NodeContextMenu,
     unilib.mvc.menu.Menu.prototype);
+    
+  /**
+   * context menu used for editing a pin
+   * @class
+   * @extends {unilib.mvc.menu.Menu}
+   * @param {unilib.mvc.bc.BooleanCircuitController} controller
+   */
+  unilib.mvc.bc.menu.PinContextMenu = function(controller) {
+    unilib.mvc.menu.Menu.call(this);
+    //set menu items
+    
+    var elementData = new unilib.mvc.menu.BaseMenuData();
+    elementData.text = 'Link';
+    this.addItem(new unilib.mvc.menu.MenuElement(
+      new unilib.mvc.bc.command.LinkCommand(
+        controller),
+      elementData
+    ));
+    
+  };
+  unilib.inherit(unilib.mvc.bc.menu.PinContextMenu,
+    unilib.mvc.menu.Menu.prototype);
   
 }, ['unilib/mvc/menu/model.js', 
   'unilib/mvc/boolean_circuit_graph/command.js']);

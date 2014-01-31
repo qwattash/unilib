@@ -223,7 +223,7 @@ unilib.provideNamespace('unilib.mvc.view', function() {
    */
   unilib.mvc.view.DrawableManager.prototype.getDrawablesAt = 
   function(position) {
-    var targets = this.getRecordsAtPoint_(position); 
+    var targets = this.getRecordsAtPoint_(position);
     var drawables = [];
     if (targets.length != 0) {
       for (var i = 0; i < targets.length; i++) {

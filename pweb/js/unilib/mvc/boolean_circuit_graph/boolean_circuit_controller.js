@@ -93,6 +93,13 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
     this.nodeMenuModel = new unilib.mvc.bc.menu.NodeContextMenu(this);
     
     /**
+     * pin linking context menu
+     * @type {unilib.mvc.bc.menu.NodeContextMenu}
+     * @public
+     */
+    this.pinMenuModel = new unilib.mvc.bc.menu.PinContextMenu(this);
+    
+    /**
      * context menu models
      * @type {unilib.mvc.bc.MainContextMenu}
      * @public
@@ -104,6 +111,7 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
     this.mainMenuModel.attachObserver(this.drawableManager);
     this.addNodeMenuModel.attachObserver(this.drawableManager);
     this.nodeMenuModel.attachObserver(this.drawableManager);
+    this.pinMenuModel.attachObserver(this.drawableManager);
     
     /**
      * the event manager is used to parse envents and convert them in an 

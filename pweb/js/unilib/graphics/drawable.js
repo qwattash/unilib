@@ -230,6 +230,9 @@ unilib.provideNamespace('unilib.graphics', function() {
   unilib.graphics.Line = function(start, end, position) {
     unilib.graphics.DrawableShape.call(this);
     
+    if (start === undefined) start = new unilib.geometry.Point(0, 0);
+    if (end === undefined) end = new unilib.geometry.Point(0, 0);
+    
     /**
      * @see {unilib.graphics.DrawableShape#position_}
      */
@@ -281,7 +284,7 @@ unilib.provideNamespace('unilib.graphics', function() {
     renderer.setRelativeOrigin(this.position_);
     //delete in strict mode so that it is more likely to have accidental
     //deletion of other elements
-    renderer.clearElementsAt(this.start_, true);
+    renderer.clearElementsAt(this.start_);
     renderer.clearRelativeOrigin();
   };
   
@@ -308,21 +311,31 @@ unilib.provideNamespace('unilib.graphics', function() {
    * @see {unilib.interfaces.graphics.IDrawable#getBoundingBox}
    */
   unilib.graphics.Line.prototype.getBoundingBox = function() {
+    var lowCorrection = Math.floor(this.style_.lineWidth / 2);
+    var hiCorrection = Math.ceil(this.style_.lineWidth / 2);
     var tl = new unilib.geometry.Point(
       this.start_.x + this.position_.x,
       this.start_.y + this.position_.y); 
     var br = new unilib.geometry.Point(
       this.end_.x + this.position_.x,
       this.end_.y + this.position_.y);
-    if (this.end_.x == this.start_.x) {
-      //vertical line
-      br.x += this.style_.lineWidth;
+    //check whether the tl and br needs to be changed to really form a box
+    var trueTl = new unilib.geometry.Point(tl.x, tl.y);
+    var trueBr = new unilib.geometry.Point(br.x, br.y);
+    if (tl.x >= br.x) {
+      trueTl.x = br.x;
+      trueBr.x = tl.x;
     }
-    else {
-      //horizontal
-      br.y += this.style_.lineWidth;
+    if (tl.y >= br.y) {
+      trueTl.y = br.y;
+      trueBr.y = tl.y;
     }
-    return new unilib.collision.BoundingBox(tl, br, this.collisionMode_);
+    //apply rendering correction
+    trueTl.x -= lowCorrection;
+    trueTl.y -= lowCorrection;
+    trueBr.x += hiCorrection;
+    trueBr.y += hiCorrection;
+    return new unilib.collision.BoundingBox(trueTl, trueBr, this.collisionMode_);
   };
   
   /**

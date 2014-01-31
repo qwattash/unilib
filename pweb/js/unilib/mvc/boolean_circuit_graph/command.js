@@ -244,10 +244,170 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
   };
   
   /**
-   * move edge element
-   * @todo
+   * move edge element; same logic as the node but with added logic to
+   * modify the edge logic
+   * @class
+   * @extends {unilib.mvc.bc.command.MoveElementCommand}
+   * @param {unilib.mvc.graph.GraphElement} element
+   * @param {unilib.geometry,Point3D} position target position
+   * @param {boolean} [reversible=false] if the command can be undone
+   * @param {unilib.mvc.graph.BaseGraphElementData} [startingData=null] 
+   *  if command is reversible then starting data for undo operation can 
+   *  be specified. Default to data of the element at the time of exec()
+   * @param {unilib.mvc.bc.BooleanCircuitCOntroller} controller used to 
+   * extract the segment clicked
+   * @param {Object} state state of the previous moveEdge command, this is
+   * needed to propagate the segment index informations
    */
-   
+  unilib.mvc.bc.command.MoveEdgeElementCommand = 
+    function(element, position, undo, startingData, controller, state) {
+      unilib.mvc.bc.command.MoveElementCommand.call(this, element, 
+        position, undo, startingData);
+      
+      this.position_ = position;
+      
+      /**
+       * segment index to be moved
+       * @type {number}
+       * @private
+       */
+      this.segment_ = -1;
+      if (state && state['segment'] >= 0) {
+        this.segment_ = state['segment'];
+      }
+      else {
+        var container = controller.drawableManager.getDrawableFromElement(
+          element);
+        var polyline = null;
+        //get polyline in container
+        for (var i = container.createDrawableIterator(); ! i.end(); i.next()) {
+          if (i.item().getID() == unilib.mvc.bc.DrawableShapeType.POLYLINE) {
+            polyline = i.item();
+            break;
+          }  
+        }
+        if (polyline) {
+          //get clicked segment from the polyline
+          var relPosition = new unilib.geometry.Point3D(0, 0, null);
+          relPosition.x = position.x - polyline.getPosition().x - 
+            container.getPosition().x;
+          relPosition.y = position.y - polyline.getPosition().y -
+            container.getPosition().y;
+          var count = 0;
+          for (var i = polyline.createDrawableIterator(); ! i.end(); i.next()) {
+            if (i.item().isAt(relPosition)) {
+              this.segment_ = count;
+              break;
+            }
+            count++;
+          }
+        }
+        state['segment'] = this.segment_;
+      }
+      
+      /**
+       * remember the state to update it during exec and undo
+       * @type {Object}
+       * @private
+       */
+      this.state_ = state;
+  };
+  unilib.inherit(unilib.mvc.bc.command.MoveEdgeElementCommand, 
+    unilib.mvc.bc.command.MoveElementCommand.prototype);
+  
+  /**
+   * @see {unilib.mvc.controller.BaseCommand#exec}
+   */  
+  unilib.mvc.bc.command.MoveEdgeElementCommand.prototype.exec = function() {
+    //translate node
+    var targetData = this.target_.getData();
+    //check the segment to move
+    if (this.segment_ < 0 || this.segment_ > targetData.points.length - 2) {
+      //invalid segment number, ignore
+      return;
+    }
+    //get segment ends
+    //note that segment numbers varies in [0, points.length - 2]
+    segStart = targetData.points[this.segment_];
+    segEnd = targetData.points[this.segment_ + 1];
+    //get segment orientation
+    vertical = (segStart.x - segEnd.x) == 0;
+    horizontal = (segStart.y - segEnd.y) == 0;
+    /*
+     * the segment is updated:
+     * if the segment is moved along its direction nothing changes
+     * if it moves perpendicular, adjacent segments are modified (in length)
+     * if length of an adjacent segment reaches 0 it is removed
+     */
+    //if the current segment index changes, remember it in the state
+    var newSegment = this.segment_;
+    //go on with the updating
+    if (vertical && horizontal) {
+      //wtf? do nothing
+      return;
+    }
+    else {
+      //modify previous segment
+      var nStartPoint = null;
+      if (this.segment_ - 1 < 0) {
+        //no previous segment, create a new start point since the start point 
+        //can not be moved
+        nStartPoint = new unilib.geometry.Point(segStart.x, segStart.y);
+        //since we are creating a new first segment, the one clicked 
+        //becomes the second, the increment is stored
+        newSegment += 1;
+      }
+      //move target segment start point
+      if (horizontal) {
+        //move seg start by the y translation
+        segStart.y = this.position_.y;
+      }
+      else if (vertical) {
+        //move seg start by the x translation
+        segStart.x = this.position_.x;
+      }
+      //insert new point if needed
+      if (nStartPoint) {
+        //put new start point in the point array
+        targetData.points.splice(0, 0, nStartPoint);
+      }
+      //modify following segment
+      var nEndPoint = null;
+      if (this.segment_ + 1 >= targetData.points.length - 1) {
+        //no following segment, create a new end point since the end point 
+        //can not be moved
+        nEndPoint = new unilib.geometry.Point(segEnd.x, segEnd.y);
+        //no changes to the segment index since we are appending this one
+      }
+      //move target segment end point
+      if (horizontal) {
+        //move seg start by the y translation
+        segEnd.y = this.position_.y;
+      }
+      else if (vertical) {
+        //move seg start by the y translation
+        segEnd.x = this.position_.x;
+      }
+      //insert new point if needed
+      if (nEndPoint) {
+        //put new start point in the point array
+        targetData.points.push(nEndPoint);
+      }
+    }
+    this.state_['segment'] = newSegment;
+    //-------------------
+    this.target_.setData(targetData);
+    //update model
+    this.target_.getModel().notify();
+  };
+	
+	/**
+   * @see {unilib.mvc.controller.BaseCommand#undo}
+   */  
+  unilib.mvc.bc.command.MoveEdgeElementCommand.prototype.undo = function() {
+    console.log("UNDO");
+    
+  };
 	
 	/**
 	 * base class for menu commands, enables further parameters to be set
@@ -348,6 +508,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     this.instance_ = model.makeNode();
     var data = this.instance_.getData();
     data.position = this.position_;
+    data.position.z = 0; //force nodes on layer 0
     data.points.push(new unilib.geometry.Point(0,0));
     data.points.push(new unilib.geometry.Point(50, 50));
     data.text = "Node";
@@ -378,9 +539,6 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      return cmd;
   }; 
 	
-	/*
-	 * remove element
-	 */
 	/**
    * remove node element
    * @class
@@ -400,7 +558,6 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    */
   unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.exec = function() {
     this.instance_ = this.controller_.selectionManager.getSelection();
-    console.log(this.instance_);
     if (this.instance_) {
       var model = this.controller_.graphModel;
       for (var i = 0; i < this.instance_.length; i++) {
@@ -428,22 +585,118 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    function() {
      var cmd = new unilib.mvc.bc.command.RemoveNodeElementCommand(
       this.controller_);
-     cmd.setup(this.position_, this.instance_);
+     cmd.setup(this.position_);
      return cmd;
-  };
-  
-  /**
-   * setup further parameters
-   * @param {unilib.geometry.Point3D} position
-   */
-  unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.setup = 
-   function(position) {
-     this.position_ = position;
   };
 	
 	/**
-	 * link elements
-	 */
+	 * link elements, the command takes care of the routing of the edge
+	 * (this should not be written to the model but to the view, this is
+	 *   an architectural error!)
+   * @class
+   * @extends {unilib.mvc.bc.command.ElementCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   */
+  unilib.mvc.bc.command.LinkCommand = 
+    function(controller) {
+    unilib.mvc.bc.command.ElementCommand.call(this, controller);
+    
+  };
+  unilib.inherit(unilib.mvc.bc.command.LinkCommand, 
+    unilib.mvc.bc.command.ElementCommand.prototype);
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#exec}
+   */
+  unilib.mvc.bc.command.LinkCommand.prototype.exec = function() {
+    //get selected pins
+    var selection = this.controller_.selectionManager.getSelection();
+    //get first two pins from selection
+    var targets = [];
+    for (var i = 0; i < selection.length; i++) {
+      if (selection[i].getID() == unilib.mvc.bc.GraphElementType.PIN) {
+        if (targets.length < 2) {
+          targets.push(selection[i]);
+        }
+        else {
+          break;
+        }
+      }
+    }
+    if (targets.length < 2) {
+      //Not enough pin selected!
+      return;
+    }
+    //create a link
+    //array of positions
+    var points = [];
+    
+    //  -----------------------------------------------------------------------
+    /*
+     * basic path construction that ignores overlapping
+     */
+    //var startTarget = this.controller_.drawableManager.getElementFromDrawable(
+    //  targets[0]);
+    //var endTarget = this.controller_.drawableManager.getElementFromDrawable(
+    //  targets[1]);
+    var startTarget = targets[0];
+    var endTarget = targets[1];
+    var startData = startTarget.getData();
+    var endData = endTarget.getData();
+    //extract start and end positions
+    var start = unilib.copyObject(startData.position);
+    start.x += (startData.points[1].x - startData.points[0].x) / 2;
+    start.y += (startData.points[1].y - startData.points[0].y) / 2;
+    var end = unilib.copyObject(endData.position);
+    end.x += (endData.points[1].x - endData.points[0].x) / 2;
+    end.y += (endData.points[1].y - endData.points[0].y) / 2;
+    //build points array
+    //add start
+    points.push(start);
+    //in this case 1 intermediate points is used
+    var dx = end.x - start.x;
+    var dy = end.y - start.y;
+    //first align in x
+    if (dx != 0) {
+      points.push(new unilib.geometry.Point(start.x + dx, start.y));
+    }
+    //then in y
+    if (dy != 0) {
+      points.push(new unilib.geometry.Point(start.x + dx, start.y + dy));
+    }
+    //add end
+    //points.push(end);
+    //  -----------------------------------------------------------------------
+    
+    //put points into the link
+    var edge = startTarget.makeConnection(endTarget);
+    edge.setID(unilib.mvc.bc.GraphElementType.EDGE);
+    var edgeData = edge.getData();
+    edgeData.points = points;
+    edgeData.position = new unilib.geometry.Point3D(0, 0, 1);
+    edge.setData(edgeData);
+    //notify
+    this.controller_.graphModel.notify();
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.LinkCommand.prototype.undo = function() {
+    var model = this.controller_.graphModel;
+    
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MenuCommand#getInstance
+   */
+  unilib.mvc.bc.command.LinkCommand.prototype.getInstance = 
+   function() {
+     var cmd = new unilib.mvc.bc.command.LinkCommand(this.controller_);
+     cmd.setup(this.position_);
+     return cmd;
+  };
+  
 	
 	/**
    * open context menu

@@ -70,6 +70,11 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         this.controller_.nodeMenuModel);
       this.controller_.exec(cmd);
     }
+    if (this.controller_.pinMenuModel.getPosition() != null) {
+      var cmd = new unilib.mvc.bc.command.HideCtxMenuCommand(
+        this.controller_.pinMenuModel);
+      this.controller_.exec(cmd);
+    }
   };
   
   /**
@@ -95,6 +100,15 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
           this.controller_.nodeMenuModel);
         cmd.setup(position);
         this.controller_.exec(cmd);
+    }
+    else if (id == unilib.mvc.bc.GraphElementType.PIN) {
+      var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+          this.controller_.pinMenuModel);
+        cmd.setup(position);
+        this.controller_.exec(cmd);
+    }
+    else if (id == unilib.mvc.bc.GraphElementType.EDGE) {
+      
     }
     else {
       if (this.controller_.mainMenuModel.getPosition() == null) {
@@ -184,6 +198,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         }
         break;
       case unilib.mvc.controller.EventButtonType.BUTTON_RIGHT:
+        this.closeMenu_(null);
         var menuPosition = new unilib.geometry.Point3D(evt.position.x, 
             evt.position.y, 1);
         if (evt.getTarget() == null) {
@@ -254,6 +269,19 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
      */
     this.mouseOffsetY_ = 0;
     
+    /**
+     * saved target after drag start
+     * @type {unilib.mvc.graph.GraphElement}
+     * @private
+     */
+    this.target_ = null;
+    
+    /**
+     * edge state informations
+     * @type {Object}
+     * @private
+     */
+    this.edgeCommandState_ = {};
   };
   unilib.inherit(unilib.mvc.bc.DragDropEventObserver,
     unilib.interfaces.observer.Observer.prototype);
@@ -283,8 +311,18 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         targetPosition, undo, startingData);
     }
     else if (target.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
+      /*
+       * the target position must be modified because the edge is
+       * stored in a non conventional way, this has been an error!
+       */
+      targetPosition.x += this.mouseOffsetX_;
+      targetPosition.y += this.mouseOffsetY_;
+      /*
+       * track segment in the edge that has been clicked
+       * using a state object, this is something like a memento pattern 
+       */
       cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
-        targetPosition, undo, startingData);
+        targetPosition, undo, startingData, this.commandHandler_, this.edgeCommandState_);
     }
     else {
       //some node type
@@ -301,6 +339,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     if (this.canHandle_(evt) == false) return;
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART) {
       this.storeStartingData_(evt.getTarget());
+      //clear edge dragging state upon new drag
+      this.edgeCommandState_ = {};
       //save mouse offset relative to target origin
       this.mouseOffsetX_ = evt.position.x - 
         (this.startingTargetData_.position.x + 
@@ -308,6 +348,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       this.mouseOffsetY_ = evt.position.y - 
         (this.startingTargetData_.position.y + 
          this.startingTargetData_.points[0].y);
+         this.target_ = evt.getTarget();
     }
     else if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAG ||
       evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGEND) {
@@ -321,7 +362,11 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       var undo = (evt.getEventType() == 
         unilib.mvc.controller.DragDropEvent.DRAG) ? false : true;
       var startingData = (undo) ? this.startingTargetData_ : null;
-      var cmd = this.getCommand_(evt.getTarget(), targetPosition, undo, startingData);
+      var cmd = this.getCommand_(this.target_, targetPosition, undo, startingData);
+      if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGEND) {
+        //reset target on dragend
+        this.target_ = null;
+      }
       this.commandHandler_.exec(cmd);
     }
     else if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DROP) {

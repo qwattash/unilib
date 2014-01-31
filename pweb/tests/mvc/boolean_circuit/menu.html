@@ -31,6 +31,12 @@
     pinStyle.backgroundColor = '#AAAA44';
     var pinFocusStyle = new unilib.graphics.StyleInformations();
     pinFocusStyle.backgroundColor = '#888822';
+    var edgeStyle = new unilib.graphics.StyleInformations();
+    edgeStyle.lineColor = '#AA4444';
+    edgeStyle.lineWidth = 5;
+    var edgeFocusStyle = new unilib.graphics.StyleInformations();
+    edgeFocusStyle.lineColor = '#FF8888';
+    edgeFocusStyle.lineWidth = 5;
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.TEXT, textStyle);
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.BODY, nodeStyle);
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.INPUT_NODE, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
@@ -39,6 +45,10 @@
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT, textStyle);
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.BODY_FOCUS, pinFocusStyle);
     styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.BODY, edgeStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.BODY_FOCUS, edgeFocusStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
     styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.BODY, menuStyle);
     styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.TEXT, mTextStyle);
 
@@ -49,7 +59,7 @@
    var data = node1.getData();
    data.position.x = 10;
    data.position.y = 10;
-   data.position.z = 1;
+   data.position.z = 0;
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(50, 50)];
    data.text = "Node 1";
    node1.setData(data);
@@ -58,6 +68,25 @@
    data = pin.getData();
    data.position.x = 5;
    data.position.y = 5;
+   data.position.z = 2;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
+   data.text = "";
+   pin.setData(data);
+   
+   var node2 = model.makeNode();
+   node2.setID(unilib.mvc.bc.GraphElementType.INPUT_NODE);
+   var data = node2.getData();
+   data.position.x = 100;
+   data.position.y = 100;
+   data.position.z = 0;
+   data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(50, 50)];
+   data.text = "Node 2";
+   node2.setData(data);
+   var pin = node2.makePin();
+   pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+   data = pin.getData();
+   data.position.x = 95;
+   data.position.y = 95;
    data.position.z = 2;
    data.points = [new unilib.geometry.Point(0, 0), new unilib.geometry.Point(10, 10)];
    data.text = "";

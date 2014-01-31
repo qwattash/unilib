@@ -516,7 +516,6 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       var targets = drawableManager.getDrawablesAt(position);
       var keymap = eventManager.parseKeymap(evt);
       var foregroundTarget = eventManager.getForegroundTarget(targets);
-      
       if (keymap.button == unilib.mvc.controller.EventButtonType.BUTTON_LEFT &&
         foregroundTarget != null) {
         /*

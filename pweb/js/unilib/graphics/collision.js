@@ -92,6 +92,12 @@ unilib.provideNamespace('unilib.collision', function() {
       return null;
     }
     /*
+     * if the shape is a composite bounding box, use its collide
+     */
+    if (shape.corners === undefined) {
+      return shape.collide(this);
+    }
+    /*
      * the given shape is considered the target,
      * this shape is considered the box
      */

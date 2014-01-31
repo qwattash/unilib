@@ -369,13 +369,20 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
      */
     var lines = polyline.createDrawableIterator();
     var i = 1;
-    while (i < data.points.length || ! lines.end()) {
+    while (i < data.points.length) {
       if (i < data.points.length) {
         /*
          * there are points in the buffer that have not corresponding line
          * or there is a corresponding line
          */
-        var line = (lines.end()) ? unilib.graphics.Line() : lines.item();
+        var line = null;
+        if (lines.end()) {
+          line = new unilib.graphics.Line();
+          polyline.addDrawable(line);
+        }
+        else {
+          line = lines.item();
+        }
         var start = data.points[i - 1];
         var end = data.points[i];
         line.setPosition(new unilib.geometry.Point3D(0, 0, 0));
@@ -383,12 +390,13 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         line.setEnd(end);
         line.setStyleInformations(style);
       }
-      else if (i >= data.points.length && ! lines.end()) {
-        //there are unwanted lines in the polyline, remove the remaining
-        polyline.removeDrawable(lines.item());
-      }
       lines.next();
       i++;
+    }
+    //now remove unused lines
+    for (; ! lines.end(); lines.next()) {
+        //there are unwanted lines in the polyline, remove the remaining
+        polyline.removeDrawable(lines.item());
     }
     polyline.setPosition(data.position);
   };
@@ -407,6 +415,10 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    */
   unilib.mvc.bc.EdgeDrawableManagerStrategy.prototype.setupLabel_ =
     function(elem, text, relatedLine, label, style) {
+    //default text to ""
+    if (text == null) {
+      text = '';
+    }
     //create labels
     //setup label text and position
     var lineStyle = relatedLine.getStyleInformations();
@@ -513,6 +525,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     var drawable = new unilib.graphics.CompositeDrawableShape();
     var polyline = new unilib.graphics.CompositeDrawableShape();
     polyline.setID(unilib.mvc.bc.DrawableShapeType.POLYLINE);
+    polyline.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     var polylineStyle = this.styleProvider_.getStyle(elem.getID(), 
         unilib.mvc.bc.StyleType.BODY);
     var lineStart = new unilib.graphics.Line();
@@ -525,22 +538,24 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     this.setupPolyline_(elem, polyline, polylineStyle);
     drawable.addDrawable(polyline);
     //setup labels and label containers
-    var text = data.text.match(/<start:(.*)><end:(.*)>/);
-    textStart = (text && text[1] != undefined) ? text[1] : null;
-    textEnd = (text && text[2] != undefined) ? text[2] : null;
-    var labelStart = this.getLabelContainer_(drawable, textStart,
-        unilib.mvc.bc.DrawableShapeType.LABEL_START);
-    var labelEnd = this.getLabelContainer_(drawable, textEnd,
-        unilib.mvc.bc.DrawableShapeType.LABEL_END);
-    var labelStyle = this.styleProvider_.getStyle(elem.getID(), 
-        unilib.mvc.bc.StyleType.TEXT);
-    if (labelStart) {
-      this.setupLabel_(elem, textStart, lineStart, labelStart, labelStyle);
-      labelStart.setPosition(polyline.getPosition());
-    }
-    if (labelEnd) {
-      this.setupLabel_(elem, textEnd, lineEnd, labelEnd, labelStyle);
-      labelEnd.setPosition(polyline.getPosition());
+    if (data.text && data.text != '') {
+      var text = data.text.match(/<start:(.*)><end:(.*)>/);
+      textStart = (text && text[1] !== undefined) ? text[1] : null;
+      textEnd = (text && text[2] !== undefined) ? text[2] : null;
+      var labelStart = this.getLabelContainer_(drawable, textStart,
+          unilib.mvc.bc.DrawableShapeType.LABEL_START);
+      var labelEnd = this.getLabelContainer_(drawable, textEnd,
+          unilib.mvc.bc.DrawableShapeType.LABEL_END);
+      var labelStyle = this.styleProvider_.getStyle(elem.getID(), 
+          unilib.mvc.bc.StyleType.TEXT);
+      if (labelStart) {
+        this.setupLabel_(elem, textStart, lineStart, labelStart, labelStyle);
+        labelStart.setPosition(polyline.getPosition());
+      }
+      if (labelEnd) {
+        this.setupLabel_(elem, textEnd, lineEnd, labelEnd, labelStyle);
+        labelEnd.setPosition(polyline.getPosition());
+      }
     }
     return drawable;
   };
