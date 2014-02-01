@@ -844,12 +844,20 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    * @see {unilib.mvc.controlle.ReversibleCommand#exec}
    */
   unilib.mvc.bc.command.UnlinkCommand.prototype.exec = function() {
-    this.instance_ = this.controller_.selectionManager.getSelection();
-    if (this.instance_) {
+    var selected = this.controller_.selectionManager.getSelection();
+    if (selected) {
       var model = this.controller_.graphModel;
-      for (var i = 0; i < this.instance_.length; i++) {
-        var startPin = this.instance_[i].getStartPin();
-        startPin.unlink(this.instance_[i]);  
+      //for each edge store edge and start/end pairs
+      //then unlink
+      this.instance_ = [];
+      for (var i = 0; i < selected.length; i++) {
+        if (selected[i].getID() == unilib.mvc.bc.GraphElementType.EDGE) {
+          var startPin = selected[i].getStartPin();
+          var endPin = selected[i].getEndPin();
+          startPin.unlink(selected[i]);
+          endPin.unlink(selected[i]);
+          this.instance_.push([selected[i], startPin, endPin]);
+        }
       }
       model.notify();
     }
@@ -860,8 +868,11 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    */
   unilib.mvc.bc.command.UnlinkCommand.prototype.undo = function() {
     var model = this.controller_.graphModel;
-    for (node in this.instance_) {
-      model.addNode(node); 
+    for (var i= 0; i < this.instance_.length; i++) {
+      var start = this.instance_[i][1];
+      var end = this.instance_[i][2];
+      start.link(this.instance_[i][0]);
+      end.link(this.instance_[i][0]); 
     }
     model.notify();
   };
