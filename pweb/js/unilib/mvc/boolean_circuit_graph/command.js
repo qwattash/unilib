@@ -570,8 +570,41 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
         targetData.points.push(nEndPoint);
       }
     }
-    this.state_['segment'] = newSegment;
     //-------------------
+    //now try to merge aligned segments
+    var i = 0;
+    while (i <= targetData.points.length - 3) {
+      //is segment i aligned to the next (in the same orientation,
+      //so 2 is added instead of 1
+      if (targetData.points[i].x - targetData.points[i + 1].x == 0) { 
+        if(targetData.points[i].x - targetData.points[i + 2].x == 0) {
+          //vertical alignment, remove point i+1
+          targetData.points.splice(i + 1, 1);
+          //update segment index if needed
+          if (i + 1 <= newSegment) {
+            //an index before or equal to the selected one has been removed
+            newSegment -= 1;
+          }
+         continue;
+         }
+      }
+      else {
+        //horizontal
+        if (targetData.points[i].y - targetData.points[i + 2].y == 0) {
+          //vertical alignment, remove point i+1
+          targetData.points.splice(i + 1, 1);
+          //update segment index if needed
+          if (i + 1 <= newSegment) {
+            //an index before or equal to the selected one has been removed
+            newSegment -= 1;
+          }
+          continue;
+        }
+      }
+      i++;
+    }
+    //finalise modifications
+    this.state_['segment'] = newSegment;
     this.target_.setData(targetData);
     //update model
     this.target_.getModel().notify();
