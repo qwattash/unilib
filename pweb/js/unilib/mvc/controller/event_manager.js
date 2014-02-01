@@ -35,6 +35,83 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
   };
   
   /**
+   * non printable chars constants
+   * @enum {string}
+   */
+  unilib.mvc.controller.NonPrintableKeyCode = {
+    ENTER : "Enter",
+    TAB : "Tab",
+    ESC : "Esc",
+    BACKSPACE : "Backspace",
+    SHIFT : "Shift",
+    CTRL : "Control",
+    ALT : "Alt",
+    CAPSLOCK : "CapsLock",
+    NUMLOCK : "NumLock",
+    LEFT : "Left",
+    UP : "Up",
+    RIGHT : "Right",
+    DOWN : "Down",
+    INS : "Insert",
+    DEL : "Del",
+    HOME : "Home",
+    END : "End",
+    PGUP : "PgUp",
+    PGDOWN : "PgDown",
+    F1 : "F1",
+    F2 : "F2",
+    F3 : "F3",
+    F4 : "F4",
+    F5 : "F5",
+    F6 : "F6",
+    F7 : "F7",
+    F8 : "F8",
+    F9 : "F9",
+    F10 : "F10",
+    F11 : "F11",
+    F12 : "F12",
+    ALTGR : "AltGraph"
+  };
+  
+  /**
+   * non printable chars strings
+   * @enum {string}
+   */
+  unilib.mvc.controller.EventKeyString = {
+    13 : unilib.mvc.controller.NonPrintableKeyCode.ENTER,
+    9 : unilib.mvc.controller.NonPrintableKeyCode.TAB,
+    27 : unilib.mvc.controller.NonPrintableKeyCode.ESC,
+    8 : unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE,
+    16 : unilib.mvc.controller.NonPrintableKeyCode.SHIFT,
+    17 : unilib.mvc.controller.NonPrintableKeyCode.CTRL,
+    18 : unilib.mvc.controller.NonPrintableKeyCode.ALT,
+    20 : unilib.mvc.controller.NonPrintableKeyCode.CAPSLOCK,
+    144 : unilib.mvc.controller.NonPrintableKeyCode.NUMLOCK,
+    37 : unilib.mvc.controller.NonPrintableKeyCode.LEFT,
+    38 : unilib.mvc.controller.NonPrintableKeyCode.UP,
+    39 : unilib.mvc.controller.NonPrintableKeyCode.RIGHT,
+    40 : unilib.mvc.controller.NonPrintableKeyCode.DOWN,
+    45 : unilib.mvc.controller.NonPrintableKeyCode.INS,
+    46 : unilib.mvc.controller.NonPrintableKeyCode.DEL,
+    36 : unilib.mvc.controller.NonPrintableKeyCode.HOME,
+    35 : unilib.mvc.controller.NonPrintableKeyCode.END,
+    33 : unilib.mvc.controller.NonPrintableKeyCode.PGUP,
+    34 : unilib.mvc.controller.NonPrintableKeyCode.PGDOWN,
+    112 : unilib.mvc.controller.NonPrintableKeyCode.F1,
+    113 : unilib.mvc.controller.NonPrintableKeyCode.F2,
+    114 : unilib.mvc.controller.NonPrintableKeyCode.F3,
+    115 : unilib.mvc.controller.NonPrintableKeyCode.F4,
+    116 : unilib.mvc.controller.NonPrintableKeyCode.F5,
+    117 : unilib.mvc.controller.NonPrintableKeyCode.F6,
+    118 : unilib.mvc.controller.NonPrintableKeyCode.F7,
+    119 : unilib.mvc.controller.NonPrintableKeyCode.F8,
+    120 : unilib.mvc.controller.NonPrintableKeyCode.F9,
+    121 : unilib.mvc.controller.NonPrintableKeyCode.F10,
+    122 : unilib.mvc.controller.NonPrintableKeyCode.F11,
+    123 : unilib.mvc.controller.NonPrintableKeyCode.F12,
+    225 : unilib.mvc.controller.NonPrintableKeyCode.ALTGR
+  };
+  /**
    * event key map, used to store pressed keys for the event
    * @class
    */
@@ -234,10 +311,65 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       e.preventDefault();
       e.stopPropagation();
     });
+    this.container_.setAttribute('tabindex', 0);
+  };
+  
+  /**
+   * check if a key is printable ascii for keypress events
+   * @param {number} key keycode
+   * @returns {boolean}
+   */
+  unilib.mvc.controller.HTML4EventManager.prototype.isKeyPressPrintable_ = 
+  function(charCode) {
+    //first check, these codes are consistent among browsers
+    if (charCode >= 65 && charCode <= 90 || //upper letters
+        charCode >= 97 && charCode <= 122 || //lower letters
+        charCode >= 48 && charCode <= 57 || //numbers
+        charCode >= 33 && charCode <= 64 || //symbols
+        charCode >= 91 && charCode <= 96 || //symbols
+        charCode == 32 || //space
+        charCode >= 123 && charCode <= 126 //symbols
+        ) { 
+      return true;
+    };
+    return false;
+  };
+  
+  /**
+   * check if a key is printable ascii for keyup and down events
+   * @param {number} key keycode
+   * @returns {boolean}
+   */
+  unilib.mvc.controller.HTML4EventManager.prototype.isKeyDownPrintable_ = 
+  function(charCode) {
+    //first check, these codes are consistent among browsers
+    if (charCode >= 65 && charCode <= 90 || //upper letters
+        charCode >= 97 && charCode <= 122 || //lower letters
+        charCode >= 48 && charCode <= 57 || //numbers
+        charCode == 32 //space
+        ) { 
+      return true;
+    };
+    return false;
+  };
+  
+  /**
+   * convert a non printable char code to standard string
+   * @param {number} key keycode
+   * @returns {String}
+   */
+  unilib.mvc.controller.HTML4EventManager.prototype.charCodeToString_ = 
+  function(charCode) {
+    var str = unilib.mvc.controller.EventKeyString[charCode];
+    return (str === undefined) ? "" : str;
   };
   
   /**
    * parse the key for an event
+   * @see http://unixpapa.com/js/key.html
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent?
+   *  redirectlocale=en-US&redirectslug=DOM%2FKeyboardEvent#Key_names
+   * @see http://www.javascripter.net/faq/keycodes.htm
    * @private
    * @param {Event} event DOM Event
    * @returns {Object.<string, boolean>}
@@ -245,10 +377,64 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
   unilib.mvc.controller.HTML4EventManager.prototype.parseEventKey_ = 
   function(event) {
     var parsed = {key: null, printable: false};
-      parsed.key = (event.type == 'keypress') ? 
-          String.fromCharCode(event.charCode) :
-            String.fromCharCode(event.keyCode);
-      parsed.printable = (parsed.key.search(/\x[0-9]{1,2}/) != -1);
+    //ASCII chars are generated only on keypress
+    //newest standard support
+    if (event.key) {
+      parsed.key = (event.key == 'MozPrintableKey') ? 
+        String.fromCharCode(event.charCode) : event.key;
+      if (parsed.key.length == 1) {
+        //non printable give a descriptive string
+        parsed.printable = true;
+      }
+      else {
+        //check for a couple of special cases
+        switch (parsed.key) {
+          case "Spacebar":
+            parsed.key = " ";
+            parsed.printable = true;
+          break;
+        }
+      }
+    }
+    //fallback
+    else {
+      if (event.type == 'keypress') {
+        var vk = event.which;
+        //console.log("kp", charCode, event.charCode, event.keyCode, event.key);
+        if (this.isKeyPressPrintable_(vk)) {
+              parsed.key = String.fromCharCode(event.charCode);
+              parsed.printable = true;
+        }
+        else {
+          //convert anything else to a string representation
+          parsed.printable = false;
+          if (vk == 0) {
+            parsed.key = this.charCodeToString_(event.keyCode);
+          }
+          else {
+            parsed.key = this.charCodeToString_(vk);
+          }
+        }
+      }
+      else {
+        var vk = event.which;
+        //console.log("du", charCode, event.charCode, event.keyCode, event.key);
+        //filter out alphanumeric keys
+        //console.log(event.type, event.which, event.charCode, event.keyCode, event.key, unilib.mvc.controller.EventKeyString[event.which]);
+        if (event.charCode == 0) {
+          //mozilla
+          if (this.isKeyDownPrintable_(vk)) {
+              parsed.key = String.fromCharCode(vk);
+              parsed.printable = true;
+          }
+          else {
+            //convert anything else into a string representation
+            parsed.printable = false;
+            parsed.key = this.charCodeToString_(vk);
+          }
+        }
+      }  
+    }
     return parsed;
   };
   
@@ -282,6 +468,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     console.log('[d] got ' + evt.type);
     //console.log('[d] curent state: ' + __state);
     */
+   //console.log('[d] got ' + evt.type);
     this.handlingState_.handle(evt, this, this.drawableManager_);
   };
   

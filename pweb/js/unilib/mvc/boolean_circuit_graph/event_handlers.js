@@ -308,7 +308,10 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   
   /**
    * get command for the specific target
-   * @param 
+   * @param {unilib.mvc.graph.GraphElement} target
+   * @param {unilib.geometry.Point3D} targetPosition
+   * @param {boolean} undo
+   * @param {unilib.mvc.graph.BaseGraphElementData} startingData
    * @returns {unilib.mvc.controller.BaseCommand}
    */
   unilib.mvc.bc.DragDropEventObserver.prototype.getCommand_ = function(target, 
@@ -403,6 +406,145 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       if (evt.getTarget().getID() != unilib.mvc.menu.MenuType.MENU) {
         return true;
       }
+    }
+    return false;
+  };
+  
+  
+  /**
+   * command factory module for keyboard events.
+   * @class
+   * @extends {unilib.interfaces.observer.Observer}
+   * @param {unilib.mvc.command.CommandHandler} commandHandler
+   */
+  unilib.mvc.bc.KeyEventObserver = function(commandHandler) {
+    
+    /**
+     * command handler object to handle undo redo and execution of commands
+     * @type {unilib.mvc.command.CommandHandler}
+     * @private
+     */
+    this.commandHandler_ = commandHandler;
+    
+    /**
+     * arrow translation step, number of pixel of
+     * translation when an object is moved with an arrow
+     * @type {number}
+     * @private
+     */
+    this.arrowTranslationStep_ = 10;
+    
+  };
+  unilib.inherit(unilib.mvc.bc.KeyEventObserver,
+    unilib.interfaces.observer.Observer.prototype);
+  
+  /**
+   * get command for the specific target
+   * @param {unilib.geometry.Point} translation
+   * @param {unilib.mvc.graph.GraphElement} target
+   * @private
+   */
+  unilib.mvc.bc.KeyEventObserver.prototype.moveElement_ = function(translation, 
+    target) {
+    var cmd;
+    //calculate new position
+    var data = target.getData();
+    var position = data.position;
+    position.x += translation.x;
+    position.y += translation.y;
+    //build command
+    if (target.getID() == unilib.mvc.bc.GraphElementType.PIN) {
+      cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
+        position, true, null, {});
+    }
+    else if (target.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
+      /*
+       * Edges can not be moved because the segment clicked can not easily
+       * be recovered, it would be better to change the architecture of
+       * the drawing system in order to make this type of changes easier 
+      cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
+        position, true, null, this.commandHandler_, {"segment": });
+      */
+    }
+    else {
+      //some node type
+      cmd = new unilib.mvc.bc.command.MoveNodeElementCommand(target, 
+        position, true, null, {});
+    }
+    this.commandHandler_.exec(cmd);
+  };
+  
+  /**
+   * @see {unilib.interfaces.observer.Observer#update}
+   */
+  unilib.mvc.bc.KeyEventObserver.prototype.update = function(evt) {
+    if (this.canHandle_(evt) == false) return;
+    if (evt.getEventType() == 'keydown') {
+      var selection = this.commandHandler_.selectionManager.getSelection();
+      for (var i = 0; i < selection.length; i++) {
+        switch(evt.keymap.key) {
+          case unilib.mvc.controller.NonPrintableKeyCode.UP:
+            this.moveElement_(
+              new unilib.geometry.Point(0, -this.arrowTranslationStep_), 
+              selection[i]);
+          break;
+          case unilib.mvc.controller.NonPrintableKeyCode.DOWN:
+            this.moveElement_(
+              new unilib.geometry.Point(0, this.arrowTranslationStep_), 
+              selection[i]);
+          break;
+          case unilib.mvc.controller.NonPrintableKeyCode.LEFT:
+            this.moveElement_(
+              new unilib.geometry.Point(-this.arrowTranslationStep_, 0), 
+              selection[i]);
+          break;
+          case unilib.mvc.controller.NonPrintableKeyCode.RIGHT:
+            this.moveElement_(
+              new unilib.geometry.Point(this.arrowTranslationStep_, 0), 
+              selection[i]);
+          break;
+        }
+      }
+      //console.log('down', evt.keymap.isKeyPrintable, evt.keymap.key);
+    }
+    else if (evt.getEventType() == 'keyup') {
+      //console.log('up', evt.keymap.isKeyPrintable, evt.keymap.key);
+    }
+    else if (evt.getEventType() == 'keypress') {
+      //edit element label
+      var selection = this.commandHandler_.selectionManager.getSelection();
+      var target = null;
+      //search selection for a valid target: eg. edges are not labelled
+      for (var i = 0; i < selection.length; i++) {
+        if (selection[i].getID() != unilib.mvc.bc.GraphElementType.EDGE) {
+          target = selection[i];
+          break;
+        }
+      }
+      if (target) {
+        //edit target label
+        if (evt.keymap.isKeyPrintable || 
+            evt.keymap.key == 
+            unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE) {
+          var cmd = new unilib.mvc.bc.command.ChangeTextCommand(target, 
+            evt.keymap.key);
+          this.commandHandler_.exec(cmd);
+        }
+      }
+    }
+  };
+  
+  /**
+   * tells if this observer can handle an event
+   * @private
+   * @param {unilib.mvc.controller.ViewEvent} evt
+   * @returns {boolean}
+   */
+  unilib.mvc.bc.KeyEventObserver.prototype.canHandle_ = function(evt) {
+    if (evt.getEventType() == 'keydown' ||
+      evt.getEventType() == 'keypress' ||
+      evt.getEventType() == 'keyup') {
+        return true;
     }
     return false;
   };

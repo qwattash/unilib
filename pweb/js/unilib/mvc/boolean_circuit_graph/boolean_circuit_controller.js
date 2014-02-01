@@ -153,9 +153,18 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
      */
     this.clickObserver = new unilib.mvc.bc.ClickEventObserver(this);
     
+    /**
+     * event handler for keyboard events, this handles key shortcuts
+     * and text insertion
+     * @type {unilib.mvc.bc.KeyEventObserver}
+     * @public
+     */
+    this.keyObserver = new unilib.mvc.bc.KeyEventObserver(this);
+    
     //attach event observers to the event manager
     this.eventManager.attachObserver(this.dragdropObserver);
     this.eventManager.attachObserver(this.clickObserver);
+    this.eventManager.attachObserver(this.keyObserver);
     
     /**
      * selection manager, handles user selections of elements in

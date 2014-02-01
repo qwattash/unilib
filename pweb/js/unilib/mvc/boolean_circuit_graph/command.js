@@ -1074,6 +1074,45 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     this.menu_.setPosition(null);
   };
 	
+	
+	/**
+   * change element text
+   * @class
+   * @extends {unilib.mvc.controller.IrreversibleCommand}
+   * @param {unilib.mvc.graph.GraphElement} target
+   * @param {string} deltaText text variation
+   */
+  unilib.mvc.bc.command.ChangeTextCommand = function(target, deltaText) {
+    unilib.mvc.controller.IrreversibleCommand.call(this);
+    /**
+     * target elemnt
+     * @type {unilib.mvc.graph.GraphElement}
+     * @private
+     */
+    this.target_ = target;
+    
+    /**
+     * text to change into
+     * @type {string}
+     * @private
+     */
+    this.text_ = deltaText;
+  };
+  unilib.inherit(unilib.mvc.bc.command.ChangeTextCommand, 
+    unilib.mvc.controller.IrreversibleCommand.prototype);
+  
+  unilib.mvc.bc.command.ChangeTextCommand.prototype.exec = function() {
+    var data = this.target_.getData();
+    if (this.text_ == unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE) {
+      data.text = data.text.substr(0, data.text.length - 1);
+    }
+    else {
+      data.text += this.text_;
+    }
+    this.target_.setData(data);
+    this.target_.getModel().notify();
+  };
+  
 }, ['unilib/error.js', 'unilib/mvc/graph/model.js', 
     'unilib/mvc/controller/controller.js']);
 unilib.notifyLoaded();
