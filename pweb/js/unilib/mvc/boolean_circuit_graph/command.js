@@ -825,6 +825,57 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      cmd.setup(this.position_);
      return cmd;
   };
+  
+  /**
+   * remove edge element
+   * @class
+   * @extends {unilib.mvc.bc.command.ElementCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   */
+  unilib.mvc.bc.command.UnlinkCommand = 
+    function(controller) {
+    unilib.mvc.bc.command.ElementCommand.call(this, controller);
+    
+  };
+  unilib.inherit(unilib.mvc.bc.command.UnlinkCommand, 
+    unilib.mvc.bc.command.ElementCommand.prototype);
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#exec}
+   */
+  unilib.mvc.bc.command.UnlinkCommand.prototype.exec = function() {
+    this.instance_ = this.controller_.selectionManager.getSelection();
+    if (this.instance_) {
+      var model = this.controller_.graphModel;
+      for (var i = 0; i < this.instance_.length; i++) {
+        var startPin = this.instance_[i].getStartPin();
+        startPin.unlink(this.instance_[i]);  
+      }
+      model.notify();
+    }
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.UnlinkCommand.prototype.undo = function() {
+    var model = this.controller_.graphModel;
+    for (node in this.instance_) {
+      model.addNode(node); 
+    }
+    model.notify();
+  };
+  
+  /**
+   * @see {unilib.mvc.bc.command.MenuCommand#getInstance
+   */
+  unilib.mvc.bc.command.UnlinkCommand.prototype.getInstance = 
+   function() {
+     var cmd = new unilib.mvc.bc.command.UnlinkCommand(
+      this.controller_);
+     cmd.setup(this.position_);
+     return cmd;
+  };
 	
 	/**
 	 * link elements, the command takes care of the routing of the edge
@@ -872,10 +923,6 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     /*
      * basic path construction that ignores overlapping
      */
-    //var startTarget = this.controller_.drawableManager.getElementFromDrawable(
-    //  targets[0]);
-    //var endTarget = this.controller_.drawableManager.getElementFromDrawable(
-    //  targets[1]);
     var startTarget = targets[0];
     var endTarget = targets[1];
     var startData = startTarget.getData();
@@ -907,6 +954,11 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     
     //put points into the link
     var edge = startTarget.makeConnection(endTarget);
+    //check if the model inverted the edge ends to fit directions
+    if (edge.getStartPin() != startTarget) {
+      //reverse points
+      points.reverse();
+    }
     edge.setID(unilib.mvc.bc.GraphElementType.EDGE);
     var edgeData = edge.getData();
     edgeData.points = points;

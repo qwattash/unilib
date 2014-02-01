@@ -173,6 +173,28 @@ unilib.provideNamespace('unilib.mvc.bc.menu', function() {
   };
   unilib.inherit(unilib.mvc.bc.menu.PinContextMenu,
     unilib.mvc.menu.Menu.prototype);
+    
+  /**
+   * context menu used for editing an edge
+   * @class
+   * @extends {unilib.mvc.menu.Menu}
+   * @param {unilib.mvc.bc.BooleanCircuitController} controller
+   */
+  unilib.mvc.bc.menu.EdgeContextMenu = function(controller) {
+    unilib.mvc.menu.Menu.call(this);
+    //set menu items
+    
+    var elementData = new unilib.mvc.menu.BaseMenuData();
+    elementData.text = 'Delete';
+    this.addItem(new unilib.mvc.menu.MenuElement(
+      new unilib.mvc.bc.command.UnlinkCommand(
+        controller),
+      elementData
+    ));
+    
+  };
+  unilib.inherit(unilib.mvc.bc.menu.EdgeContextMenu,
+    unilib.mvc.menu.Menu.prototype);
   
 }, ['unilib/mvc/menu/model.js', 
   'unilib/mvc/boolean_circuit_graph/command.js']);

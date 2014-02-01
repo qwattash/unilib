@@ -75,6 +75,11 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         this.controller_.pinMenuModel);
       this.controller_.exec(cmd);
     }
+    if (this.controller_.edgeMenuModel.getPosition() != null) {
+      var cmd = new unilib.mvc.bc.command.HideCtxMenuCommand(
+        this.controller_.edgeMenuModel);
+      this.controller_.exec(cmd);
+    }
   };
   
   /**
@@ -108,7 +113,10 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         this.controller_.exec(cmd);
     }
     else if (id == unilib.mvc.bc.GraphElementType.EDGE) {
-      
+      var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+          this.controller_.edgeMenuModel);
+        cmd.setup(position);
+        this.controller_.exec(cmd);
     }
     else {
       if (this.controller_.mainMenuModel.getPosition() == null) {
