@@ -89,7 +89,8 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
      * note that the style returned is a copy, this is done to avoid
      * unwanted modifications on the registered styles
      */
-    if (this.styleMap_[id]) {
+    if (id != unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT && 
+      this.styleMap_[id]) {
       if (this.styleMap_[id][styleType]) {
         return unilib.copyObject(this.styleMap_[id][styleType]);
       }
@@ -97,6 +98,13 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
         StyleProviderReservedType.STYLE_DEFAULT]) {
         return unilib.copyObject(this.styleMap_[id][unilib.mvc.controller.
            StyleProviderReservedType.STYLE_DEFAULT]);
+      }
+    }
+    else if (styleType != 
+      unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT){
+      id = unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT;
+      if (this.styleMap_[id] && this.styleMap_[id][styleType]) {
+        return unilib.copyObject(this.styleMap_[id][styleType]);
       }
     }
     return unilib.copyObject(this.defaultStyle_);

@@ -28,24 +28,34 @@
     //elem types and style types
     var styleType = {
       TYPE_1: 1,
-      TYPE_2: 2
+      TYPE_2: 2,
+      TYPE_3: 3
     };
     var elemType = {
       TYPE_A: 'a',
       TYPE_B: 'b',
       TYPE_C: 'c'
     };
+    
+    var t2DefaultStyle = new unilib.graphics.StyleInformations();
+    defaultStyle.lineWidth = 222;
+    var t1DefaultStyle = new unilib.graphics.StyleInformations();
+    defaultStyle.lineWidth = 111;
     //register styles
     //s1 as default for elem type A
     provider.registerStyle(elemType.TYPE_A, unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, s1);
     provider.registerStyle(elemType.TYPE_A, styleType.TYPE_2, s2);
     provider.registerStyle(elemType.TYPE_B, styleType.TYPE_1, s3);
     provider.registerStyle(elemType.TYPE_B, styleType.TYPE_2, s4);
+    provider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, styleType.TYPE_2, t2DefaultStyle);
+    provider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, styleType.TYPE_1, t1DefaultStyle);
     assertDeepEqual(provider.getStyle(elemType.TYPE_A, styleType.TYPE_1), s1, 'ask default style for element A');
     assertDeepEqual(provider.getStyle(elemType.TYPE_A, styleType.TYPE_2), s2, 'ask type2 style for element A');
     assertDeepEqual(provider.getStyle(elemType.TYPE_B, styleType.TYPE_1), s3, 'ask type1 style for element B');
     assertDeepEqual(provider.getStyle(elemType.TYPE_B, styleType.TYPE_2), s4, 'ask type2 style for element B');
-    assertDeepEqual(provider.getStyle(elemType.TYPE_C, styleType.TYPE_1), defaultStyle, 'ask global default style');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_C, styleType.TYPE_1), t1DefaultStyle, 'ask T1 default style');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_C, styleType.TYPE_2), t2DefaultStyle, 'ask T2 default style');
+    assertDeepEqual(provider.getStyle(elemType.TYPE_C, styleType.TYPE_3), defaultStyle, 'ask global default style');
   });
   
   test('Command Controller', function() {

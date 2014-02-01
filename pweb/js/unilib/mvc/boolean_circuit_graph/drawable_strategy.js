@@ -14,6 +14,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    * type of graph elements, these are used as IDs of graph
    * elements
    * @enum {number}
+   * @readonly
    */
   unilib.mvc.bc.GraphElementType = {
       INPUT_NODE: 0,
@@ -28,6 +29,61 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       XOR_NODE: 9,
       XNOR_NODE:10
   };
+  
+  
+  /**
+   * NodeSpec specifications for node creation
+   * @class
+   */
+  unilib.mvc.bc.NodeSpec = function(input, output, label) {
+    
+    /**
+     * number of inputs
+     * @type {number}
+     * @public
+     */
+    this.input = input;
+    
+    /**
+     * number of outputs
+     * @type {number}
+     * @public
+     */
+    this.output = output;
+    
+    /**
+     * label
+     * @type {string}
+     * @public
+     */
+    this.label = label;
+  
+  };
+  
+  /**
+   * map number of input and output for each node
+   * as well a label for them
+   * @enum {unilib.mvc.bc.NodeSpec}
+   */
+  unilib.mvc.bc.GraphElementPins = {};
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.INPUT_NODE] = 
+    new unilib.mvc.bc.NodeSpec(0, 1, 'Input');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.OUTPUT_NODE] = 
+    new unilib.mvc.bc.NodeSpec(1, 0,'Output');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.AND_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'AND');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.OR_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'OR');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.NOT_NODE] = 
+    new unilib.mvc.bc.NodeSpec(1, 1,'NOT');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.XOR_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'XOR');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.XNOR_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'XNOR');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.NAND_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'NAND');
+  unilib.mvc.bc.GraphElementPins[unilib.mvc.bc.GraphElementType.NOR_NODE] = 
+    new unilib.mvc.bc.NodeSpec(2, 1,'NOR');
   
   /**
    * style types to be used in unilib.mvc.controller.StyleProvider

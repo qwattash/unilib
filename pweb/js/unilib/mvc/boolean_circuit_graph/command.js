@@ -714,15 +714,43 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    */
   unilib.mvc.bc.command.CreateNodeElementCommand.prototype.exec = function() {
     var model = this.controller_.graphModel;
+    var nodespec = unilib.mvc.bc.GraphElementPins[this.type_];
     this.instance_ = model.makeNode();
     var data = this.instance_.getData();
     data.position = this.position_;
     data.position.z = 0; //force nodes on layer 0
     data.points.push(new unilib.geometry.Point(0,0));
     data.points.push(new unilib.geometry.Point(50, 50));
-    data.text = "Node";
+    data.text = nodespec.label;
     this.instance_.setData(data);
     this.instance_.setID(this.type_);
+    //now create pins
+    spacing = (data.points[1].y - data.points[0].y) / nodespec.input - 5;
+    for (var i = 0; i < nodespec.input; i++) {
+      //pins are added to the left and have a fixed size of 10x10
+      var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.IN);
+      pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+      var pinData = pin.getData();
+      pinData.points.push(new unilib.geometry.Point(0,0));
+      pinData.points.push(new unilib.geometry.Point(10,10));
+      pinData.position.x = this.position_.x - 5;
+      pinData.position.y = this.position_.y + i * spacing;
+      pinData.position.z = 2;
+      pin.setData(pinData);
+    }
+    spacing = (data.points[1].y - data.points[0].y) / nodespec.output - 5;
+    for (var i = 0; i < nodespec.output; i++) {
+      //pins are added to the left and have a fixed size of 10x10
+      var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.OUT);
+      pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+      var pinData = pin.getData();
+      pinData.points.push(new unilib.geometry.Point(0,0));
+      pinData.points.push(new unilib.geometry.Point(10,10));
+      pinData.position.x = this.position_.x + data.points[1].x - 5;
+      pinData.position.y = this.position_.y + i * spacing;
+      pinData.position.z = 2;
+      pin.setData(pinData);
+    }
     model.notify();
   };
   
