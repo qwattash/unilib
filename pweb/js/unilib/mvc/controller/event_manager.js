@@ -298,17 +298,20 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
   unilib.mvc.controller.HTML4EventManager.prototype.attachEventListeners_ = 
   function() {
     //mouse events
-    unilib.addEventListener(this.container_, 'click', this);
-    unilib.addEventListener(this.container_, 'dblclick', this);
-    unilib.addEventListener(this.container_, 'mousedown', this);
-    unilib.addEventListener(this.container_, 'mouseup', this);
-    unilib.addEventListener(this.container_, 'mousemove', this);
-    unilib.addEventListener(this.container_, 'mouseover', this);
-    unilib.addEventListener(this.container_, 'mouseout', this);
+    var cbk = unilib.createCallback(this, this.handleEvent);
+    var ct = this.container_;
+    this.container_ = document;
+    unilib.addEventListener(this.container_, 'click', cbk);
+    unilib.addEventListener(this.container_, 'dblclick', cbk);
+    unilib.addEventListener(this.container_, 'mousedown', cbk);
+    unilib.addEventListener(this.container_, 'mouseup', cbk);
+    unilib.addEventListener(this.container_, 'mousemove', cbk);
+    unilib.addEventListener(this.container_, 'mouseover', cbk);
+    unilib.addEventListener(this.container_, 'mouseout', cbk);
     //keyboard events
-    unilib.addEventListener(this.container_, 'keydown', this);
-    unilib.addEventListener(this.container_, 'keyup', this);
-    unilib.addEventListener(this.container_, 'keypress', this);
+    unilib.addEventListener(this.container_, 'keydown', cbk);
+    unilib.addEventListener(this.container_, 'keyup', cbk);
+    unilib.addEventListener(this.container_, 'keypress', cbk);
     unilib.addEventListener(this.container_, 'contextmenu', function(e) {
       if (e.preventDefault) {
         //FFX
@@ -322,7 +325,8 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
         return false;
       }
     });
-    this.container_.setAttribute('tabindex', 0);
+    this.container_ = ct;
+    //this.container_.setAttribute('tabindex', 0);
   };
   
   /**
@@ -409,31 +413,45 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     }
     //fallback
     else {
-      if (event.type == 'keypress') {
-        var vk = event.which;
-        //console.log("kp", charCode, event.charCode, event.keyCode, event.key);
-        if (this.isKeyPressPrintable_(vk)) {
-              parsed.key = String.fromCharCode(event.charCode);
+      var vk = (event.which !== undefined) ? event.charCode : event.keyCode;
+      var keycode = event.keyCode;
+      var which = (event.which !== undefined) ? event.which : event.keyCode;
+      if (this.parseType(event) == 'keypress') {
+        
+        //console.log("kp", vk, event.charCode, event.keyCode, event.key);
+        if (this.isKeyPressPrintable_(which)) {
+              parsed.key = String.fromCharCode(vk);
               parsed.printable = true;
         }
         else {
           //convert anything else to a string representation
           parsed.printable = false;
           if (vk == 0) {
-            parsed.key = this.charCodeToString_(event.keyCode);
+            parsed.key = this.charCodeToString_(keycode);
           }
           else {
-            parsed.key = this.charCodeToString_(vk);
+            parsed.key = this.charCodeToString_(which);
           }
         }
       }
-      else {
-        var vk = event.which;
-        //console.log("du", charCode, event.charCode, event.keyCode, event.key);
+      else if (this.parseType(event) == 'keydown' || this.parseType(event) == 'keyup'){
+        //console.log("du", vk, event.charCode, event.keyCode, event.key);
         //filter out alphanumeric keys
         //console.log(event.type, event.which, event.charCode, event.keyCode, event.key, unilib.mvc.controller.EventKeyString[event.which]);
-        if (event.charCode == 0) {
+        if (event.charCode && event.charCode == 0) {
           //mozilla
+          if (this.isKeyDownPrintable_(which)) {
+              parsed.key = String.fromCharCode(vk);
+              parsed.printable = true;
+          }
+          else {
+            //convert anything else into a string representation
+            parsed.printable = false;
+            parsed.key = this.charCodeToString_(vk);
+          }
+        }
+        else {
+          //IE8
           if (this.isKeyDownPrintable_(vk)) {
               parsed.key = String.fromCharCode(vk);
               parsed.printable = true;
@@ -447,6 +465,23 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
       }  
     }
     return parsed;
+  };
+  
+  /**
+   * prevent default action for the event
+   * @param {Event} evt
+   * @public
+   */
+  unilib.mvc.controller.HTML4EventManager.prototype.preventDefault = 
+    function(evt) {
+      if (evt.preventDefault) {
+        //FFX
+        evt.preventDefault();
+      }
+      else {
+        //Shitty IE8
+        evt.returnValue = false;
+      }    
   };
   
   //public interface
@@ -465,6 +500,9 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
    */
   unilib.mvc.controller.HTML4EventManager.prototype.handleEvent = 
   function(evt) {
+    if (evt === undefined) {
+      evt = window.event;
+    }
     /*
     if (this.handlingState_ instanceof unilib.mvc.controller.HTML4WaitState) {
       __state = 'waitstate';
@@ -479,8 +517,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     console.log('[d] got ' + evt.type);
     //console.log('[d] curent state: ' + __state);
     */
-   //console.log('[d] got ' + evt.type);
-    this.handlingState_.handle(evt, this, this.drawableManager_);
+   this.handlingState_.handle(evt, this, this.drawableManager_);
   };
   
   /**
@@ -687,6 +724,13 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     var position = eventManager.parsePosition(evt);
     var keymap = eventManager.parseKeymap(evt);
     var type = eventManager.parseType(evt);
+    /*
+     * check for special actions needed to prevent bad default
+     * behaviors
+     */
+    if (keymap.key == unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE) {
+      eventManager.preventDefault(evt);
+    }
     eventManager.fireViewEvent(type, position, keymap);
   };
   

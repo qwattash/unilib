@@ -477,6 +477,34 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   };
   
   /**
+   * handle writing on node lables, may be keydown or keypress
+   * @param {unilib.mvc.view.ViewEvent} evt
+   * @private
+   */
+  unilib.mvc.bc.KeyEventObserver.prototype.handleWriting_ = function(evt) {
+    //edit element label
+    var selection = this.commandHandler_.selectionManager.getSelection();
+    var target = null;
+    //search selection for a valid target: eg. edges are not labelled
+    for (var i = 0; i < selection.length; i++) {
+      if (selection[i].getID() != unilib.mvc.bc.GraphElementType.EDGE) {
+        target = selection[i];
+        break;
+      }
+    }
+    if (target) {
+      //edit target label
+      if (evt.keymap.isKeyPrintable || 
+          evt.keymap.key == 
+          unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE) {
+        var cmd = new unilib.mvc.bc.command.ChangeTextCommand(target, 
+          evt.keymap.key);
+        this.commandHandler_.exec(cmd);
+      }
+    }
+  };
+  
+  /**
    * @see {unilib.interfaces.observer.Observer#update}
    */
   unilib.mvc.bc.KeyEventObserver.prototype.update = function(evt) {
@@ -505,6 +533,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
               new unilib.geometry.Point(this.arrowTranslationStep_, 0), 
               selection[i]);
           break;
+          case unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE:
+            this.handleWriting_(evt);
+          break;
         }
       }
       //console.log('down', evt.keymap.isKeyPrintable, evt.keymap.key);
@@ -513,26 +544,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       //console.log('up', evt.keymap.isKeyPrintable, evt.keymap.key);
     }
     else if (evt.getEventType() == 'keypress') {
-      //edit element label
-      var selection = this.commandHandler_.selectionManager.getSelection();
-      var target = null;
-      //search selection for a valid target: eg. edges are not labelled
-      for (var i = 0; i < selection.length; i++) {
-        if (selection[i].getID() != unilib.mvc.bc.GraphElementType.EDGE) {
-          target = selection[i];
-          break;
-        }
-      }
-      if (target) {
-        //edit target label
-        if (evt.keymap.isKeyPrintable || 
-            evt.keymap.key == 
-            unilib.mvc.controller.NonPrintableKeyCode.BACKSPACE) {
-          var cmd = new unilib.mvc.bc.command.ChangeTextCommand(target, 
-            evt.keymap.key);
-          this.commandHandler_.exec(cmd);
-        }
-      }
+      this.handleWriting_(evt);
     }
   };
   

@@ -218,12 +218,12 @@ unilib.removeEventListener = function(element, eventType, listener) {
 unilib.createCallback = function(object, method, args) {
   if (!args) {
     return function() {
-      method.apply(object, arguments);
+      return method.apply(object, arguments);
     }
   }
   else {
     return function() {
-      method.apply(object, args);
+      return method.apply(object, args);
     }
   }
 };
