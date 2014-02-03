@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/interface/iterator.js');
+
 /**
  * @namespace unilib.interfaces.iterator
  */

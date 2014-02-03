@@ -5,6 +5,8 @@
  * @version 1.0
  */
 
+unilib.notifyStart('unilib/interface/observer.js');
+
 /**
  * @namespace unilib.interfaces.observer
  */

@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/graph/model.js');
+
 /**
  * @todo
  * [FEAT] add flags to Pin::removeEdge to remove edges from both ends when keepEdges==false

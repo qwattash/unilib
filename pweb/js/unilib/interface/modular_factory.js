@@ -4,6 +4,11 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/interface/modular_factory.js');
+
+/**
+ * @namespace unilib.interfaces.factory
+ */
 unilib.provideNamespace('unilib.interfaces.factory', function() {
   
   /**

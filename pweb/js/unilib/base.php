@@ -541,6 +541,14 @@ unilib.dependencyManager = {
     indexMap_: [],
     
     /**
+     * the script currently running, this property is set by notifyBeginning
+     * and cleared by notifyLoaded
+     * @type {string}
+     * @private
+     */
+    currentScript_: null,
+    
+    /**
      * helper class used to keep track of included namespaces
      * @param {string} id id of the record or some reserved value
      * @param {function=} callback init callback for the namespace
@@ -673,6 +681,7 @@ unilib.dependencyManager = {
     generateExecutionList_: function() {
       //visit the graph starting from start nodes
       var visited = [];
+      //this.printMatrix_();//-----------------------------------------------------------------------------DEBUG
       while (this.dependencyMatrix_.length > visited.length) {
         var executables = this.findFreeNodes_(visited);
         if (executables.length == 0) throw new Error('Self dependency found');
@@ -712,7 +721,7 @@ unilib.dependencyManager = {
     },
     
     /**
-     * init the space for a file with give ID that has to be tracked by the
+     * init the space for a file with given ID that has to be tracked by the
      * dependency system
      * @private
      * @param {string} id id of the file/resource to track
@@ -736,9 +745,6 @@ unilib.dependencyManager = {
       }
     },
     
-    
-    // ---------------------------------------------------------------------------- DBG
-    
     /**
      * notify that an included file has been loaded.
      *   This is used to determine if all files has been included by just
@@ -755,7 +761,26 @@ unilib.dependencyManager = {
      */
     notifyLoaded: function() {
       this.notifications_++;
+      this.currentScript_ = null;
       if (this.notifications_ == this.included_.length) this.exec_();
+    },
+    
+    /**
+     * notify the start of a script, this is needed since there is no standard 
+     * way to determine the execution order of the script injected in the page.
+     * Nonstandard solutions include:
+     * i) importing one script at a time, using script.onload or 
+     * script.onreadystatechange to determine when a script finishes execution
+     * ii) using document.currentScript
+     * Other solutions are:
+     * i) importing scripts using AJAX calls
+     * ii) using timers to check for the loading of the dependencies
+     * The file ID must be given for every script that is included with
+     * this method, the ID consist of the file path and may be generated
+     * automatically by PHP as the BASE dir in this file.
+     */
+    notifyBeginning: function(id) {
+      this.currentScript_ = id;
     },
     
     /**     
@@ -766,7 +791,7 @@ unilib.dependencyManager = {
      *   Note that document.onload cannot be called before script elements
      *   present in the page (not dynamically added) have been parsed, so if
      *   one of them has uninitialised dependencies this.notifications_ != 
-     *   unilib.included.length_ always (at least in HTLM 4.01).
+     *   unilib.included.length_ always (at least in HTML 4.01).
      * @private
      */
     documentLoaded_: function() {
@@ -936,7 +961,8 @@ unilib.dependencyManager = {
       /* search for the correct current script running considering
        * origin of inclusions, if running an inline script return null.
        */
-      return this.included_[this.notifications_];
+      return this.currentScript_;
+      //return this.included_[this.notifications_];
     },
     
     /**
@@ -1011,6 +1037,16 @@ unilib.addEventListener(window, 'load', unilib.createCallback(
  */
 unilib.notifyLoaded = function() {
   unilib.dependencyManager.notifyLoaded();
+};
+
+/**
+ * expose private unilib.dependencyManager.notifyBeginning method,
+ * notify beginning of a dependency file
+ * @see unilib.dependencyManager.notifyBeginning
+ */
+unilib.notifyStart = function(id) {
+  id = unilib.config.jsBase + '/' + id;
+  unilib.dependencyManager.notifyBeginning(id);
 };
 
 /**

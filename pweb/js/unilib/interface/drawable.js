@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/interface/drawable.js');
+
 /**
  * @namespace {unilib.interfaces.graphics}
  */

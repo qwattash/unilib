@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/menu/model.js');
+
 /**
  * @namespace unilib.mvc.menu
  */

@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/view/drawable_manager.js');
+
 /**
  * @namespace unilib.mvc.view
  */

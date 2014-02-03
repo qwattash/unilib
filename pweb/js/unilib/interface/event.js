@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/interface/event.js');
+
 /**
  * @namespace unilib.interfaces.event
  */

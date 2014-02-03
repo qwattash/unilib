@@ -3,6 +3,7 @@
  * @author qwattash (Alfredo Mazzinghi)
  * @license GPL
  */
+unilib.notifyStart('unilib/graphics/collision.js');
 
 unilib.provideNamespace('unilib.collision', function() {
   

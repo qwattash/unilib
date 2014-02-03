@@ -3,6 +3,7 @@
  * @author qwattash (Alfredo Mazzinghi)
  * @license GPL
  */
+unilib.notifyStart('unilib/geometry/geometry.js');
 
 unilib.provideNamespace('unilib.geometry', function() {
   

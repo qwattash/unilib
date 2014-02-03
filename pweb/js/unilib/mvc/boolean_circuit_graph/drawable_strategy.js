@@ -5,6 +5,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/boolean_circuit_graph/drawable_strategy.js');
+
 /**
  * @namespace unilib.mvc.bc
  */

@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/interface/clonable.js');
+
 /**
  * @namespace unilib.interfaces.clonable
  */

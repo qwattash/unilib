@@ -5,6 +5,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/controller/event_manager.js');
+
 /**
  * @namespace unilib.mvc.controller
  */
@@ -308,8 +310,17 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     unilib.addEventListener(this.container_, 'keyup', this);
     unilib.addEventListener(this.container_, 'keypress', this);
     unilib.addEventListener(this.container_, 'contextmenu', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e.preventDefault) {
+        //FFX
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      else {
+        //Shitty IE8
+        e.returnValue = false;
+        e.cancelBubble = true;
+        return false;
+      }
     });
     this.container_.setAttribute('tabindex', 0);
   };

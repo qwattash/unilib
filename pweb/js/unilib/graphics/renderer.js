@@ -13,6 +13,8 @@
  *  interface
  */
 
+unilib.notifyStart('unilib/graphics/renderer.js');
+
 /**
  * @namespace unilib.graphics
  */

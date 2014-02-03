@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/boolean_circuit_graph/context_menu.js');
+
 /**
  * @namespace unilib.mvc.bc.menu
  */

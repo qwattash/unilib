@@ -5,6 +5,8 @@
  * @version 1.0
  */
 
+unilib.notifyStart('unilib/error.js');
+
 unilib.provideNamespace('unilib.error', function() {
   /**
    * base unilib error class

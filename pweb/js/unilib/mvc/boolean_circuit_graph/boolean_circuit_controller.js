@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/boolean_circuit_graph/boolean_circuit_controller.js');
+
 /**
  * @namespace unilib.mvc.bc.controller
  */

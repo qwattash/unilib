@@ -4,6 +4,8 @@
  * @license GPL
  */
 
+unilib.notifyStart('unilib/mvc/controller/controller.js');
+
 /**
  * @namespace unilib.mvc.controller
  */
