@@ -192,6 +192,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     if (! this.canHandle_(evt)) return;
     switch (evt.keymap.button) {
       case unilib.mvc.controller.EventButtonType.BUTTON_LEFT:
+        console.log(this.controller_.drawableManager.getDrawableFromElement(evt.getTarget()));//@TODO DBG
         cmd = this.getMenuAction_(evt);
         this.closeMenu_();
         if (cmd) this.controller_.exec(cmd);

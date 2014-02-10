@@ -589,7 +589,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     var drawable = new unilib.graphics.CompositeDrawableShape();
     var polyline = new unilib.graphics.CompositeDrawableShape();
     polyline.setID(unilib.mvc.bc.DrawableShapeType.POLYLINE);
-    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     var polylineStyle = this.styleProvider_.getStyle(elem.getID(), 
         unilib.mvc.bc.StyleType.BODY);
     var lineStart = new unilib.graphics.Line();
@@ -621,6 +620,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         labelEnd.setPosition(polyline.getPosition());
       }
     }
+    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     return drawable;
   };
   
@@ -633,7 +633,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       throw new unilib.mvc.view.ViewError('Edge drawable manager ' + 
           'can not handle given element');
     }
-    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     var data = elem.getData();
     var polyline = this.extractElement_(drawable, 
         unilib.mvc.bc.DrawableShapeType.POLYLINE);
@@ -670,6 +669,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     iter.finish();
     if (labelEnd) 
       this.setupLabel_(elem, textEnd, iter.item(), labelEnd, labelStyle);
+    drawable.setCollisionMode(unilib.collision.CollisionMode.GHOST);
     return drawable;
   };
   

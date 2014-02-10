@@ -763,6 +763,7 @@ unilib.provideNamespace('unilib.graphics', function() {
    */
   unilib.graphics.CompositeDrawableShape.prototype.setCollisionMode = 
     function(mode) {
+      this.collisionMode_= mode;
       for (var i = 0; i < this.drawables_.length; i++) {
         this.drawables_[i].setCollisionMode(mode);
       }
