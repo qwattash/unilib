@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../../css/unittest.css"/>
+<title>UI test</title>
+<script type="text/JavaScript" src="../../../js/unilib/base.php"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/mvc/boolean_circuit_graph/boolean_circuit_controller.js');
+  
+  var __init__ = function() {
+    console.log('[+] initialising logical network graph');
+    var container = document.getElementById('container');
+    var ctrl = new unilib.mvc.bc.controller.BooleanCircuitController(container, "savetest.php");
+
+   var styleProvider = ctrl.styleProvider;
+    var textStyle = new unilib.graphics.StyleInformations();
+    textStyle.textSize = 10;
+    var mTextStyle = new unilib.graphics.StyleInformations();
+    mTextStyle.textSize = 10;
+    mTextStyle.backgroundColor = '#AAAA44';
+    var menuStyle = new unilib.graphics.StyleInformations();
+    menuStyle.lineWidth = 1;
+    menuStyle.backgroundColor = '#AAAA44';
+    var nodeStyle = new unilib.graphics.StyleInformations();
+    nodeStyle.backgroundColor = '#44AAAA';
+    var nodeFocusStyle = new unilib.graphics.StyleInformations();
+    nodeFocusStyle.backgroundColor = '#228888';
+    var pinStyle = new unilib.graphics.StyleInformations();
+    pinStyle.backgroundColor = '#AAAA44';
+    var pinFocusStyle = new unilib.graphics.StyleInformations();
+    pinFocusStyle.backgroundColor = '#888822';
+    var edgeStyle = new unilib.graphics.StyleInformations();
+    edgeStyle.lineColor = '#AA4444';
+    edgeStyle.lineWidth = 5;
+    var edgeFocusStyle = new unilib.graphics.StyleInformations();
+    edgeFocusStyle.lineColor = '#FF8888';
+    edgeFocusStyle.lineWidth = 5;
+    //node styles
+    styleProvider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, 
+      unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT, 
+      unilib.mvc.bc.StyleType.BODY, nodeStyle);
+    styleProvider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT,
+      unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+    styleProvider.registerStyle(unilib.mvc.controller.StyleProviderReservedType.STYLE_DEFAULT,
+      unilib.mvc.bc.StyleType.BODY_FOCUS, nodeFocusStyle);
+    
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.BODY, pinStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.BODY_FOCUS, pinFocusStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.PIN, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.BODY, edgeStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.TEXT, textStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.BODY_FOCUS, edgeFocusStyle);
+    styleProvider.registerStyle(unilib.mvc.bc.GraphElementType.EDGE, unilib.mvc.bc.StyleType.TEXT_FOCUS, textStyle);
+    styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.BODY, menuStyle);
+    styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.TEXT, mTextStyle);
+    console.log('[+] leaving control to the user');
+  };
+  unilib.dependencyManager.addEventListener('load', __init__);
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>

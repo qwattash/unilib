@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="../../css/unittest.css"/>
+<title>UI test</title>
+<script type="text/JavaScript" src="../../js/unilib/base.php"></script>
+<script type="text/JavaScript" src="../../js/unilib/unittest.js"></script>
+<script type="text/JavaScript">
+  unilib.include('unilib/ajax/ajax.js');
+  
+  asyncTest("AJAX success", 15, 1000, function() {
+    var rq = new unilib.ajax.Request("echo.php");
+    var data = {
+      foo : {bar : "bar", baz : "baz"}
+    };
+    //console.log("MARK");
+    var nyi = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.NOT_YET_INITIALISED, "Not yet init status");
+      assertFalse(code, "Not yet init code");
+      assertEqual(response, null, "Not yet init, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.NOT_YET_INITIALISED, nyi);
+    var est = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.CONNECTION_ESTABLISHED, "Established status");
+      assertFalse(code, "Established code");
+      assertEqual(response, null, "Established, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.CONNECTION_ESTABLISHED, est);
+    var recv = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.REQUEST_RECEIVED, "Received status");
+      assertEqual(code, unilib.ajax.ResponseCode.SUCCESS,"Received code");
+      assertEqual(response, null, "Received, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.REQUEST_RECEIVED, recv);
+    var ans = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.RESPONSE_RECEIVED, "Response status");
+      assertEqual(code, unilib.ajax.ResponseCode.SUCCESS, "Response code");
+      assertEqual(response, null, "Response, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.RESPONSE_RECEIVED, ans);
+    var end = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.COMPLETE, "End status");
+      assertEqual(code, unilib.ajax.ResponseCode.SUCCESS, "End code");
+      assertDeepEqual(response, data.foo, "End response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.COMPLETE, end);
+    var err = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.ERROR, "Error status should not be called");
+      assertEqual(code, 404, "Error code should not be called");
+      assertEqual(response, null, "Error response should not be called");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.ERROR, err);
+    rq.send(data);
+  });
+     
+     
+  asyncTest("AJAX error", 15, 1000, function() {
+    var rq = new unilib.ajax.Request("unexisting.php");
+    var data = {
+      foo : {bar : "bar", baz : "baz"}
+    };
+    //console.log("MARK");
+    var nyi = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.NOT_YET_INITIALISED, "Not yet init status");
+      assertFalse(code, "Not yet init code");
+      assertEqual(response, null, "Not yet init, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.NOT_YET_INITIALISED, nyi);
+    var est = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.CONNECTION_ESTABLISHED, "Established status");
+      assertFalse(code, "Established code");
+      assertEqual(response, null, "Established, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.CONNECTION_ESTABLISHED, est);
+    var recv = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.REQUEST_RECEIVED, "Received status");
+      assertEqual(code, unilib.ajax.ResponseCode.NOT_FOUND,"Received code");
+      assertEqual(response, null, "Received, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.REQUEST_RECEIVED, recv);
+    var ans = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.RESPONSE_RECEIVED, "Response status");
+      assertEqual(code, unilib.ajax.ResponseCode.NOT_FOUND, "Response code");
+      assertEqual(response, null, "Response, no response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.RESPONSE_RECEIVED, ans);
+    var end = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.COMPLETE, "End status should not be called");
+      assertEqual(code, unilib.ajax.ResponseCode.SUCCESS, "End code should not be called");
+      assertDeepEqual(response, data.foo, "End response should not be called");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.COMPLETE, end);
+    var err = function(status, code, response) {
+      assertEqual(status, unilib.ajax.ResponseStatus.ERROR, "Error status");
+      assertEqual(code, 404, "Error code");
+      assertEqual(response, null, "Error response");
+    };
+    rq.addEventListener(unilib.ajax.ResponseStatus.ERROR, err);
+    rq.send(data);
+  });
+</script>
+</head>
+<body>
+  <div id='container' class='test-output-container-big'></div>
+  <div id='unittest'></div>
+</body>
+</html>
+
+
+
+
+

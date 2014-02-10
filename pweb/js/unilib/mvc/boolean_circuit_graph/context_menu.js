@@ -30,7 +30,7 @@ unilib.provideNamespace('unilib.mvc.bc.menu', function() {
     elementData = new unilib.mvc.menu.BaseMenuData();
     elementData.text = 'Save';
     this.addItem(new unilib.mvc.menu.MenuElement(
-      null,
+      new unilib.mvc.bc.command.SaveGraphCommand(controller),
       elementData
     ));
     

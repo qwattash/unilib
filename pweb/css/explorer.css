@@ -1,0 +1,107 @@
+div.file_list_container {
+  text-align: left;
+}
+
+ul.file_list {
+  padding: 1%;
+  list-style-type: none;
+}
+
+ul.file_list li.file {
+  border: dashed;
+  border-width: 0.1em;
+  border-color: #2A2E2E;
+  overflow: hidden;
+  margin: 3px 0;
+  /*
+  non standard
+  user-select: none;
+  -moz-user-select: none;
+  */
+}
+
+div#file_list_empty_message {
+  visibility: hidden;
+  color: #22A022;
+  text-align: center;
+}
+
+ul.file_list li.file_command {
+  margin-bottom: 10px;
+}
+
+ul.file_list li.file:hover {
+  border: solid;
+  border-width: 0.1em;
+}
+
+span.icon {
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  margin-left: 0.25em;
+  margin-right: 1em;
+  vertical-align: middle;
+}
+
+span.new_icon {
+  background: #3B5998;
+  color: #FFFFFF;
+}
+
+span.file_icon {
+  background: #22A022;
+}
+
+span.file_name {
+  vertical-align: middle;
+  color: #1C1F1F;
+  font-size: 1.5em;
+  font-family: "Courier new", Courier, monospace;
+}
+
+span.file_date {
+  color: #1C1F1F;
+  font-size: 1.2em;
+  font-style: italic;
+  font-family: "Courier new", Courier, monospace;
+  float: right;
+  margin: .4em;
+}
+
+span.command_name {
+  font-weight: bolder;
+  text-align: center;
+}
+
+/*------------------ popup -----------------------------------*/
+div#prompt_popup {
+  background: #708090;
+  position: absolute;
+  top: 20%;
+  left: 25%;
+  z-index: 3;
+  width: 50%;
+  text-align: center;
+  padding: 1%;
+  visibility: hidden;
+}
+
+div#prompt_popup h3 {
+  margin: 0;
+  padding: 0;
+}
+
+div#error_popup {
+  background: #708090;
+  position: absolute;
+  top: 25%;
+  left: 33%;
+  z-index: 4;
+  width: 30%;
+  text-align: center;
+  padding: 1%;
+  visibility: hidden;
+}

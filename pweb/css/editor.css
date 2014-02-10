@@ -1,0 +1,19 @@
+div.canvas {
+  width: 95%;
+  height: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: scroll;
+  background: #FFFFFF;
+}
+
+div#canvas_container {
+  height: 95%;
+}
+
+ul#header_menu {
+  float: right;
+  margin: 0.75em 2em;
+  width: auto;
+  height: auto;
+}

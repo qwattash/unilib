@@ -108,8 +108,9 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         cmd.setup(position);
         this.controller_.exec(cmd);
     }
-    else if (id == unilib.mvc.bc.GraphElementType.PIN) {
-      var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
+    else if (id == unilib.mvc.bc.GraphElementType.INPUT_PIN ||
+             id == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
+        var cmd = new unilib.mvc.bc.command.ShowCtxMenuCommand(
           this.controller_.pinMenuModel);
         cmd.setup(position);
         this.controller_.exec(cmd);
@@ -319,7 +320,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   unilib.mvc.bc.DragDropEventObserver.prototype.getCommand_ = function(target, 
     targetPosition, undo, startingData) {
     var cmd;
-    if (target.getID() == unilib.mvc.bc.GraphElementType.PIN) {
+    if (target.getID() == unilib.mvc.bc.GraphElementType.INPUT_PIN ||
+        target.getID() == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
       cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
         targetPosition, undo, startingData, this.commandState_);
     }
@@ -455,7 +457,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     position.x += translation.x;
     position.y += translation.y;
     //build command
-    if (target.getID() == unilib.mvc.bc.GraphElementType.PIN) {
+    if (target.getID() == unilib.mvc.bc.GraphElementType.INPUT_PIN ||
+        target.getID() == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
       cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
         position, true, null, {});
     }

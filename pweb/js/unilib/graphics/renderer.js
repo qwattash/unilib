@@ -294,8 +294,8 @@ unilib.provideNamespace('unilib.graphics', function() {
     rect.style.borderStyle = 
       (this.style_.lineStyle == unilib.graphics.LineStyle.LINE_DASHED) ? 
       'dashed' : 'solid';
-    rect.style.backgroundColor = this.style_.backgroundColor || '#FFFFFF';
     rect.style.backgroundImage = this.style_.backgroundImage || '';
+    rect.style.backgroundColor = this.style_.backgroundColor || '#FFFFFF';
     rect.style.backgroundRepeat = (this.style_.backgroundRepeat) ? '' : 
       'no-repeat';
     rect.style.color = this.style_.textColor || '#000000';

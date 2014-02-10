@@ -17,8 +17,12 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
    * @class
    * @extends {unilib.mvc.controller.CommandHandler}
    * @param {DOMElement} container main container for the view
+   * @param {string} url remote url for load/save operations
+   * @param {number} token remote token identifier for load/save operations
+   * @param {boolean} [doRemoteLoad=false] load saved model or create a new one
    */
-  unilib.mvc.bc.controller.BooleanCircuitController = function(container) {
+  unilib.mvc.bc.controller.BooleanCircuitController = function(container, url, 
+    token, doRemoteLoad) {
     unilib.mvc.controller.CommandHandler.call(this);
     
     /**
@@ -68,6 +72,13 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
       this.drawableStrategy);
     
     /**
+     * graph loader, used to save and load the graph model
+     * @type {unilib.mvc.graph.Loader}
+     * @public
+     */
+    this.loader = new unilib.mvc.graph.Loader(url, token);
+    
+    /**
      * graph model for the boolean circuit, it is an observable model, 
      * the drawablManager is an observer of the model. Note that there can be 
      * more than one drawableManagers that display the same model in 
@@ -76,6 +87,9 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
      * @public
      */
     this.graphModel = new unilib.mvc.graph.GraphModel();
+    if (doRemoteLoad) {
+      this.loader.load(this.graphModel);
+    }
     
     //attach graphModel observers
     this.graphModel.attachObserver(this.drawableManager);
@@ -188,5 +202,6 @@ unilib.provideNamespace('unilib.mvc.bc.controller', function() {
   'unilib/mvc/controller/event_manager.js',
   'unilib/mvc/boolean_circuit_graph/drawable_strategy.js',
   'unilib/mvc/boolean_circuit_graph/context_menu.js',
-  'unilib/mvc/boolean_circuit_graph/selection_manager.js']);
+  'unilib/mvc/boolean_circuit_graph/selection_manager.js',
+  'unilib/mvc/graph/loader.js']);
 unilib.notifyLoaded();

@@ -690,6 +690,69 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
   unilib.inherit(unilib.mvc.bc.command.ElementCommand, 
     unilib.mvc.bc.command.MenuCommand.prototype);
 	
+	//--------------------------------------------------------------------------
+	/**
+   * create generic element
+   * @class
+   * @extends {unilib.mvc.bc.command.MenuCommand}
+   * @param {unilib.mvc.graph.GraphModel} controller
+   */
+  unilib.mvc.bc.command.SaveGraphCommand = function(controller) {
+    unilib.mvc.bc.command.MenuCommand.call(this);
+    
+    /**
+     * menu model
+     * @type {unilib.mvc.bc.BooleanCircuitController}
+     * @private
+     */
+    this.controller_ = controller;
+    
+  };
+  unilib.inherit(unilib.mvc.bc.command.SaveGraphCommand, 
+    unilib.mvc.bc.command.MenuCommand.prototype);
+    
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#setup}
+   */
+  unilib.mvc.bc.command.SaveGraphCommand.prototype.setup = 
+   function(position) {
+   return;
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#getInstance}
+   */
+  unilib.mvc.bc.command.SaveGraphCommand.prototype.getInstance = 
+   function() {
+     return new unilib.mvc.bc.command.SaveGraphCommand(this.controller_);
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#exec}
+   */
+  unilib.mvc.bc.command.SaveGraphCommand.prototype.exec = function() {
+    var loader = this.controller_.loader;
+    loader.save(this.controller_.graphModel);
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#undo}
+   */
+  unilib.mvc.bc.command.SaveGraphCommand.prototype.undo = function() {
+    //can not undo a save
+    return;
+  };
+  
+  /**
+   * @see {unilib.mvc.controlle.ReversibleCommand#isReversible}
+   */
+  unilib.mvc.bc.command.SaveGraphCommand.prototype.isReversible = function() {
+    //can not undo a save
+    return false;
+  };
+  
+  //---------------------------------------------------------------------------
+	
 	/**
    * create node element
    * @class
@@ -731,7 +794,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     for (var i = 0; i < nodespec.input; i++) {
       //pins are added to the left and have a fixed size of 10x10
       var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.IN);
-      pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+      pin.setID(unilib.mvc.bc.GraphElementType.INPUT_PIN);
       var pinData = pin.getData();
       pinData.points.push(new unilib.geometry.Point(0,0));
       pinData.points.push(new unilib.geometry.Point(10,10));
@@ -744,7 +807,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     for (var i = 0; i < nodespec.output; i++) {
       //pins are added to the left and have a fixed size of 10x10
       var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.OUT);
-      pin.setID(unilib.mvc.bc.GraphElementType.PIN);
+      pin.setID(unilib.mvc.bc.GraphElementType.OUTPUT_PIN);
       var pinData = pin.getData();
       pinData.points.push(new unilib.geometry.Point(0,0));
       pinData.points.push(new unilib.geometry.Point(10,10));
@@ -778,6 +841,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      return cmd;
   }; 
 	
+	//---------------------------------------------------------------------------
 	/**
    * remove node element
    * @class
@@ -800,13 +864,32 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     if (this.instance_) {
       var model = this.controller_.graphModel;
       for (var i = 0; i < this.instance_.length; i++) {
-        model.removeNode(this.instance_[i]);  
+        //skip non nodes
+        if (! (this.instance_[i] instanceof unilib.mvc.graph.Node)) {
+          continue;
+        }
+        //remove all attached edges
+        node = this.instance_[i];
+        for (var j = node.createIterator(); ! j.end(); j.next()) {
+          var pin = j.item();
+          for (var k = pin.createIterator(); ! k.end(); k.next()) {
+            var edge = k.item();
+            var start = edge.getStartPin();
+            var end = edge.getEndPin();
+            start.unlink(edge);
+            end.unlink(edge);
+          }
+        }
+        model.removeNode(this.instance_[i]);
       }
       model.notify();
     }
   };
   
   /**
+   * @TODO implement undo properly
+   * WARNING at the moment the edges and pins attached to the node
+   * are not preserved after undo
    * @see {unilib.mvc.controlle.ReversibleCommand#undo}
    */
   unilib.mvc.bc.command.RemoveNodeElementCommand.prototype.undo = function() {
@@ -828,6 +911,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      return cmd;
   };
   
+  //---------------------------------------------------------------------------
   /**
    * remove edge element
    * @class
@@ -890,6 +974,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      return cmd;
   };
 	
+	//---------------------------------------------------------------------------
 	/**
 	 * link elements, the command takes care of the routing of the edge
 	 * (this should not be written to the model but to the view, this is
@@ -915,7 +1000,8 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     //get first two pins from selection
     var targets = [];
     for (var i = 0; i < selection.length; i++) {
-      if (selection[i].getID() == unilib.mvc.bc.GraphElementType.PIN) {
+      if (selection[i].getID() == unilib.mvc.bc.GraphElementType.INPUT_PIN ||
+          selection[i].getID() == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
         if (targets.length < 2) {
           targets.push(selection[i]);
         }

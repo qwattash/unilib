@@ -21,7 +21,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   unilib.mvc.bc.GraphElementType = {
       INPUT_NODE: 0,
       OUTPUT_NODE: 1,
-      PIN: 2,
+      INPUT_PIN: 2,
+      OUTPUT_PIN: 11,
       EDGE: 3,
       AND_NODE: 4,
       OR_NODE: 5,
@@ -367,7 +368,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
    */
   unilib.mvc.bc.PinDrawableManagerStrategy.prototype.canHandle =
     function(elem) {
-      if (elem.getID() == unilib.mvc.bc.GraphElementType.PIN) {
+      if (elem.getID() == unilib.mvc.bc.GraphElementType.INPUT_PIN ||
+          elem.getID() == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
         return true;
       }
       return false;

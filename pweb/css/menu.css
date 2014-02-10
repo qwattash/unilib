@@ -1,0 +1,14 @@
+ul.menu {
+  display: inline-block;
+  list-style-type: none;
+  text-align: left;
+  vertical-align: middle;
+}
+
+ul.menu li.item {
+  display: inline-block;
+}
+
+span.menu_text {
+  font-size: 1em;
+}

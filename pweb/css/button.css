@@ -1,0 +1,17 @@
+.in_button {
+  border: none;
+  padding: 0.25em;
+  background: #3B5998;
+  color: #FFFFFF;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bolder;
+  display: inline-block;
+  margin: 0.2em;
+}
+
+.in_button:hover {
+  border: none;
+  background-color: #5B79B8;
+  color: #FFFFFF;
+}

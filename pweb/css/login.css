@@ -1,0 +1,51 @@
+/*
+ * define positions for each block 
+ */
+
+div.title_block {
+  
+}
+
+div.tile_form {
+  width: 30%;
+  height: 80%;
+}
+
+div.tile_doc {
+  width: 30%;
+  height: 80%;
+}
+
+div.main_block {
+  height: 200px;
+}
+
+div.tile_tutorial {
+  width: 30%;
+  height: 80%;
+}
+
+form.login_form {
+  margin: 2%;
+}
+
+.block a {
+  color: inherit;
+  font-style: inherit;
+  font-size: inherit;
+  text-decoration: inherit;
+}
+
+ul {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+li {
+  padding: 1%;
+}
+
+form.login_form .in_button {
+  width: 40%;
+}
