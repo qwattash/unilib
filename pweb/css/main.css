@@ -16,7 +16,8 @@ html, body {
   display: inline-block;
   text-align: center;
   vertical-align: top;
-  overflow: hidden;
+  /*overflow: auto should show the scrollbar when the content is clipped*/
+  overflow: auto;
 }
 
 /**

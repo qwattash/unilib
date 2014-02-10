@@ -21,13 +21,13 @@
 </div>
 <div class="block_container main_block">
   <div class="tile_row">
-    <div class="tile tile_tutorial tile_blue">
+    <div class="tile tile_author tile_blue">
       <div class="tile_content">
-        <h2>Tutorial</h2>
-        <ul>
-          <li>Navigation</li>
-          <li>Create Graph</li>
-        </ul>
+        <h2>Author</h2>
+        <p>
+          This application has been created by Alfredo Mazzinghi for the web programming module at the University of Pisa.
+          The software comes with no warranty whatsoever, under the MIT License.
+        </p>
       </div>
     </div>
     <div class="tile tile_form tile_orange">
@@ -101,7 +101,7 @@
         <h2>Documentation</h2>
         <ul>
           <li><a href="../tests/index.php">Testing</a></li>
-          <li>JsDoc</li>
+          <li><a href="">JsDoc</a></li>
         </ul>
       </div>
     </div>

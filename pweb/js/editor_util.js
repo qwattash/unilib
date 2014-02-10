@@ -140,12 +140,12 @@ var __init__ = function() {
   var inPinStyle = new unilib.graphics.StyleInformations();
   inPinStyle.backgroundColor = '#228022';
   var inPinFocusStyle = new unilib.graphics.StyleInformations();
-  inPinFocusStyle.backgroundColor = '#22A022';
+  inPinFocusStyle.backgroundColor = '#112011';
   //OUTPUT PIN
   var outPinStyle = new unilib.graphics.StyleInformations();
   outPinStyle.backgroundColor = '#9F2F28';
   var outPinFocusStyle = new unilib.graphics.StyleInformations();
-  outPinFocusStyle.backgroundColor = '#AF4F48';
+  outPinFocusStyle.backgroundColor = '#3F1010';//'#AF4F48';
   //create style for the edges
   var edgeStyle = new unilib.graphics.StyleInformations();
   edgeStyle.lineColor = '#222222';
