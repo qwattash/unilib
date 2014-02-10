@@ -785,7 +785,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     data.position = this.position_;
     data.position.z = 0; //force nodes on layer 0
     data.points.push(new unilib.geometry.Point(0,0));
-    data.points.push(new unilib.geometry.Point(50, 50));
+    data.points.push(new unilib.geometry.Point(65, 53));
     data.text = nodespec.label;
     this.instance_.setData(data);
     this.instance_.setID(this.type_);
