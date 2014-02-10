@@ -461,22 +461,36 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
         target.getID() == unilib.mvc.bc.GraphElementType.OUTPUT_PIN) {
       cmd = new unilib.mvc.bc.command.MovePinElementCommand(target, 
         position, true, null, {});
+      this.commandHandler_.exec(cmd);
     }
     else if (target.getID() == unilib.mvc.bc.GraphElementType.EDGE) {
       /*
-       * Edges can not be moved because the segment clicked can not easily
-       * be recovered, it would be better to change the architecture of
-       * the drawing system in order to make this type of changes easier 
-      cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
-        position, true, null, this.commandHandler_, {"segment": });
-      */
+       * A single edge segment can not be moved because the segment clicked 
+       * can not easily be recovered, it would be better to change the 
+       * architecture of the drawing system in order to make this type 
+       * of changes easier.
+       * Instead call the move command for each edge segment.
+       * Note that the first and the last segments are not moved, this is because
+       * they are attached to a pin that takes care of them if it they should be
+       * moved.
+       */
+      var edgeData = target.getData(); //note that the data are cloned
+      var nEdges = edgeData.points.length - 1;
+      for (var i = 1; i < nEdges - 1; i++) {
+        var newEdgePos = new unilib.geometry.Point();
+        newEdgePos.x = position.x + edgeData.points[i].x;
+        newEdgePos.y = position.y + edgeData.points[i].y;
+        cmd = new unilib.mvc.bc.command.MoveEdgeElementCommand(target, 
+        newEdgePos, true, null, this.commandHandler_, {"segment": i});
+        this.commandHandler_.exec(cmd);
+      }
     }
     else {
       //some node type
       cmd = new unilib.mvc.bc.command.MoveNodeElementCommand(target, 
         position, true, null, {});
+      this.commandHandler_.exec(cmd);
     }
-    this.commandHandler_.exec(cmd);
   };
   
   /**
