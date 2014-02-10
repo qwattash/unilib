@@ -387,8 +387,8 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     }
     else if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DROP) {
       //@TODO-----------------------------------------------------------------------------------------------------------------------
-      console.log(evt.getTarget());
-      console.log(this.commandHandler_.drawableManager.getDrawableFromElement(evt.getTarget()));
+      //console.log(evt.getTarget());
+      //console.log(this.commandHandler_.drawableManager.getDrawableFromElement(evt.getTarget()));
       //note that drop event, if generated, is fired immediately 
       //AFTER! the DRAGEND
       //forbid any collision by undoing reversible translation executed before
@@ -490,6 +490,16 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       cmd = new unilib.mvc.bc.command.MoveNodeElementCommand(target, 
         position, true, null, {});
       this.commandHandler_.exec(cmd);
+      /*
+       * check for overlapping at new position, if there is overlapping undo
+       */
+      var drawable = 
+        this.commandHandler_.drawableManager.getDrawableFromElement(target);
+      var colliding = 
+        this.commandHandler_.drawableManager.getOverlappingDrawables(drawable);
+      if (colliding.length > 0) {
+        this.commandHandler_.undo();
+      }
     }
   };
   

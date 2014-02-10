@@ -67,11 +67,11 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
      * state that is persisted among different Move
      * commands that are considered related, the common usage
      * is to track starting data for the edges.
-     * @todo
+     * @TODO
      * Further refinement can be done to support startingData
      * undo only with this state and remove the startingData property
      * @type {Object}
-     * @private
+     * @protected
      */
     this.state_ = state;
   };
@@ -141,6 +141,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    */  
   unilib.mvc.bc.command.MoveNodeElementCommand.prototype.exec = function() {
     //translate node
+    var originalData = this.target_.getData();
     var targetData = this.target_.getData();
     var translation = new unilib.geometry.Point3D();
     translation.x = this.position_.x - targetData.position.x;
@@ -163,9 +164,12 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
         pinStartingData = i.item().getData();
         //the initial condition must be recovered from the translation happened
         //between the node starting data and the actual node data
-        pinStartingData.position.x += - (targetData.position.x - this.startingData_.position.x);
-        pinStartingData.position.y += - (targetData.position.y - this.startingData_.position.y);
-        pinStartingData.position.z += - (targetData.position.z - this.startingData_.position.z);
+        pinStartingData.position.x += 
+          - (originalData.position.x - this.startingData_.position.x);
+        pinStartingData.position.y += 
+          - (originalData.position.y - this.startingData_.position.y);
+        pinStartingData.position.z += 
+          - (originalData.position.z - this.startingData_.position.z);
       }
       var pinCmd = new unilib.mvc.bc.command.MovePinElementCommand(
         i.item(), targetPos, this.undo_, pinStartingData, this.state_);
@@ -227,16 +231,35 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
        * a clone is needed to prevent reordering that may be caused
        * by a removal and an undo??
        * for now store just the data and rely on fixed order
-       * @type {Array.<Array.<unilib.mvc.graph.BaseGraphElementData>>}
+       * The state entry start_edges is an array of entries with two
+       * properties: pin and data, the pin is the pin to which the data
+       * belongs, the data is an array of BaseGraphElementData, one for
+       * each edge in the pin
        */
+      //console.log("s", state, this.state_);
       if (! this.state_['start_edges']) {
+        this.state_['start_edges'] = [];
+      }
+      //search current pin into the state to see if its edges are already
+      //stored
+      var isPinPresent = false;
+      for (var i = 0; i < this.state_['start_edges'].length; i++) {
+        if (this.state_['start_edges'][i].pin == this.target_) {
+          isPinPresent = true;
+          break;
+        }
+      }
+      if (! isPinPresent) {
+        //the pin has not yet been stored, store it along with its edges
+        var startEdgesEntry = {pin: this.target_, data: null};
         var startingEdgesData = [];
         var edgeIter = this.target_.createIterator();
         for (edgeIter.begin(); ! edgeIter.end(); edgeIter.next()) {
           //build initial condition for the edge
           startingEdgesData.push(edgeIter.item().getData());
         }
-        this.state_['start_edges'] = startingEdgesData;
+        startEdgesEntry.data = startingEdgesData;
+        this.state_['start_edges'].push(startEdgesEntry);
       }
   };
   unilib.inherit(unilib.mvc.bc.command.MovePinElementCommand, 
@@ -365,9 +388,18 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
    */
   unilib.mvc.bc.command.MovePinElementCommand.prototype.undo = function() {
     if (this.undo_) {
+      edgeData = null;
+      //retrieve the data for the edges of this pin
+      for (var i = 0; i < this.state_['start_edges'].length; i++) {
+        if (this.state_['start_edges'][i].pin == this.target_) {
+          edgeData = this.state_['start_edges'][i].data;
+          break;
+        }
+      }
+      //set data to edges
       var edgeIter = this.target_.createIterator();
       for (edgeIter.begin(); ! edgeIter.end(); edgeIter.next()) {
-        edgeIter.item().setData(this.state_['start_edges'].pop());
+        edgeIter.item().setData(edgeData.pop());
       }
       unilib.mvc.bc.command.MoveElementCommand.prototype.undo.call(this);
     }
