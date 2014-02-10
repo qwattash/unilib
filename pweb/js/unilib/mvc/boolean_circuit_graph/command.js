@@ -613,6 +613,7 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
   };
 	
 	/**
+	 * @TODO this is a todo since undo is not currently supported entirely
    * @see {unilib.mvc.controller.BaseCommand#undo}
    */  
   unilib.mvc.bc.command.MoveEdgeElementCommand.prototype.undo = function() {
@@ -790,20 +791,48 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     this.instance_.setData(data);
     this.instance_.setID(this.type_);
     //now create pins
-    spacing = (data.points[1].y - data.points[0].y) / nodespec.input - 5;
+    var pinDimension = 10;
+    /*
+     * Here the pins are spaced and translated relative to the node 
+     * center on the y axis. The following code implements this reasoning:
+     * given N pins to be placed along a line of length L;
+     * a) the pin spacing is computed as S = L/N;
+     * b) the center of the line (nodeCenter) is NC = L/2;
+     * c) the center of the distribution of pins spaced S is then
+     *  DC = S * N/2 + D, the displacement D is needed because the position of 
+     *  the pin is taken relative to its center.
+     * d) now we have to place pin number i:
+     *  it position relative to the top of the line will be Ptop = i * S - D;
+     *  where i is the index, S the spacing (see #a) and D the displacement 
+     *  (half pin length, see #c)
+     *  We want the position to be relative to the node center instead.
+     *  We translate the centre of the node to the top of the line:
+     *  Pc = Ptop - NC;
+     *  Now translate the top of the line (think of it as the origin) to the
+     *  center of the distribution as computed to be on the positive half
+     *  of the axis (the line).
+     *  Pfinal = Pc + ND;
+     */
+    var spacing = 
+      (data.points[1].y - data.points[0].y) / (nodespec.input);
+    var distributionCenter = spacing * (nodespec.input/2) + spacing/2;
+    var nodeCenter = (data.points[1].y - data.points[0].y) / 2;
     for (var i = 0; i < nodespec.input; i++) {
       //pins are added to the left and have a fixed size of 10x10
       var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.IN);
       pin.setID(unilib.mvc.bc.GraphElementType.INPUT_PIN);
       var pinData = pin.getData();
       pinData.points.push(new unilib.geometry.Point(0,0));
-      pinData.points.push(new unilib.geometry.Point(10,10));
-      pinData.position.x = this.position_.x - 5;
-      pinData.position.y = this.position_.y + i * spacing;
+      pinData.points.push(new unilib.geometry.Point(pinDimension, pinDimension));
+      //see comment above for a description of the equation
+      pinData.position.x = this.position_.x - pinDimension/2;
+      pinData.position.y = this.position_.y + (i * spacing - pinDimension/2) +
+        (distributionCenter - nodeCenter);
       pinData.position.z = 2;
       pin.setData(pinData);
     }
-    spacing = (data.points[1].y - data.points[0].y) / nodespec.output - 5;
+    spacing = (data.points[1].y - data.points[0].y) / nodespec.output;
+    distributionCenter = spacing * (nodespec.output/2) + spacing/2;
     for (var i = 0; i < nodespec.output; i++) {
       //pins are added to the left and have a fixed size of 10x10
       var pin = this.instance_.makePin(unilib.mvc.graph.PinDirection.OUT);
@@ -811,8 +840,10 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
       var pinData = pin.getData();
       pinData.points.push(new unilib.geometry.Point(0,0));
       pinData.points.push(new unilib.geometry.Point(10,10));
-      pinData.position.x = this.position_.x + data.points[1].x - 5;
-      pinData.position.y = this.position_.y + i * spacing;
+      //------ see comment above for a description of the equations
+      pinData.position.x = this.position_.x + data.points[1].x - pinDimension/2;
+      pinData.position.y = this.position_.y + (i * spacing - pinDimension/2) +
+        (distributionCenter - nodeCenter);
       pinData.position.z = 2;
       pin.setData(pinData);
     }
