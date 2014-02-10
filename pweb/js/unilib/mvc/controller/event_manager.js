@@ -522,7 +522,8 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
   
   /**
    * get absolute position in the page for an element, offsetTop, offsetLeft, 
-   * offsetParent are part of the CSSOM View specification
+   * offsetParent and getBoundingClientRects are part of the CSSOM View 
+   * specification
    * @private
    * @param {Element} element DOM element
    * @returns {unilib.geometry.Point3D}
@@ -532,11 +533,17 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
     var z = (isNaN(parseInt(element.style.zIndex))) ? 0 : 
       parseInt(element.style.zIndex); 
     var position = new unilib.geometry.Point3D(0, 0, z);
-    do {
+    /*
+     * this implemententation does not take in account scrolling
+     do {
       position.x += element.offsetLeft;
       position.y += element.offsetTop;
       element = element.offsetParent;
-    } while (element != null);
+    } while (element != null);*/
+    //getBoundingClient rect takes scrolling into account
+    var rect = element.getBoundingClientRect();
+    position.x = rect.left;
+    position.y = rect.top;
     return position;
   };
   

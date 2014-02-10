@@ -354,7 +354,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
             //fetch actual data for the edge
             var xmlRealEdge = this.fetchEdge_(
               xmlDummyEdges[k].getAttribute("refer"), xmlEdges);
-            console.log(xmlEdges, xmlDummyEdges, xmlRealEdge, refer, i, j, k);
+            //console.log(xmlEdges, xmlDummyEdges, xmlRealEdge, refer, i, j, k);
             //set edge id
             edges[refer].setID(parseInt(xmlRealEdge.getAttribute("id")));
             //set edge data
