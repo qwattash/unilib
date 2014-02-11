@@ -354,7 +354,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   unilib.mvc.bc.DragDropEventObserver.prototype.update = function(evt) {
     if (this.canHandle_(evt) == false) return;
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART) {
-      console.log("evt", evt.position.x, evt.position.y);//------------------------------------------------DEBUG //TODO
       this.storeStartingData_(evt.getTarget());
       //clear edge dragging state upon new drag
       this.commandState_ = {};
