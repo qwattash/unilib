@@ -6,6 +6,10 @@ div.title_block {
   
 }
 
+input#real_in_pwd {
+  display: none;
+}
+
 div.tile_form {
   width: 30%;
   height: 90%;

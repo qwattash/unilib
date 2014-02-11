@@ -154,7 +154,7 @@ unilib.provideNamespace('unilib.ajax', function() {
       requestURL += encodeURI(this.serializer_.serialize(data[key]));
     }
     //open, always async
-    this.transport_.open(String.toUpperCase(this.method_),
+    this.transport_.open(String(this.method_).toUpperCase(),
       this.url_ + requestURL, true);
     this.transport_.send();
   };
@@ -227,11 +227,9 @@ unilib.provideNamespace('unilib.ajax', function() {
           state == unilib.ajax.ResponseStatus.COMPLETE) {
             response = this.serializer_.unserialize(this.transport_.responseText);
         }
-        
       }
       catch(e) {
         //IE8 can throw here too
-        console.log(e.toString());
         response = null;
       }
       this.invokeStatusCallbacks_(state, code, response);

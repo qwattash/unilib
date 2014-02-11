@@ -259,7 +259,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
       xmlDoc.async = "false";
       xmlDoc.loadXML(xmlData);
       return xmlDoc;
-    } else if (document.implementation && document.implementation.createDocument) {
+    } 
+    else if (document.implementation && document.implementation.createDocument) {
       //Others
       parser = new DOMParser();
       xmlDoc = parser.parseFromString(xmlData,"application/xml");

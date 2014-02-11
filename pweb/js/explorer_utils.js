@@ -25,9 +25,21 @@ function createFileListEntry(id, name, date) {
     "</ul>" +
     "<span class='file_date'>" + date + "</span>" +
   "</li>";
-  var parser = new DOMParser();
-  var item = parser.parseFromString(xmlString, "text/html");
+  var li = null;
+  if (window.ActiveXObject) {
+    //IE
+    var xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+    xmlDoc.async = "false";
+    xmlDoc.loadXML(xmlString);
+    var item = xmlDoc.documentElement;
+    li = item.getElementsByTagName("li")[0];
+  } 
+  else if (document.implementation && document.implementation.createDocument) {
+    //Others
+    var parser = new DOMParser();
+    var item = parser.parseFromString(xmlString, "text/html");
   var li = item.getElementsByTagName("li")[0];
+    }
   list.appendChild(li);
 }
 

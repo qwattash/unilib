@@ -63,19 +63,23 @@
             </li>
             <li>
               <input 
-                onfocus="inputFocus(this); pwdFocus(this);" 
-                onblur="inputBlur(this);" 
-                class="in_text" 
-                type="text" 
-                name="pwd" 
-                value=<?php 
+                id="real_in_pwd"
+                onblur="pwdRealSwap(this)"
+                class="in_text"
+                type="pwd"
+                value="<?php 
                   if (isset($_SESSION['auth_attempt_pwd']) && $_SESSION['auth_attempt_pwd'] != "") {
                     echo $_SESSION['auth_attempt_pwd'];
                   }
-                  else {
-                    echo "Password";
-                  }
-                ?> 
+                ?>"
+                tabindex="2"/>
+              <input 
+                id="dummy_in_pwd"
+                onfocus="pwdDummySwap(this);"  
+                class="in_text" 
+                type="text" 
+                name="dummy" 
+                value="Password"
                 tabindex="2"/>
             </li>
             <li>
