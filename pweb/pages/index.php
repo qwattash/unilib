@@ -26,7 +26,7 @@
         <h2>Author</h2>
         <p>
           This application has been created by Alfredo Mazzinghi for the web programming module at the University of Pisa.
-          The software comes with no warranty whatsoever, under the MIT License.
+          The software comes with no warranty whatsoever, under the GPL License.
         </p>
       </div>
     </div>
@@ -106,7 +106,6 @@
         <h2>Documentation</h2>
         <ul>
           <li><a href="../tests/index.php">Testing</a></li>
-          <li><a href="">JsDoc</a></li>
         </ul>
       </div>
     </div>
