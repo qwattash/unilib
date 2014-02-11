@@ -1,4 +1,4 @@
-/**
+/*
  * callback on form input that clears it when nothing is
  * inside
  * @param {DOMElement} elem
@@ -13,7 +13,7 @@ function inputBlur(elem) {
   }
 }
 
-/**
+/*
  * focus event clear the default content
  * @param {DOMElement} elem
  */
@@ -23,7 +23,7 @@ function inputFocus(elem) {
   }
 }
 
-/**
+/*
  * focus event for the password field, replace dummy field with another
  * @param {DOMElement} elem
  * @param {string} other
@@ -38,7 +38,7 @@ function pwdFocus(elem, other) {
   
 }
 
-/**
+/*
  * blur or focus password field and replace it with given generic input
  * @param {DOMElement} dummy
  */
@@ -49,7 +49,7 @@ function pwdDummySwap(dummy) {
   real.focus();
 }
 
-/**
+/*
  * blur or focus password field and replace it with given generic input
  * @param {DOMElement} real
  */
@@ -62,7 +62,7 @@ function pwdRealSwap(real) {
   }
 }
 
-/**
+/*
  * submit form
  * @param {string} formID
  * @param {string} url

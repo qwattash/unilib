@@ -509,6 +509,12 @@ unilib.dependencyManager = {
      */
     done_: false,
     
+    /**
+     * indicates when the document has finished loading, this gives the 
+     * possibility to run the callbacks on the onload dependencyManager
+     */
+    isDocumentLoaded_: false,
+    
     /** callbacks to execute after all dependencies have been resolved and
      *   initialised.
      * @type {Array.<function>}
@@ -681,7 +687,7 @@ unilib.dependencyManager = {
     generateExecutionList_: function() {
       //visit the graph starting from start nodes
       var visited = [];
-      //this.printMatrix_();//-----------------------------------------------------------------------------DEBUG
+      //this.printMatrix_();
       while (this.dependencyMatrix_.length > visited.length) {
         var executables = this.findFreeNodes_(visited);
         if (executables.length == 0) throw new Error('Self dependency found');
@@ -762,7 +768,10 @@ unilib.dependencyManager = {
     notifyLoaded: function() {
       this.notifications_++;
       this.currentScript_ = null;
-      if (this.notifications_ == this.included_.length) this.exec_();
+      if (this.notifications_ == this.included_.length && 
+        this.isDocumentLoaded_) {
+          this.exec_();
+        }
     },
     
     /**
@@ -799,8 +808,11 @@ unilib.dependencyManager = {
       /* check this.done_ to avoid double calls 
        * if callbacks have been already triggered by notifyLoaded
        */
+      this.isDocumentLoaded_ = true;
       if ((this.notifications_ == this.included_.length) && 
-          !this.done_) this.exec_();
+        !this.done_) {
+         this.exec_();
+      }
     },
     
     /**

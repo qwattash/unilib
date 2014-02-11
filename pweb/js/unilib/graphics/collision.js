@@ -51,7 +51,7 @@ unilib.provideNamespace('unilib.collision', function() {
     
     /**
      * corners of the bounding box
-     * @type {Array.<unilib.geometry.Point}
+     * @type {Array.<unilib.geometry.Point>}
      * @public
      */
     this.corners = [tl, br];

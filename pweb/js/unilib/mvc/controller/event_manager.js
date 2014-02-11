@@ -8,7 +8,7 @@
 unilib.notifyStart('unilib/mvc/controller/event_manager.js');
 
 /**
- * @namespace unilib.mvc.controller
+ * @namespace {unilib.mvc.controller}
  */
 unilib.provideNamespace('unilib.mvc.controller', function() {
   

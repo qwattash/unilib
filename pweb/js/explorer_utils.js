@@ -5,41 +5,51 @@
 unilib.include("unilib/UI/popup.js");
 unilib.include("unilib/ajax/ajax.js");
 
-/**
+/*
  * utility function used to add files to the file list
  * @param {number} id id of the file
  */
 function createFileListEntry(id, name, date) {
   var list = document.getElementById("file_list");
-  var xmlString = 
-  "<li id='" + id + "' class='file'>" +
-    "<span class='icon file_icon'></span>" + 
-    "<span class='file_name'>" + name + "</span>" +
-    "<ul class='menu'>" +
-      "<li class='item in_button'>" +
-        "<span class='menu_command'>Open</span>" +
-      "</li>" + 
-      "<li class='item in_button'>" +
-        "<span class='menu_command'>Delete</span>" +
-      "</li>" +
-    "</ul>" +
-    "<span class='file_date'>" + date + "</span>" +
-  "</li>";
-  var li = null;
-  if (window.ActiveXObject) {
-    //IE
-    var xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-    xmlDoc.async = "false";
-    xmlDoc.loadXML(xmlString);
-    var item = xmlDoc.documentElement;
-    li = item.getElementsByTagName("li")[0];
-  } 
-  else if (document.implementation && document.implementation.createDocument) {
-    //Others
-    var parser = new DOMParser();
-    var item = parser.parseFromString(xmlString, "text/html");
-  var li = item.getElementsByTagName("li")[0];
-    }
+  //do this manually because IE8 doesn't like parsing it
+  //from a string and appending to the DOM
+  var li = document.createElement("li");
+  li.setAttribute("id", id);
+  li.setAttribute("class", "file");
+  //icon span inside the li
+  var spanIcon = document.createElement("span");
+  spanIcon.setAttribute("class", "icon file_icon");
+  li.appendChild(spanIcon);
+  //file name span
+  var spanName = document.createElement("span");
+  spanName.setAttribute("class", "file_name");
+  spanName.appendChild(document.createTextNode(name));
+  li.appendChild(spanName);
+  //submenu
+  var ulMenu = document.createElement("ul");
+  ulMenu.setAttribute("class", "menu");
+  var liOpen = document.createElement("li");
+  liOpen.setAttribute("class", "item in_button");
+  liOpen.setAttribute("onclick", "openProject(this)");
+  var liOpenSpan = document.createElement("span");
+  liOpenSpan.setAttribute("class", "menu_command");
+  liOpenSpan.appendChild(document.createTextNode("Open"));
+  liOpen.appendChild(liOpenSpan);
+  ulMenu.appendChild(liOpen);
+  var liDel = document.createElement("li");
+  liDel.setAttribute("class", "item in_button");
+  liDel.setAttribute("onclick", "deleteProject(this)");
+  var liDelSpan = document.createElement("span");
+  liDelSpan.setAttribute("class", "menu_command");
+  liDelSpan.appendChild(document.createTextNode("Delete"));
+  liDel.appendChild(liDelSpan);
+  ulMenu.appendChild(liDel);
+  li.appendChild(ulMenu);
+  //date span
+  var spanDate = document.createElement("span");
+  spanDate.setAttribute("class", "file_date");
+  spanDate.appendChild(document.createTextNode(date));
+  li.appendChild(spanDate);
   list.appendChild(li);
 }
 
@@ -114,6 +124,7 @@ var init = function () {
     var msg = document.getElementById("file_list_empty_message");
     msg.style.visibility = "visible";
   }
+  
 };
 
 /*

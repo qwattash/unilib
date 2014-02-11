@@ -66,7 +66,8 @@
                 id="real_in_pwd"
                 onblur="pwdRealSwap(this)"
                 class="in_text"
-                type="pwd"
+                type="password"
+                name="pwd"
                 value="<?php 
                   if (isset($_SESSION['auth_attempt_pwd']) && $_SESSION['auth_attempt_pwd'] != "") {
                     echo $_SESSION['auth_attempt_pwd'];

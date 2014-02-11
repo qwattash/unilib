@@ -174,7 +174,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
     
     var root = this.getXMLDocument_("<" + 
       unilib.mvc.graph.XMLNodeName.TAG_MODEL + "></" + 
-      unilib.mvc.graph.XMLNodeName.TAG_MODEL + ">", "application/xml");
+      unilib.mvc.graph.XMLNodeName.TAG_MODEL + ">");
     
     //array for the edges that are stored separately
     var edges = [];
@@ -188,7 +188,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
       //record node data
       var xmlNodeData = root.createElement(
         unilib.mvc.graph.XMLNodeName.TAG_DATA);
-      xmlNodeData.textContent = JSON.stringify(node.getData());
+      xmlNodeData.appendChild(
+        root.createTextNode(JSON.stringify(node.getData())));
       xmlNode.appendChild(xmlNodeData);
       //record node
       root.documentElement.appendChild(xmlNode);
@@ -202,7 +203,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
         //record pin data
         var xmlPinData = root.createElement(
           unilib.mvc.graph.XMLNodeName.TAG_DATA);
-        xmlPinData.textContent = JSON.stringify(pin.getData());
+        xmlPinData.appendChild(
+          root.createTextNode(JSON.stringify(pin.getData())));
         xmlPin.appendChild(xmlPinData);
         //record pin
         xmlNode.appendChild(xmlPin);
@@ -227,7 +229,8 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
       xmlEdge.setAttribute("id", edge.getID());
       var xmlEdgeData = root.createElement(
         unilib.mvc.graph.XMLNodeName.TAG_DATA);
-      xmlEdgeData.textContent = JSON.stringify(edges[i].getData());
+      xmlEdgeData.appendChild(
+        root.createTextNode(JSON.stringify(edges[i].getData())));
       xmlEdge.appendChild(xmlEdgeData);
       xmlEdge.setAttribute("refer", i);
       //record data
@@ -244,8 +247,15 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
    */
   unilib.mvc.graph.GraphSerializer.prototype.xmlToString_ = function(xmlDoc) {
     
-    var serializer = new XMLSerializer();
-    return serializer.serializeToString(xmlDoc);
+    try {
+      //others
+      var serializer = new XMLSerializer();
+      return serializer.serializeToString(xmlDoc);
+    }
+    catch(e) {
+      //IE
+      return xmlDoc.xml;
+    }
   };
   
   /**
@@ -293,7 +303,7 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
    */
   unilib.mvc.graph.GraphSerializer.prototype.parseData_ = function(xmlData) {
     var data = new unilib.mvc.graph.BaseGraphElementData();
-    var dataObj = JSON.parse(xmlData.textContent);
+    var dataObj = JSON.parse(xmlData.firstChild.nodeValue);
     data.position = dataObj.position;
     data.points = dataObj.points;
     data.text = dataObj.text;
@@ -316,7 +326,6 @@ unilib.provideNamespace('unilib.mvc.graph', function() {
     for (var i = 0; i < xmlEdges.length; i++) {
       edges.push(null);
     }
-    
     //fetch nodes
     var xmlNodes = xmlDoc.getElementsByTagName(
       unilib.mvc.graph.XMLNodeName.TAG_NODE);
