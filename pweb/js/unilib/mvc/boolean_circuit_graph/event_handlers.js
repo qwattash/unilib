@@ -192,7 +192,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
     if (! this.canHandle_(evt)) return;
     switch (evt.keymap.button) {
       case unilib.mvc.controller.EventButtonType.BUTTON_LEFT:
-        console.log(this.controller_.drawableManager.getDrawableFromElement(evt.getTarget()));//@TODO DBG
         cmd = this.getMenuAction_(evt);
         this.closeMenu_();
         if (cmd) this.controller_.exec(cmd);
@@ -355,6 +354,7 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
   unilib.mvc.bc.DragDropEventObserver.prototype.update = function(evt) {
     if (this.canHandle_(evt) == false) return;
     if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DRAGSTART) {
+      console.log("evt", evt.position.x, evt.position.y);//------------------------------------------------DEBUG //TODO
       this.storeStartingData_(evt.getTarget());
       //clear edge dragging state upon new drag
       this.commandState_ = {};
@@ -387,9 +387,6 @@ unilib.provideNamespace('unilib.mvc.bc', function() {
       this.commandHandler_.exec(cmd);
     }
     else if (evt.getEventType() == unilib.mvc.controller.DragDropEvent.DROP) {
-      //@TODO-----------------------------------------------------------------------------------------------------------------------
-      //console.log(evt.getTarget());
-      //console.log(this.commandHandler_.drawableManager.getDrawableFromElement(evt.getTarget()));
       //note that drop event, if generated, is fired immediately 
       //AFTER! the DRAGEND
       //forbid any collision by undoing reversible translation executed before

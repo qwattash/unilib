@@ -433,29 +433,61 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     var nodeBR = new unilib.geometry.Point(
       nodeData.position.x + nodeData.points[1].x,
       nodeData.position.y + nodeData.points[1].y);
-    
-    //forbid motion outside the node
-    if (nextCentre.x < nodeTL.x || nextCentre.x > nodeBR.x) {
-      //lock x axis
-      position.x = targetData.position.x;
+    /*
+     * allow motion on each node edge, check that the new point
+     * verify the segment equation for at least one of the four
+     * edges.
+     * Bring the rectangle of the node in polar coordinates with origin
+     * at the centre of the node (x, y) -> (T, M) such that:
+     * a) Find the angle Theta (T) at which the new point lies: 
+     *  Theta = arctan(Cy/Cx).
+     * b) make it be at the distance needed to make it stick to the edge:
+     *  W = width, H = height of the node
+     *  1) T in [-PI/4, +PI/4] M = W / (2cos(T))
+     *  2) T in [PI/4, 3PI/4] M = H / (2sin(T))
+     *  3) T in [3PI/4, 5PI/4] M = W / (2cos(T)) (W is negative and so is cos(T))
+     *  4) T in [5PI/4], 7PI/4] M = H / (2sin(T)) (H is negative and so is sin(T))
+     */
+    var nodeCentre = new unilib.geometry.Point();
+    nodeCentre.x = (nodeBR.x + nodeTL.x) / 2;
+    nodeCentre.y = (nodeBR.y + nodeTL.y) / 2;
+    var nodeH = Math.abs(nodeBR.y - nodeTL.y);
+    var nodeW = Math.abs(nodeBR.x - nodeTL.x);
+    //T in [-PI, PI]
+    var T = Math.atan2(nextCentre.y - nodeCentre.y,
+      nextCentre.x - nodeCentre.x);
+    //add a phase shift since the axes are rotated by
+    //console.log("atan step", T, nodeCentre.x, nodeCentre.y, nextCentre.x, nextCentre.y, 
+    //  nextCentre.x - nodeCentre.x, nextCentre.y - nodeCentre.y);
+    //now calculate the right x and y for the correct distance
+    if (T <= Math.PI/4 && T >= -Math.PI/4) {
+      //case 1 in the comment above
+      var M = nodeW / (2 * Math.cos(T));
+      position.x = M * Math.cos(T) - halfX;
+      position.y = M * Math.sin(T) - halfY;
     }
-    if (nextCentre.y < nodeTL.y || nextCentre.y > nodeBR.y) {
-      //lock y axis
-      position.y = targetData.position.y;
+    else if (T > Math.PI/4 && T < 3*Math.PI/4) {
+      //case 2 in the comment above
+      var M = nodeH / (2 * Math.sin(T));
+      position.x = M * Math.cos(T) - halfX;
+      position.y = M * Math.sin(T) - halfY;
     }
-    var oldCentre = new unilib.geometry.Point(targetData.position.x + halfX, 
-      targetData.position.y + halfY);
-    //forbid motion inside the node
-    if (oldCentre.x == nodeTL.x || oldCentre.x == nodeBR.x) {
-      if (nextCentre.y > nodeTL.y && nextCentre.y < nodeBR.y) {
-        position.x = targetData.position.x;
-      }
+    else if (T <= -Math.PI/4 && T >= -3*Math.PI/4) {
+      //case 4 in the comment above
+      var M = -nodeH / (2 * Math.sin(T));
+      position.x = M * Math.cos(T) - halfX;
+      position.y = M * Math.sin(T) - halfY;
     }
-    if (oldCentre.y == nodeTL.y || oldCentre.y == nodeBR.y) {
-      if (nextCentre.x > nodeTL.x && nextCentre.x < nodeBR.x) {
-        position.y = targetData.position.y;
-      }
+    else {
+      //case 3 in the comment above
+      var M = -nodeW / (2 * Math.cos(T));
+      position.x = M * Math.cos(T) - halfX;
+      position.y = M * Math.sin(T) - halfY;
     }
+    //now back to coordinates relative to the real origin
+    position.x = position.x + nodeCentre.x;
+    position.y = position.y + nodeCentre.y;
+    //console.log("alg output", position.x, position.y);
     return position;
   };
   
