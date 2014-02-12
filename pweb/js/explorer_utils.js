@@ -5,6 +5,8 @@
 unilib.include("unilib/UI/popup.js");
 unilib.include("unilib/ajax/ajax.js");
 
+var ID_PREFIX = "prefix_";
+
 /*
  * utility function used to add files to the file list
  * @param {number} id id of the file
@@ -14,7 +16,7 @@ function createFileListEntry(id, name, date) {
   //do this manually because IE8 doesn't like parsing it
   //from a string and appending to the DOM
   var li = document.createElement("li");
-  li.setAttribute("id", id);
+  li.setAttribute("id", ID_PREFIX + id);
   li.setAttribute("class", "file");
   //icon span inside the li
   var spanIcon = document.createElement("span");
@@ -132,7 +134,8 @@ var init = function () {
  */
 
 function openProject(item) {
-  var fileID = item.parentNode.parentNode.getAttribute("id");
+  var fileID = 
+    item.parentNode.parentNode.getAttribute("id").substr(ID_PREFIX.length);
   var lastSeparator = location.href.lastIndexOf("/");
   var base = location.href.substr(0, lastSeparator);
   location.href = base + "/editor.php?edit=" + fileID;
@@ -140,7 +143,9 @@ function openProject(item) {
 
 function deleteProject(item) {
   if (unilib && unilib.ajax) {
-    var fileID = item.parentNode.parentNode.getAttribute("id");
+    var fileID = 
+      item.parentNode.parentNode.getAttribute("id").substr(ID_PREFIX.length);
+      console.log(fileID, ID_PREFIX.length, item.parentNode.parentNode.getAttribute("id"));
     var request = new unilib.ajax.Request("project.php",
       unilib.ajax.Method.GET, new unilib.ajax.NOPSerializer());
     request.addEventListener(unilib.ajax.ResponseStatus.COMPLETE, 

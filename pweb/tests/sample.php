@@ -1,11 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
 "http://www.w3.org/TR/html4/strict.dtd">
-<html encoding='UTF-8'>
+<html>
 <head>
  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="../css/unittest.css"/>
-<script type='text/JavaScript' src='../js/unilib/base.php'></script>
-<script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
+  <link rel="stylesheet" type="text/css" href="../css/unittest.css">
+  <title>Samples</title>
+  <script type='text/JavaScript' src='../js/unilib/base.php'></script>
+  <script type="text/JavaScript" src="../js/unilib/unittest.js"></script>
 <script type="text/JavaScript">
 test('assertTrue [PASS]', function(){
 	assertTrue(true, 'given true');

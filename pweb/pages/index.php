@@ -6,13 +6,13 @@
 ?>
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<title>Graph Designer <?php echo VERSION; ?></title>
-	<meta name="author" content="qwattash" />
+	<meta name="author" content="qwattash">
 	<!-- Date: 2013-02-06 -->
-	<link rel="stylesheet" type="text/css" href="../css/main.css"/>
-	<link rel="stylesheet" type="text/css" href="../css/button.css"/>
-	<link rel="stylesheet" type="text/css" href="../css/login.css"/>
+	<link rel="stylesheet" type="text/css" href="../css/main.css">
+	<link rel="stylesheet" type="text/css" href="../css/button.css">
+	<link rel="stylesheet" type="text/css" href="../css/login.css">
 	<script type="text/javascript" src="../js/login_utils.js"></script>
 </head>
 <body>
@@ -59,7 +59,7 @@
                     echo "User";
                   }
                 ?> 
-                tabindex="1"/>
+                tabindex="1">
             </li>
             <li>
               <input 
@@ -73,7 +73,7 @@
                     echo $_SESSION['auth_attempt_pwd'];
                   }
                 ?>"
-                tabindex="2"/>
+                tabindex="2">
               <input 
                 id="dummy_in_pwd"
                 onfocus="pwdDummySwap(this);"  
@@ -81,7 +81,7 @@
                 type="text" 
                 name="dummy" 
                 value="Password"
-                tabindex="2"/>
+                tabindex="2">
             </li>
             <li>
               <input 
@@ -89,13 +89,13 @@
                 type="button" 
                 value="Login" 
                 tabindex="3" 
-                onclick="formSubmit('login_form', 'login.php')"/>
+                onclick="formSubmit('login_form', 'login.php')">
               <input 
                 class="in_button" 
                 type="button" 
                 value="Signup" 
                 tabindex="4" 
-                onclick="formSubmit('login_form', 'register.php')"/>
+                onclick="formSubmit('login_form', 'register.php')">
             </li>
           </ul>
         </form>

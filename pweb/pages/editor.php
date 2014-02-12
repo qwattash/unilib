@@ -16,10 +16,10 @@
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="../css/main.css"/>
-<link rel="stylesheet" type="text/css" href="../css/button.css"/>
-<link rel="stylesheet" type="text/css" href="../css/menu.css"/>
-<link rel="stylesheet" type="text/css" href="../css/editor.css"/>
+<link rel="stylesheet" type="text/css" href="../css/main.css">
+<link rel="stylesheet" type="text/css" href="../css/button.css">
+<link rel="stylesheet" type="text/css" href="../css/menu.css">
+<link rel="stylesheet" type="text/css" href="../css/editor.css">
 <title>Graph Designer <?php echo VERSION; ?></title>
 <script type="text/JavaScript" src="../js/unilib/base.php"></script>
 <script type="text/javascript">

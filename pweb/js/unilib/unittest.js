@@ -15,7 +15,7 @@
 /*
  * Each test report is generated using the following structure:
  * expressions inside [*] are parametric.
- * <div id='test#[ordinal_number]' class='test-container'>
+ * <div id='test_[ordinal_number]' class='test-container'>
  *   <p class='test-header'>
  *     <span class='test-icon test-fold-icon'>[icon]</span>
  *     <span class'test-header-text'>[text]</span>
@@ -269,7 +269,7 @@ testManager = {
   startTest: function(test){
     var index = this.getTestIndex_(test);
     var asyncIndex = this.getAsyncTestIndex_(test);
-    var testId = (index == -1) ? 'asyncTest#' + asyncIndex : 'test#' + index;
+    var testId = (index == -1) ? 'asyncTest_' + asyncIndex : 'test_' + index;
     var container = document.createElement('div');
     container.setAttribute('class', 'test-container');
     container.setAttribute('id', testId);

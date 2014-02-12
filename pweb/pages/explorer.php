@@ -11,14 +11,14 @@
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>Graph Designer <?php echo VERSION; ?></title>
-  <meta name="author" content="qwattash" />
+  <meta name="author" content="qwattash">
   
-  <link rel="stylesheet" type="text/css" href="../css/main.css"/>
-  <link rel="stylesheet" type="text/css" href="../css/button.css"/>
-  <link rel="stylesheet" type="text/css" href="../css/menu.css"/>
-  <link rel="stylesheet" type="text/css" href="../css/explorer.css"/>
+  <link rel="stylesheet" type="text/css" href="../css/main.css">
+  <link rel="stylesheet" type="text/css" href="../css/button.css">
+  <link rel="stylesheet" type="text/css" href="../css/menu.css">
+  <link rel="stylesheet" type="text/css" href="../css/explorer.css">
   <script type="text/javascript" src="../js/unilib/base.php"></script>
   <script type="text/javascript" src="../js/explorer_utils.js"></script>
   <script type="text/javascript" src="../js/login_utils.js"></script>
@@ -48,7 +48,7 @@
         while ($handle && $row = mysql_fetch_assoc($handle)) {
       ?>
         <li class="file"
-            id="<?php echo $row['id']; ?>">
+            id="<?php echo "prefix_".$row['id']; ?>">
           <span class="icon file_icon">
           </span>
           <span class="file_name"><?php echo $row['name']; ?></span>
@@ -77,7 +77,7 @@
       class="in_text" 
       value="Name"
       onfocus="inputFocus(this);"
-      onblur="inputBlur(this);" />
+      onblur="inputBlur(this);">
   </div>
   <div id="error_popup">
     <h3>Error</h3>
