@@ -54,6 +54,7 @@
                 value="<?php 
                   if (isset($_SESSION['auth_attempt_user']) && $_SESSION['auth_attempt_user'] != "") {
                     echo $_SESSION['auth_attempt_user'];
+                    unset($_SESSION['auth_attempt_user']);
                   }
                   else {
                     echo "User";
@@ -71,6 +72,7 @@
                 value="<?php 
                   if (isset($_SESSION['auth_attempt_pwd']) && $_SESSION['auth_attempt_pwd'] != "") {
                     echo $_SESSION['auth_attempt_pwd'];
+                    unset($_SESSION['auth_attempt_pwd']);
                   }
                 ?>"
                 tabindex="2">
