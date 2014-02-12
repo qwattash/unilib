@@ -1144,10 +1144,15 @@ unilib.provideNamespace('unilib.mvc.bc.command', function() {
     }
     //add end
     //points.push(end);
-    //  -----------------------------------------------------------------------
     
     //put points into the link
-    var edge = startTarget.makeConnection(endTarget);
+    try {
+      var edge = startTarget.makeConnection(endTarget);
+    }
+    catch(e) {
+      //the edge is inconsistent and can not be created
+      //here some user output would be helpful
+    }
     //check if the model inverted the edge ends to fit directions
     if (edge.getStartPin() != startTarget) {
       //reverse points

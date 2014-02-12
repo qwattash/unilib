@@ -71,7 +71,7 @@
                 name="pwd"
                 value="<?php 
                   if (isset($_SESSION['auth_attempt_pwd']) && $_SESSION['auth_attempt_pwd'] != "") {
-                    echo $_SESSION['auth_attempt_pwd'];
+                    echo ""; //$_SESSION['auth_attempt_pwd'];
                     unset($_SESSION['auth_attempt_pwd']);
                   }
                 ?>"

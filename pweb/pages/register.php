@@ -5,6 +5,10 @@
   function failure() {
     header("Location: http://".SERVER_BASE_URI."/pages/index.php");
   }
+  
+  function success() {
+    header("Location: http://".SERVER_BASE_URI."/pages/explorer.php");
+  }
 
   if (!isset($_POST['user']) || !isset($_POST['pwd'])) {
     failure();  
@@ -33,6 +37,7 @@
     unset($_SESSION['auth_attempt_user']);
     unset($_SESSION['auth_attempt_pwd']);
     unset($_SESSION['auth_error']);
+    success();
   }
   else {
     //back to login
