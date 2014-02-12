@@ -51,14 +51,14 @@
                 class="in_text" 
                 type="text"
                 name="user" 
-                value=<?php 
+                value="<?php 
                   if (isset($_SESSION['auth_attempt_user']) && $_SESSION['auth_attempt_user'] != "") {
                     echo $_SESSION['auth_attempt_user'];
                   }
                   else {
                     echo "User";
                   }
-                ?> 
+                ?>"
                 tabindex="1">
             </li>
             <li>
