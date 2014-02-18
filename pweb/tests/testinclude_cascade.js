@@ -3,9 +3,10 @@
  * 	code depends on unilib/base.js
  * @author qwattash
  */
+unilib.notifyStart("./testinclude_cascade.js");
 
 unilib.provideNamespace('baz', function() {
-	baz.loadTime = true;
+	baz.loadTime = new Date();
 }, [['testinclude.js', './']]);
 unilib.notifyLoaded();
 /*

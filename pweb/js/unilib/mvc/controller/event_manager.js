@@ -673,7 +673,7 @@ unilib.provideNamespace('unilib.mvc.controller', function() {
         maxZ += targets[i].getPosition().z;
       }
       else {
-        maxZ = foregroundTarget.getPosition().z;
+        maxZ = targets[i].getPosition().z;
       }
       //now check if the maxZ found is better than the foregroundZ
       if (foregroundZ < maxZ || foregroundZ == null) {

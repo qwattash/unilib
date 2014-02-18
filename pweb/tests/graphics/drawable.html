@@ -43,7 +43,7 @@
       //bounding box
       var bb = line.getBoundingBox();
       //IDrawable::clear
-      //line.clear(renderer);
+      line.clear(renderer);
       assertEqual(container.childNodes.length, 0, 'line cleared in renderer');
     });
     test('Rectangle shape', function(){
@@ -180,8 +180,8 @@
       assertEqual(container.childNodes.length, 0, 'both elements deleted');
     });
     test('IDrawable::isAt position checking', function(){
-      var container = document.getElementById('container');
-      var renderer = new unilib.graphics.HTML4Renderer(container);
+      //var container = document.getElementById('container');
+      //var renderer = new unilib.graphics.HTML4Renderer(container);
       var tl = new unilib.geometry.Point(80, 10);
       var br = new unilib.geometry.Point(200, 50);
       var pos = new unilib.geometry.Point3D(10, 10, 0);
@@ -202,11 +202,11 @@
       var style = new unilib.graphics.StyleInformations();
       style.lineWidth = 10;
       line.setStyleInformations(style);
-      assertTrue(line.isAt(new unilib.geometry.Point3D(90, 20, 0)), 'Line::isAt topLeft corner');
-      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 20, 0)), 'Line::isAt topRight corner');
-      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 60, 0)), 'Line::isAt bottomRight corner');
-      assertTrue(line.isAt(new unilib.geometry.Point3D(90, 60, 0)), 'Line::isAt bottomLeft corner');
-      assertTrue(line.isAt(new unilib.geometry.Point3D(100, 50, 0)), 'Line::isAt edge');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(85, 15, 0)), 'Line::isAt topLeft corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(95, 15, 0)), 'Line::isAt topRight corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(95, 65, 0)), 'Line::isAt bottomRight corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(85, 65, 0)), 'Line::isAt bottomLeft corner');
+      assertTrue(line.isAt(new unilib.geometry.Point3D(95, 40, 0)), 'Line::isAt edge');
       
     });
   </script>

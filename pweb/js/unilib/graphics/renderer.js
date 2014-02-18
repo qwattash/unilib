@@ -609,7 +609,8 @@ unilib.provideNamespace('unilib.graphics', function() {
     var id = this.getIDFromHandle_(handle);
     var elem = document.getElementById(id);
     if (elem) {
-      this.container_.removeChild(elem);
+      //container.removeChild(elem)
+      elem.parentNode.removeChild(elem);
     }
   };
   

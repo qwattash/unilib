@@ -378,7 +378,7 @@ testManager = {
     catch(ex) {
         this.globalFailure('on test:' + this.name + ' > ' 
             + ex.toString() + ', ' + ex.fileName + ':' + ex.lineNumber);
-      }
+    }
     this.current = null;
     if (this.asyncTests.length != 0) {
       this.executeAsync();

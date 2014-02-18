@@ -1055,9 +1055,10 @@ unilib.notifyLoaded = function() {
  * expose private unilib.dependencyManager.notifyBeginning method,
  * notify beginning of a dependency file
  * @see unilib.dependencyManager.notifyBeginning
+ * @param {string} [base=unilib.config.jsBase] base of the file id
  */
-unilib.notifyStart = function(id) {
-  id = unilib.config.jsBase + '/' + id;
+unilib.notifyStart = function(id, base) {
+  id = ((base === undefined) ? unilib.config.jsBase : base) + '/' + id;
   unilib.dependencyManager.notifyBeginning(id);
 };
 

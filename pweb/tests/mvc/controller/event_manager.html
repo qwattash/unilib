@@ -290,6 +290,7 @@
     drawableManager.update(add0);
     drawableManager.update(add1);
     //drag start event by click delay expiration
+    var evt = [];
     fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
     callLeftUp = function () {
       fireEvent('mouseup', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_LEFT, eventManager, true);
@@ -352,6 +353,7 @@
     drawableManager.update(add0);
     drawableManager.update(add1);
     //drag start event by click delay expiration
+    var evt = [];
     fireEvent('mousedown', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, eventManager, true);
     callLeftUp = function () {
       fireEvent('mouseup', 30, 30, 0,0,0,0, unilib.mvc.controller.EventButtonType.BUTTON_RIGHT, eventManager, true);

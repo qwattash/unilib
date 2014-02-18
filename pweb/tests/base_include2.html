@@ -14,15 +14,17 @@
     */
    unilib.provideNamespace('foo', function() {
      foo.bar = 'bar';
-     foo.loadTime = (baz.loadTime) ? true : false;
+     foo.loadTime = new Date();
    },
    [['testinclude_cascade.js', './']], true);
+   
    test('multiple inclusion', function() {
       assertTrue(foo, 'foo namespace created');
       assertEqual(foo.bar, 'bar', 'namespace content accessible');
-      assertTrue(foo.loadTime, 'init called correctly and baz init called before foo init');
       assertTrue(baz, 'baz created correctly');
       assertTrue(baz.loadTime, 'baz init called');
+      assertTrue(foo.loadTime.getMilliseconds() >= baz.loadTime.getMilliseconds(), 
+        'init called correctly and baz init called before foo init');
       assertTrue(importedStuff, 'cascade included stuff ok');
     });
   </script>
