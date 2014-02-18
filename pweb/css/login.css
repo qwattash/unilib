@@ -2,10 +2,6 @@
  * define positions for each block 
  */
 
-div.title_block {
-  
-}
-
 input#real_in_pwd {
   display: none;
 }
@@ -43,6 +39,14 @@ div.tile_author {
 
 div.tile_author p {
   margin: 0.2em;
+  padding: 0 0.5em;
+}
+
+div.tile_description {
+  width: 90%;
+  height: 100%;
+  padding: 0 1em;
+  text-align: left;
 }
 
 form.login_form {
@@ -68,4 +72,8 @@ li {
 
 form.login_form .in_button {
   width: 40%;
+}
+
+div.tile_content {
+  color: #FFFFFF;
 }

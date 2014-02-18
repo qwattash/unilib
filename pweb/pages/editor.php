@@ -32,6 +32,9 @@
 <script type="text/JavaScript" src="../js/editor_util.js"></script>
 </head>
 <body>
+  <noscript>
+    The editor can not be run with javascript disables, please enable javascript.
+  </noscript>
   <div class="header">
     <div class="title">
       <h2>

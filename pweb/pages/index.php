@@ -112,6 +112,32 @@
       </div>
     </div>
   </div>
+  <div class="tile_row">
+    <div class="tile tile_description tile_blue">
+      <div class="tile_content">
+        <h2>Usage and Scope</h2>
+        <p>
+          The scope of the project is to provide a fairly extensible system, based on the model-view-controller pattern, that
+          enables the creation and editing of graphs while abstracting from the representation system. For example it may
+          be possible to render the graph to an HTML5 canvas only by changing a component in the software. The graph chosen
+          for the demonstration represents a boolean circuit, the software provides the creation, editing and saving of 
+          boolean circuit models using a context-menu based navigation approach.
+        </p>
+        <p>
+          The UI has been kept simple both to avoid to put too much burden into the event handling architecture, that is the
+          part that has the most questionable architecture (in other words could have been better organised).
+          The software is fairly intuitive to use, once you signup or log in you can create a new project and open it.
+        </p>
+        <p>
+          The editor interface is accessed by right-clicking on the "canvas", this will open a submenu that enables the
+          creation of nodes, similarly other context menus are used to define specific actions on each element.
+          To link two pins it is necessary to select both of them by holding the shift key during the selection and then chose
+          link form the context menu.
+          Additionally arrows can be used to move the elements, this may give better precision in some circumstances.
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
 </body>
 </html>

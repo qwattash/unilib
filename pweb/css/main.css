@@ -107,3 +107,8 @@ div#logout_button {
   width: auto;
   height: auto;
 }
+
+/* errors */
+noscript {
+  color: #B22222;
+}
