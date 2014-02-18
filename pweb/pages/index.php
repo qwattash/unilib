@@ -112,7 +112,7 @@
       </div>
     </div>
   </div>
-  <div class="tile_row">
+  <div class="tile_row tile_row_description">
     <div class="tile tile_description tile_blue">
       <div class="tile_content">
         <h2>Usage and Scope</h2>
