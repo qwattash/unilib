@@ -17,3 +17,24 @@ ul#header_menu {
   width: auto;
   height: auto;
 }
+
+div#help_popup {
+  background: #707B7B;
+  position: absolute;
+  top: 15%;
+  color: #FFFFFF;
+  left: 5%;
+  z-index: 3;
+  width: 90%;
+  text-align: left;
+  padding: 1%;
+  visibility: visible;
+}
+
+div#help_popup h3 {
+  color: #2A2E2E;
+}
+
+div#help_popup h2 {
+  color: #1C1F1F;
+}

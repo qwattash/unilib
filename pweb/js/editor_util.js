@@ -2,6 +2,7 @@
  * @author qwattash (Alfredo Mazzinghi)
  */
 
+unilib.include("unilib/UI/popup.js");
 unilib.include('unilib/mvc/boolean_circuit_graph/boolean_circuit_controller.js');
 
 /*
@@ -218,6 +219,12 @@ var __init__ = function() {
   //MENU
   styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.BODY, menuStyle);
   styleProvider.registerStyle(unilib.mvc.menu.MenuType.MENU, unilib.mvc.bc.StyleType.TEXT, mTextStyle);
+  
+  //popup creation handling
+  var popupContainer = document.getElementById("help_popup");
+  var popup = new unilib.ui.Popup(popupContainer, "in_button");
+  popup.bind("click", document.getElementById("menu_help"));
+  
 };
 
 unilib.dependencyManager.addEventListener('load', __init__);
@@ -236,4 +243,11 @@ function logout() {
   var lastSeparator = location.href.lastIndexOf("/");
   var base = location.href.substr(0, lastSeparator);
   location.href = base + "/logout.php";
+}
+
+/*
+ * help popup callbak
+ */
+function openHelp() {
+  
 }

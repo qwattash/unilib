@@ -56,12 +56,45 @@
       </h2>
     </div>
     <ul id="header_menu" class="menu">
+      <li class="item in_button" id="menu_help"><span class="menu_text">Help</span></li>
       <li class="item in_button" onclick="save();"><span class="menu_text">Save</span></li>
       <li class="item in_button" onclick="logout();"><span class="menu_text">Logout</span></li>
     </ul>
   </div>
   <div id="canvas_container" class="block_container">
     <div id='container' class='canvas'></div>
+  </div>
+  <div id="help_popup">
+    <h2>Help</h2>
+    <p>
+      <h3>Creating an element</h3>
+      To create an elment right click on the canvas and select "create node" from the context menu, then
+      select the desired element to create.
+    </p>
+    <p>
+      <h3>Selecting multiple elements</h3>
+      To select more than one element hold the "shift" key and select the elements using the left click.
+    </p>
+    <p>
+      <h3>Connect two elements</h3>
+      Two elements can be connected by selecting two pins and then right clicking on one of them and
+      selecting the "link" option. Note that if two input or output pins are selected they will not
+      be connected since it would be an error.
+    </p>
+    <p>
+      <h3>Delete an element</h3>
+      To delete an element right click on it and select the "delete" command.
+    </p>
+    <p>
+      <h3>Moving an element</h3>
+      An element can be moved by dragging it with the mouse. It is also possible to select one or more
+      elements and move them using the arrow keys.
+    </p>
+    <p>
+      <h3>Save the project</h3>
+      The project can be saved by clicking the "save" button or by chosing the "save" option in the
+      context menu that is opened with the right click.
+    </p>
   </div>
 </body>
 </html>

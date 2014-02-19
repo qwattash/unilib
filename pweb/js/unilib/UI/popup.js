@@ -95,8 +95,10 @@ unilib.provideNamespace('unilib.ui', function() {
     this.container_.style.visibility = "hidden";
     if (code) {
       var cbkList = this.listeners_[code];
-      for (var i = 0; i < cbkList.length; i++) {
-        cbkList[i]();
+      if (cbkList) {
+        for (var i = 0; i < cbkList.length; i++) {
+          cbkList[i]();
+        }
       }
     }
   };
